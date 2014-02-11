@@ -12,7 +12,7 @@ import main.scala.musical.Tone
 import javax.sound.midi.Sequencer
 import javax.sound.midi.MidiSystem
 
-class MelodyReader(melody: Melody) {
+case class MelodyReader(melody: Melody) {
   
   
 // for now only consider track 0 in melody

@@ -6,7 +6,7 @@ import main.scala.musical.MajorChord
 import main.scala.musical.Melody
 import main.scala.musical.Chord
 
-class Cadence(tonic: Tone, arpeggio: Arpeggio, val tempo: Int) extends Melody {
+case class Cadence(tonic: Tone, arpeggio: Arpeggio, val tempo: Int) extends Melody {
   val subdominant: Tone = tonic + 5
   val dominant: Tone = tonic + 7
   val chordDuration = arpeggio.duration
