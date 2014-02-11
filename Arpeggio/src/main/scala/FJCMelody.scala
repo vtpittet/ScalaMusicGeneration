@@ -9,7 +9,7 @@ import main.scala.midiInterface.MelodyReader
 import main.scala.musical._
 import main.scala.musical.SilentChord
 
-class FJCMelody(tonic: Tone, val tempo: Int) extends Melody {
+case class FJCMelody(tonic: Tone, val tempo: Int) extends Melody {
 
   val arp1: Arpeggio = Arpeggio(List(List(0, 3/2.0), List(1/2.0), List(1)), 2)
   val chord1: Chord = BasicChord(List(tonic, tonic+2, tonic+4), arp1) 
@@ -38,6 +38,6 @@ class FJCMelody(tonic: Tone, val tempo: Int) extends Melody {
 
 object FJCMelody {
   def main(args: Array[String]) {
-    new MelodyReader(new FJCMelody(new A(0), 100))
+    MelodyReader(FJCMelody(A(0), 100))
   }
 }
