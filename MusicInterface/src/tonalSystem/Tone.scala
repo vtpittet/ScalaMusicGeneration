@@ -3,23 +3,23 @@ package tonalSystem
 sealed trait Tone {
   
   lazy val next: Tone = this match {
-    case I(o) => II(o)
-    case II(o) => III(o)
-    case III(o) => IV(o)
-    case IV(o) => V(o)
-    case V(o) => VI(o)
-    case VI(o) => VII(o)
-    case VII(o) => I(o + 1)
+    case I(o, a) => II(o, a)
+    case II(o, a) => III(o, a)
+    case III(o, a) => IV(o, a)
+    case IV(o, a) => V(o, a)
+    case V(o, a) => VI(o, a)
+    case VI(o, a) => VII(o, a)
+    case VII(o, a) => I(o + 1, a)
     case O => O
   }
   lazy val prev: Tone = this match {
-    case I(o) => VII(o - 1)
-    case II(o) => I(o)
-    case III(o) => II(o)
-    case IV(o) => III(o)
-    case V(o) => IV(o)
-    case VI(o) => V(o)
-    case VII(o) => VI(o)
+    case I(o, a) => VII(o - 1, a)
+    case II(o, a) => I(o, a)
+    case III(o, a) => II(o, a)
+    case IV(o, a) => III(o, a)
+    case V(o, a) => IV(o, a)
+    case VI(o, a) => V(o, a)
+    case VII(o, a) => VI(o, a)
     case O => O
   }
   
@@ -40,6 +40,7 @@ sealed trait Tone {
 
 case object O extends Tone {
   val octave = 0
+  val alter = 0
 }
 
 case class I(val octave: Int = 0, val alter: Int = 0) extends Tone
