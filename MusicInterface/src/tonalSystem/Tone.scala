@@ -33,6 +33,8 @@ sealed trait Tone {
   
   def -(tones: Int): Tone = this + (-tones)
   
+  val alter: Int
+  
   val octave: Int
 }
 
@@ -40,19 +42,19 @@ case object O extends Tone {
   val octave = 0
 }
 
-case class I(val octave: Int = 0) extends Tone
-case class II(val octave: Int = 0) extends Tone
-case class III(val octave: Int = 0) extends Tone
-case class IV(val octave: Int = 0) extends Tone
-case class V(val octave: Int = 0) extends Tone
-case class VI(val octave: Int = 0) extends Tone
-case class VII(val octave: Int = 0) extends Tone
+case class I(val octave: Int = 0, val alter: Int = 0) extends Tone
+case class II(val octave: Int = 0, val alter: Int = 0) extends Tone
+case class III(val octave: Int = 0, val alter: Int = 0) extends Tone
+case class IV(val octave: Int = 0, val alter: Int = 0) extends Tone
+case class V(val octave: Int = 0, val alter: Int = 0) extends Tone
+case class VI(val octave: Int = 0, val alter: Int = 0) extends Tone
+case class VII(val octave: Int = 0, val alter: Int = 0) extends Tone
 
-object I extends I(0)
-object II extends II(0)
-object III extends III(0)
-object IV extends IV(0)
-object V extends V(0)
-object VI extends VI(0)
-object VII extends VII(0)
+object I extends I(0, 0)
+object II extends II(0, 0)
+object III extends III(0, 0)
+object IV extends IV(0, 0)
+object V extends V(0, 0)
+object VI extends VI(0, 0)
+object VII extends VII(0, 0)
 
