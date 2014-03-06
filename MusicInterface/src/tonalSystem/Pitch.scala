@@ -7,7 +7,7 @@ sealed trait Pitch {
   def -(halfTone: Int): Pitch
 }
 
-// FIXME bug with A+(-1)
+
 case class A(octave: Int) extends Pitch {
   def +(halfTone: Int): Pitch = if (halfTone == 0) {
     this
