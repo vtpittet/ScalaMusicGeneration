@@ -33,6 +33,8 @@ sealed trait Tone {
   
   def -(tones: Int): Tone = this + (-tones)
   
+  def <(that: Tone): Boolean = ???
+  
   val alter: Int
   
   val octave: Int

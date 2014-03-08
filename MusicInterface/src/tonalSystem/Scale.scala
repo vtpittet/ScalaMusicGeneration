@@ -6,7 +6,10 @@ sealed trait Scale {
   val mode: Mode
   val tonic: Pitch
   // translate Tone to corresponding pitch according to the scale
-  def pitchTone(tone: Tone): Pitch = tonic + degreeToHalves(tone) + tone.octave * 12
+  def pitchTone(tone: Tone): Pitch = tone match {
+    case O => S
+    case _ => tonic + degreeToHalves(tone) + tone.octave * 12
+  }
   
   // returns how many half tones separate the given tone with the tonic (assume in same octave)
   def degreeToHalves(tone: Tone): Int

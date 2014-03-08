@@ -10,6 +10,8 @@ class SimpleMelody(notes: List[Note]) extends SequentialSegment(notes) {
   def +:(rawNote:(Tone, Int)): SimpleMelody = rawNote match {
     case (tone, bpm) => +:(tone, bpm, 0)
   }
+  
+  def +:(rawNote:Tone): SimpleMelody = +:(rawNote, 1, 0)
 }
 
 object SimpleMelody extends SimpleMelody(Nil){
