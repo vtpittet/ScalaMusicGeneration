@@ -5,6 +5,8 @@ import tonalSystem._
 import utils.Print
 import segmentSystem.Note
 import rythmics.BPM
+import rythmics.W
+import rythmics.Q
 
 object Test extends App {
   
@@ -25,11 +27,26 @@ object Test extends App {
   
   val segt1 = I +: II +: III +: I +: SimpleMelody
   
-  val segt2 = segt1 + 3
+  val segt2 = segt1 + 2
   
-  val full = (segt1 * segt2) | (segt0 * segt1)
+  val full = segt1 + segt2 | segt0 + segt1
   
   Print(full)
+  
+  val newOSegt = O(Q) * 4
+  val newSegt = I() + II() + III() + I()
+  val newFull = newSegt + (newSegt + 2) | newOSegt + newSegt
+  
+  println
+  println("Same:")
+  Print(newFull)
+  
+  
+  val full2 = (newSegt *+ ((x=>x), _+2)) *| ((x=>x), _>>(Q, Q, Q, Q))
+  
+  println
+  println("similar but not same")
+  Print(full2)
   
   
 }

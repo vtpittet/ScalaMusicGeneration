@@ -2,6 +2,7 @@ package segmentSystem
 
 import rythmics.BPM
 import tonalSystem.Tone
+import tonalSystem.O
 
 sealed trait MusicalSegment {
   def melody: List[MusicalSegment]
@@ -9,12 +10,27 @@ sealed trait MusicalSegment {
   // parallel addition
   def |(that: MusicalSegment): ParallelSegment = ParallelSegment(List(this, that))
   // sequential addition
-  def *(that: MusicalSegment): SequentialSegment = SequentialSegment(List(this, that))
+  def +(that: MusicalSegment): SequentialSegment = SequentialSegment(List(this, that))
+  
   
 //  Note that parallel multiplication is idempotent as the same melody is replayed at the same time
 //  def *(repetitions: Int): ParallelSegment = ParallelSegment(List.fill(repetitions)(this))
-  
   def *(repetitions: Int): SequentialSegment = SequentialSegment(List.fill(repetitions)(this))
+  
+//  TODO should identity be assumed at each beginning of definition ?
+  def *+(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = {
+    val iter = transf.iterator
+    SequentialSegment(List.fill(transf.size)(iter.next()(this)))
+  }
+  def *|(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = {
+    val iter = transf.iterator
+    ParallelSegment(List.fill(transf.size)(iter.next()(this)))
+  }
+  
+  def >>(duration: BPM*): SequentialSegment = SequentialSegment(duration.foldRight(this :: Nil)((d, s) => O(d) :: s))
+  
+  
+  def length: Double = melody.foldLeft(0.0)((x, y) => x + y.length)
   
   def +(toneRise: Int): MusicalSegment
   
@@ -32,6 +48,6 @@ case class SequentialSegment(tracks: List[MusicalSegment]) extends MusicalSegmen
 }
 case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
   def melody = this :: Nil
-  
+  override def length = duration.computed
   def +(toneRise: Int): Note = Note(tone + toneRise, duration)
 }
