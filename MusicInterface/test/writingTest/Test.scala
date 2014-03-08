@@ -42,11 +42,10 @@ object Test extends App {
   Print(newFull)
   
   
-  val full2 = (newSegt *+ ((x=>x), _+2)) *| ((x=>x), _>>(Q, Q, Q, Q))
   
   println
   println("similar but not same")
-  Print(full2)
+  Print( ((I() *+ (_+1, _+2, x=>x)) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
   
 }

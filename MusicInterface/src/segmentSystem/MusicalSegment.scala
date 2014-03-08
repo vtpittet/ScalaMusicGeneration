@@ -19,12 +19,12 @@ sealed trait MusicalSegment {
   
 //  TODO should identity be assumed at each beginning of definition ?
   def *+(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = {
-    val iter = transf.iterator
-    SequentialSegment(List.fill(transf.size)(iter.next()(this)))
+    val iter = (((x: MusicalSegment) => x) +: transf).iterator
+    SequentialSegment(List.fill(transf.size + 1)(iter.next()(this)))
   }
   def *|(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = {
-    val iter = transf.iterator
-    ParallelSegment(List.fill(transf.size)(iter.next()(this)))
+    val iter = (((x: MusicalSegment) => x) +: transf).iterator
+    ParallelSegment(List.fill(transf.size + 1)(iter.next()(this)))
   }
   
   def >>(duration: BPM*): SequentialSegment = SequentialSegment(duration.foldRight(this :: Nil)((d, s) => O(d) :: s))
