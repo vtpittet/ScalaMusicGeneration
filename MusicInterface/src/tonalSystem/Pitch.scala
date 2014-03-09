@@ -1,5 +1,6 @@
 package tonalSystem
 
+// TODO discuss option of creating pitches through a stream-like form to avoid multiple instantiation
 sealed trait Pitch { self =>
   val octave: Int
   val alter: Int
@@ -16,8 +17,30 @@ sealed trait Pitch { self =>
   }
   def -(steps: Int): Pitch = self + (-steps)
   
-  def is(times: Int = 1) = newSelf(octave, alter+times)
-  def es(times: Int = 1) = is(-times)
+  def up(halfTones: Int): Pitch = {
+    if (halfTones <= -7) quintDown + (halfTones + 7)
+    else if (halfTones < 1) self - 1 + (halfTones + 2)
+    else if (halfTones == -1) self es
+    else if (halfTones == 0) self
+    else if (halfTones == 1) self is
+    else if (halfTones < 7) self + 1 + (halfTones - 2)
+    else /*if (tones >= 7)*/ quintUp + (halfTones - 7)
+  }
+  def down(halfTones: Int): Pitch = self + (-halfTones)
+  
+  private lazy val quintUp: Pitch = self match {
+    case B(o, a) => F(o, a+1)
+    case _ => self + 4
+  }
+  private lazy val quintDown: Pitch = self match {
+    case F(o, a) => B(o, a-1)
+    case _ => self - 4
+  }
+  
+  def is(times: Int): Pitch = newSelf(octave, alter+times)
+  def is: Pitch = is(1)
+  def es(times: Int): Pitch = is(-times)
+  def es: Pitch = is(-1)
 }
 
 case object S extends Pitch {
