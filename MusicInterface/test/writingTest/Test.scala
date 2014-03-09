@@ -45,7 +45,7 @@ object Test extends App {
   
   println
   println("similar but not same")
-  Print( ((I() *+ (_+1, _+2, x=>x)) *+ (_+2)) *| ((O(Q) * 4)+_) )
+  Print( ((I() *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
   
 }

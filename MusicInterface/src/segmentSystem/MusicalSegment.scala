@@ -13,18 +13,21 @@ sealed trait MusicalSegment {
   def +(that: MusicalSegment): SequentialSegment = SequentialSegment(List(this, that))
   
   
-//  Note that parallel multiplication is idempotent as the same melody is replayed at the same time
-//  def *(repetitions: Int): ParallelSegment = ParallelSegment(List.fill(repetitions)(this))
+  /*
+   * Note that parallel multiplication is nearly idempotent as the same melody is replayed at the same time
+   * def *(repetitions: Int): ParallelSegment = ParallelSegment(List.fill(repetitions)(this))
+   */
   def *(repetitions: Int): SequentialSegment = SequentialSegment(List.fill(repetitions)(this))
   
-//  TODO should identity be assumed at each beginning of definition ?
-  def *+(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = {
+//  TODO is it good to assume identity at each beginning of definition ?
+  def *+(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = 
+    multiTransf(transf, SequentialSegment(_))
+  def *|(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = 
+    multiTransf(transf, ParallelSegment(_))
+  
+  private def multiTransf[T <: MusicalSegment](transf: Seq[(MusicalSegment) => MusicalSegment], builder: (List[MusicalSegment]) => T): T = {
     val iter = (((x: MusicalSegment) => x) +: transf).iterator
-    SequentialSegment(List.fill(transf.size + 1)(iter.next()(this)))
-  }
-  def *|(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = {
-    val iter = (((x: MusicalSegment) => x) +: transf).iterator
-    ParallelSegment(List.fill(transf.size + 1)(iter.next()(this)))
+    builder(List.fill(transf.size + 1)(iter.next()(this)))
   }
   
   def >>(duration: BPM*): SequentialSegment = SequentialSegment(duration.foldRight(this :: Nil)((d, s) => O(d) :: s))
