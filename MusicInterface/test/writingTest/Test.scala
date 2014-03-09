@@ -1,24 +1,25 @@
 package writingTest
 
+import rythmics.BPM
+import rythmics.Q
+import segmentSystem.Note
+import segmentSystem.Note
 import segmentSystem.SimpleMelody
 import tonalSystem._
 import utils.Print
-import segmentSystem.Note
-import rythmics.BPM
-import rythmics.W
-import rythmics.Q
 
 object Test extends App {
   
-  val harp = SimpleMelody((I, 1, 0), (III, 1, 0), (V, 1, 0), (VII, 1, 0))
+//  val harp = SimpleMelody((I, 1, 0), (III, 1, 0), (V, 1, 0), (VII, 1, 0))
   
-  println
-  println("C Major")
-  Print(harp, Major(C))
+  val scale = I() + II() + III() + IV () + V() + VI() + VII() + I(Q, 1)
+  
+  println("G# Major")
+  Print(scale, Major(G(0, 1)))
   
   println
   println("C Minor")
-  Print(harp, MinorNatural(C))
+  Print(scale, Minor(C))
   
   
   println

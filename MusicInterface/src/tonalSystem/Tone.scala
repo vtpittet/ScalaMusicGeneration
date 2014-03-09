@@ -38,8 +38,21 @@ sealed trait Tone {
   
   def -(tones: Int): Tone = this + (-tones)
   
-  def <(that: Tone): Boolean = ???
+  def stepsTo(that: Tone): Int = {
+    if (this == O || that == O) 0
+    else (that.octave - this.octave) * 7 + that.typeToInt - this.typeToInt
+  }
   
+  private def typeToInt: Int = this match {
+    case O => 0
+    case I(_, _) => 0
+    case II(_, _) => 1
+    case III(_, _) => 2
+    case IV(_, _) => 3
+    case V(_, _) => 4
+    case VI(_, _) => 5
+    case VII(_, _) => 6
+  }
   /*
    * Some(true) => +1/2
    * None => + 0
