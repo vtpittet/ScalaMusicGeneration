@@ -8,7 +8,7 @@ import segmentSystem.SimpleMelody
 import tonalSystem._
 import utils.Print
 
-object Test extends App {
+object WTest extends App {
   
 //  val harp = SimpleMelody((I, 1, 0), (III, 1, 0), (V, 1, 0), (VII, 1, 0))
   
