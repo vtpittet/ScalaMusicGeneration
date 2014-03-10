@@ -6,13 +6,13 @@ import utils.Print
 
 object PTest extends App {
   
-  val song = (I() + II() + III() + I()) *+ (_ + 2) *| (O() * 4 + _)
+  val song = ((I() *+ (_+1, _+2, x=>x)) * 2 *+ (_ + 2)) *| (O() * 8 + _)
   
   val scale = Major(C)
   
-  val tempo = 120
+  val tempo = 180
   
-  MelodyPlayer(song, tempo, scale).play
+  MelodyPlayer(song, tempo, scale)
   
   Print(song)
 }
