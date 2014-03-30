@@ -19,7 +19,14 @@ sealed trait Scale {
   // translate Tone to corresponding pitch according to the scale
   def pitchTone(tone: Tone): Pitch = tone match {
     case O => S
-    case _ => alter(normalizedTonic + (I.stepsTo(tone)))
+    case tone => {
+      val pitch = alter(normalizedTonic + (I.stepsTo(tone)))
+      tone.alter match {
+        case None => pitch
+        case Some(true) => pitch is
+        case Some(false) => pitch es
+      }
+    }
   }
   
   // apply scale's alteration to the given pitch
