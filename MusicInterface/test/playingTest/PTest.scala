@@ -12,24 +12,34 @@ import rythmics.{ S => rS}
 
 object PTest extends App {
   
-  val scale = Major(C)
-  val tempo = 120
   
-  sampleMelody
+  multiRecMelody
   
   def recMelody {
-    val r = 4
-    val song = I(rS).->(r){_ *+ (_+2, _-3, identity)} *| (_ >> (rS-))
+    
+    val scale = Minor(C)
+    val tempo = 60
+    
+    val song = I(rS).+>(4){_ *+ (_+2, _-3, identity)} *| (_ >> (rS-))
     
     
     MelodyPlayer(song, tempo, scale)
 //    Print(song, scale)
   }
   
-  
+  def multiRecMelody {
+    
+    val scale = Minor(C)
+    val tempo = 60
+    
+    val song = (I() + II() + III()).+>(2)(_ /2, _ /0.5)
+    MelodyPlayer(song, tempo, scale)
+  }
   
   def sampleMelody {
   
+    val scale = Major(C)
+    val tempo = 120
   
     val song = ((I() *+ (_+1, _+2, x=>x)) * 2 *+ (_ + 2)) *| (O() * 8 + _)
   
