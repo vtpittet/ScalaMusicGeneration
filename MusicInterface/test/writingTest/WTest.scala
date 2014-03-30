@@ -21,7 +21,7 @@ object WTest extends App {
   println("C Minor")
   Print(scale, Minor(C))
   
-  
+  /*
   println
   println("basic melody :")
   val segt0 = Note(O, BPM(1)) * 4
@@ -48,5 +48,6 @@ object WTest extends App {
   println("similar but not same")
   Print( ((I() *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
+  */
   
 }

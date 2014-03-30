@@ -31,23 +31,7 @@ sealed trait Scale {
   
   val alterationCount: Int
   
-  val keySignature: List[Pitch with Tonality]
-}
-
-
-case class Major(val tonic: Pitch with Tonality) extends Scale {
-  
-  val alterationCount: Int = (tonic.alter * 7) + (tonic match {
-    case F(_, _) => -1
-    case C(_, _) => 0
-    case G(_, _) => 1
-    case D(_, _) => 2
-    case A(_, _) => 3
-    case E(_, _) => 4
-    case B(_, _) => 5
-  })
-  
-  val keySignature = {
+  lazy val keySignature: List[Pitch with Tonality] = {
     val circleOfFifths = if (alterationCount < 0) {
       Stream.continually(List(B, E, A, D, G, C, F)).flatten.iterator
     } else {
@@ -57,9 +41,23 @@ case class Major(val tonic: Pitch with Tonality) extends Scale {
   }
 }
 
+
+case class Major(val tonic: Pitch with Tonality) extends Scale {
+  
+  override val alterationCount: Int = (tonic.alter * 7) + (tonic match {
+    case F(_, _) => -1
+    case C(_, _) => 0
+    case G(_, _) => 1
+    case D(_, _) => 2
+    case A(_, _) => 3
+    case E(_, _) => 4
+    case B(_, _) => 5
+  })
+}
+
 case class Minor(val tonic: Pitch with Tonality) extends Scale {
   
-  val alterationCount: Int = (tonic.alter * 7) + (tonic match {
+  override val alterationCount: Int = (tonic.alter * 7) + (tonic match {
     case F(_, _) => -4
     case C(_, _) => -3
     case G(_, _) => -2
@@ -69,12 +67,4 @@ case class Minor(val tonic: Pitch with Tonality) extends Scale {
     case B(_, _) => 2
   })
   
-  val keySignature = {
-    val circleOfFifths = if (alterationCount < 0) {
-      Stream.continually(List(B, E, A, D, G, C, F)).flatten.iterator
-    } else {
-      Stream.continually(List(F, C, G, D, A, E, B)).flatten.iterator
-    }
-    List.fill(scala.math.abs(alterationCount))(circleOfFifths.next)
-  }
 }

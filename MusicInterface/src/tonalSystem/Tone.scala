@@ -5,7 +5,30 @@ import rythmics.BPM._
 import rythmics.BPM
 import rythmics.Q
 
+
 sealed trait Tone {
+  
+  
+  
+  
+  def is = alterate(true)
+  def es = alterate(false)
+  
+  private def alterate(isSharp: Boolean): Tone = alter match {
+    case Some(isSharp) => this
+    case _ => newTone(octave, Some(isSharp))
+  }
+  
+  private def newTone(octave: Int, alt: Option[Boolean]): Tone = this match {
+    case O => O
+    case I(_, _) => I(octave, alt)
+    case II(_, _) => II(octave, alt)
+    case III(_, _) => III(octave, alt)
+    case IV(_, _) => IV(octave, alt)
+    case V(_, _) => V(octave, alt)
+    case VI(_, _) => VI(octave, alt)
+    case VII(_, _) => VII(octave, alt)
+  }
   
   lazy val next: Tone = this match {
     case I(o, a) => II(o, a)
@@ -78,31 +101,38 @@ case class V(val octave: Int, val alter: Option[Boolean]) extends Tone
 case class VI(val octave: Int, val alter: Option[Boolean]) extends Tone
 case class VII(val octave: Int, val alter: Option[Boolean]) extends Tone
 
-object I extends I(0, None){
+
+trait ApplyToNote {
+  
+  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note
+  def apply(octave: Int): Note = apply(Q, octave)
+}
+
+object I extends I(0, None) with ApplyToNote {
   def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
     Note(I(octave, alter), duration)
 }
-object II extends II(0, None){
+object II extends II(0, None) with ApplyToNote {
   def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
     Note(II(octave, alter), duration)
 }
-object III extends III(0, None){
+object III extends III(0, None) with ApplyToNote {
   def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
     Note(III(octave, alter), duration)
 }
-object IV extends IV(0, None){
+object IV extends IV(0, None) with ApplyToNote {
   def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
     Note(IV(octave, alter), duration)
 }
-object V extends V(0, None){
+object V extends V(0, None) with ApplyToNote {
   def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
     Note(V(octave, alter), duration)
 }
-object VI extends VI(0, None){
+object VI extends VI(0, None) with ApplyToNote {
   def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
     Note(VI(octave, alter), duration)
 }
-object VII extends VII(0, None){
+object VII extends VII(0, None) with ApplyToNote {
   def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
     Note(VII(octave, alter), duration)
 }

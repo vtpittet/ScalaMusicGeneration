@@ -9,7 +9,7 @@ object MidiToneExtractor {
   def apply(tone: Pitch): Int = tone match {
     case A(o, a) => c0 - 3 + o * octave + a
     case B(o, a) => c0 - 1 + o * octave + a
-    case C(o, a) => c0 + 0 * octave + a
+    case C(o, a) => c0 + 0 + o * octave + a
     case D(o, a) => c0 + 2 + o * octave + a
     case E(o, a) => c0 + 4 + o * octave + a
     case F(o, a) => c0 + 5 + o * octave + a

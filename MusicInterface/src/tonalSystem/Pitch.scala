@@ -11,7 +11,7 @@ sealed trait Pitch { self =>
   val newSelf: (Int, Int) => Pitch
   
   def +(steps: Int): Pitch = {
-    if (steps < 0) prev - (steps + 1)
+    if (steps < 0) prev + (steps + 1)
     else if (steps == 0) self
     else next + (steps - 1)
   }
