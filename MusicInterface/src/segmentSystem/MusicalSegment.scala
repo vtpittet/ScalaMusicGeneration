@@ -43,6 +43,7 @@ sealed trait MusicalSegment {
   
   def >>(duration: BPM*): SequentialSegment = SequentialSegment(duration.foldRight(this :: Nil)((d, s) => O(d) :: s))
   
+  def <<(duration: BPM*): SequentialSegment = SequentialSegment(this :: duration.map(O(_)).toList)
   
   def length: Double = melody.foldLeft(0.0)((x, y) => x + y.length)
   
@@ -55,37 +56,43 @@ sealed trait MusicalSegment {
   def +> : (Note => MusicalSegment*) => MusicalSegment = +>(1)
   
   def +>(appCount: Int)(expandF: Note => MusicalSegment*): MusicalSegment = {
-    val iter: () => Note => MusicalSegment = Stream.continually(expandF).flatten.iterator.next
-    expand(appCount, iter)
+    val iter = Stream.continually(expandF).flatten.iterator
+    expand(appCount, iter.next())
   }
   
-  def expand(appCount: Int, expandF: () => Note => MusicalSegment): MusicalSegment
+  def expand(appCount: Int, expandF: => Note => MusicalSegment): MusicalSegment
   
+  
+  def notes: List[Note] = melody.flatMap(_.notes)
 }
 
 case class ParallelSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
   def melody = tracks
   
-  def expand(appCount: Int, expandF: () => Note => MusicalSegment): ParallelSegment =
+  def expand(appCount: Int, expandF: => Note => MusicalSegment): ParallelSegment =
     ParallelSegment(melody.map(_.expand(appCount, expandF)))
 }
 case class SequentialSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
   def melody = tracks
   
-  def expand(appCount: Int, expandF: () => Note => MusicalSegment): SequentialSegment =
+  def expand(appCount: Int, expandF: => Note => MusicalSegment): SequentialSegment =
     SequentialSegment(melody.map(_.expand(appCount, expandF)))
 }
 case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
   def melody = this :: Nil
   override def length = duration.computed
-  def expand(appCount: Int, expandF: () => Note => MusicalSegment) = if(appCount < 1) {
+  def expand(appCount: Int, expandF: => Note => MusicalSegment) = if(appCount < 1) {
     this
   } else if (appCount == 1) {
-    expandF()(this)
+    expandF(this)
   } else {
-    (expandF()(this)).expand(appCount-1, expandF)
+    (expandF(this)).expand(appCount-1, expandF)
   }
   
   def is: Note = Note(tone is, duration)
   def es: Note = Note(tone es, duration)
+  
+  def withDuration(duration: BPM): Note = Note(tone, duration)
+  
+  override def notes: List[Note] = this :: Nil
 }
