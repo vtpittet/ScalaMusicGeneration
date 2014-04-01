@@ -35,15 +35,38 @@ object Recuerdos extends App {
   
   def sopran1(s: MusicalSegment): MusicalSegment =
     s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2).+>(_ * 3 >> rT)
+
+  
+  def compose(s1: MusicalSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
+    sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
+  
+  val s1 = V() + IV() + III() + IV() + V() + V() +
+    V() + VI() + VII() + VI() + V() + VI() + VII() + VII() +
+    VII() + VII() + III(1) + II(1) + I(1) + II(1)
+  
+  val s2 = III() + II() + I() + II() + III() + III() +
+    III() + IV() + V() + IV() + III() + IV() + V() + V() +
+    V() + V() + I(1) + VII() + VI() + IV(-1)
+    
+  val b1 = V(-1) *3 *3 +
+    V(-1) + V(-1) + VII(-1) + VII(-1) *3 *(3 +
+    1) + III() *3 + III() *2 + VI()
+    
+  val b2 = I(-1) *4 + III(-1) *4 + VI(-1) *2
+  
   
   val tempo = 60
   val scale = Minor(A)
   
+  /*
   val phrase1 = 
     sopran1(V() + IV() + III() + IV() + V() + V()) |
     sopran2(III() + II()+ I() + II() + III() + III()) |
     bass1(V(-1) *3 *3) |
     bass2(I(-1) * 3)
+  * 
+  */
     
-  MelodyPlayer(phrase1, tempo, scale)
+    
+  MelodyPlayer(compose(s1, s2, b1, b2), tempo, scale)
 }
