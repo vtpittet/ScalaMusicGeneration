@@ -36,9 +36,29 @@ object Recuerdos extends App {
   def sopran1(s: MusicalSegment): MusicalSegment =
     s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2).+>(_ * 3 >> rT)
 
+  def specSopran1(s: MusicalSegment): MusicalSegment =
+    s.+>(_.withDuration(rT).*(2).+>(_ *3 >> rT, _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5)) >> rT), _.withDuration(rT).*(4).+>(_ *3 >> rT))
   
-  def compose(s1: MusicalSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
-    sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
+  def compose(s1: MusicalSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment, spec: Boolean = false): MusicalSegment = {
+    val sop1 = if(spec) (x: MusicalSegment) => specSopran1(x)
+      else (x: MusicalSegment) => sopran1(x)
+    sop1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
+  }
+  
+  
+  val m11S1 = I(1) + VII().is
+  val m11S2 = V() *2
+  val m11B1 = II() *3
+  val m11B2 = V(-2)
+  
+  val m11 = compose(m11S1, m11S2, m11B1, m11B2, true)
+  
+  
+  
+  
+  
+  
+  
   
   val s1 = V() + IV() + III() + IV() + V() + V() +
     V() + VI() + VII() + VI() + V() + VI() + VII() + VII() +
@@ -68,5 +88,5 @@ object Recuerdos extends App {
   */
     
     
-  MelodyPlayer(compose(s1, s2, b1, b2), tempo, scale)
+  MelodyPlayer(/*compose(s1, s2, b1, b2)*/m11, tempo, scale)
 }
