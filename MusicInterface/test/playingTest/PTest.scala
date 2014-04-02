@@ -20,7 +20,7 @@ object PTest extends App {
     val scale = Minor(C)
     val tempo = 60
     
-    val song = I(rS).+>(4){_ *+ (_+2, _-3, identity)} *| (_ >> (rS-))
+    val song = I(rS).+>(4)(_ *+ (_+2, _-3, identity)) *| (_ >> (rS-))
     
     
     MelodyPlayer(song, tempo, scale)

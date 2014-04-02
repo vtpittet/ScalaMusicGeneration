@@ -33,17 +33,20 @@ object Recuerdos extends App {
   def sopran2(s: MusicalSegment): MusicalSegment =
     s.+>(_ withDuration rE).+>( _ >> rE, identity).+>(_ << rE)
   
-  def sopran1(s: MusicalSegment): MusicalSegment =
+  def stdSopran1(s: MusicalSegment): MusicalSegment =
     s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2).+>(_ * 3 >> rT)
-
+  
   def specSopran1(s: MusicalSegment): MusicalSegment =
     s.+>(_.withDuration(rT).*(2).+>(_ *3 >> rT, _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5)) >> rT), _.withDuration(rT).*(4).+>(_ *3 >> rT))
   
-  def compose(s1: MusicalSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment, spec: Boolean = false): MusicalSegment = {
-    val sop1 = if(spec) (x: MusicalSegment) => specSopran1(x)
-      else (x: MusicalSegment) => sopran1(x)
-    sop1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
+  // Alternate sopran1 composition for each melody of given sequentialSegment
+  // !! side-effect sensitive, depth of param must be controoled
+  def sopran1(s: SequentialSegment): MusicalSegment = {
+    val sIter = Stream.continually(List(stdSopran1(_), specSopran1(_))).flatten.iterator
+    SequentialSegment(s.melody.map(sIter.next()(_)))
   }
+  def compose(s1: SequentialSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
+    sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
   
   val m11S1 = I(1) + VII().is
@@ -51,7 +54,7 @@ object Recuerdos extends App {
   val m11B1 = II() *3
   val m11B2 = V(-2)
   
-  val m11 = compose(m11S1, m11S2, m11B1, m11B2, true)
+//  val m11 = compose(m11S1, m11S2, m11B1, m11B2, true)
   
   
   
@@ -88,5 +91,5 @@ object Recuerdos extends App {
   */
     
     
-  MelodyPlayer(/*compose(s1, s2, b1, b2)*/m11, tempo, scale)
+  MelodyPlayer(compose(s1, s2, b1, b2), tempo, scale)
 }

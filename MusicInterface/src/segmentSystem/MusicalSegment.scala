@@ -8,42 +8,42 @@ sealed trait MusicalSegment {
   def melody: List[MusicalSegment]
   
   // parallel addition
-  def |(that: MusicalSegment): ParallelSegment = ParallelSegment(List(this, that))
+  def |(that: MusicalSegment): ParallelSegment = ParallelSegment(this, that)
   // sequential addition
-  def +(that: MusicalSegment): SequentialSegment = SequentialSegment(List(this, that))
+  def +(that: MusicalSegment): SequentialSegment = SequentialSegment(this, that)
   
   
   /*
    * Note that parallel multiplication is nearly idempotent as the same melody is replayed at the same time
    * def *(repetitions: Int): ParallelSegment = ParallelSegment(List.fill(repetitions)(this))
    */
-  def *(repetitions: Int): SequentialSegment = SequentialSegment(List.fill(repetitions)(this))
+  def *(repetitions: Int): SequentialSegment = SequentialSegment(List.fill(repetitions)(this):_*)
   
 //  TODO is it good to assume identity at each beginning of definition ?
   def *+(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = {
     val applications = Stream.continually(transf).flatten.take(apps)
-    multiTransf(SequentialSegment(_), applications:_*)
+    multiTransf(SequentialSegment(_:_*), applications:_*)
   }
   
   def *|(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = {
     val applications = Stream.continually(transf).flatten.take(apps)
-    multiTransf(ParallelSegment(_), applications:_*)
+    multiTransf(ParallelSegment(_:_*), applications:_*)
   }
   
   
   def *+(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = 
-    multiTransf(SequentialSegment(_), transf:_*)
+    multiTransf(SequentialSegment(_:_*), transf:_*)
   def *|(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = 
-    multiTransf(ParallelSegment(_), transf:_*)
+    multiTransf(ParallelSegment(_:_*), transf:_*)
   
   private def multiTransf[T <: MusicalSegment](builder: (List[MusicalSegment]) => T, transf: ((MusicalSegment) => MusicalSegment)*): T = {
     val iter = (((x: MusicalSegment) => x) +: transf).iterator
     builder(List.fill(transf.size + 1)(iter.next()(this)))
   }
   
-  def >>(duration: BPM*): SequentialSegment = SequentialSegment(duration.foldRight(this :: Nil)((d, s) => O(d) :: s))
+  def >>(duration: BPM*): SequentialSegment = SequentialSegment(duration.foldRight(this :: Nil)((d, s) => O(d) :: s):_*)
   
-  def <<(duration: BPM*): SequentialSegment = SequentialSegment(this :: duration.map(O(_)).toList)
+  def <<(duration: BPM*): SequentialSegment = SequentialSegment((this :: duration.map(O(_)).toList):_*)
   
   def length: Double = melody.foldLeft(0.0)((x, y) => x + y.length)
   
@@ -53,7 +53,7 @@ sealed trait MusicalSegment {
   // divides duration of all notes by frac
   def /(frac: Double): MusicalSegment = +>((v: Note) => Note(v.tone, v.duration / frac))
   
-  def +> : (Note => MusicalSegment*) => MusicalSegment = +>(1)
+  def +>(expandF: Note => MusicalSegment*): MusicalSegment = +>(1)(expandF:_*)
   
   def +>(appCount: Int)(expandF: Note => MusicalSegment*): MusicalSegment = {
     val iter = Stream.continually(expandF).flatten.iterator
@@ -62,21 +62,37 @@ sealed trait MusicalSegment {
   
   def expand(appCount: Int, expandF: => Note => MusicalSegment): MusicalSegment
   
+  /*
+   * TODO : this is implementable, how without many code duplication ?
+   * - builder of instances (how to ?)
+   * 
+   * 
+  def +>(expandF: MusicalSegment => MusicalSegment*): MusicalSegment = +>(1, expandF:_*)
+  def +>(appCount: Int, expandF: MusicalSegment => MusicalSegment*): MusicalSegment = {
+    val iter = Stream.continually(expandF).flatten.iterator
+    expand(appCount, iter.next)
+  }
+  
+  def expand(appCount: Int, expandF: => MusicalSegment => MusicalSegment): MusicalSegment
+  * 
+  */
   
   def notes: List[Note] = melody.flatMap(_.notes)
 }
 
-case class ParallelSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
-  def melody = tracks
+case class ParallelSegment(tracks: MusicalSegment*) extends MusicalSegment{
+  def melody = tracks.toList
   
   def expand(appCount: Int, expandF: => Note => MusicalSegment): ParallelSegment =
-    ParallelSegment(melody.map(_.expand(appCount, expandF)))
+    ParallelSegment(melody.map(_.expand(appCount, expandF)):_*)
+  
 }
-case class SequentialSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
-  def melody = tracks
+case class SequentialSegment(tracks: MusicalSegment*) extends MusicalSegment{
+  def melody = tracks.toList
   
   def expand(appCount: Int, expandF: => Note => MusicalSegment): SequentialSegment =
-    SequentialSegment(melody.map(_.expand(appCount, expandF)))
+    SequentialSegment(melody.map(_.expand(appCount, expandF)):_*)
+    
 }
 case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
   def melody = this :: Nil
