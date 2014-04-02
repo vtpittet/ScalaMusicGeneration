@@ -11,6 +11,7 @@ import utils.Print
 import segmentSystem.SequentialSegment
 import segmentSystem.MusicalSegment
 import segmentSystem.Note
+import utils.SS
 
 object Recuerdos extends App {
 
@@ -63,19 +64,19 @@ object Recuerdos extends App {
   
   
   
-  val s1 = V() + IV() + III() + IV() + V() + V() +
-    V() + VI() + VII() + VI() + V() + VI() + VII() + VII() +
-    VII() + VII() + III(1) + II(1) + I(1) + II(1)
+  val s1 = SS(SS(V(), IV(), III(), IV(), V(), V(),
+    V(), VI(), VII(), VI(), V(), VI(), VII(), VII(),
+    VII(), VII(), III(1), II(1), I(1), II(1)), SS(I(1), VII().is))
   
   val s2 = III() + II() + I() + II() + III() + III() +
     III() + IV() + V() + IV() + III() + IV() + V() + V() +
-    V() + V() + I(1) + VII() + VI() + IV(-1)
+    V() + V() + I(1) + VII() + VI() + IV(-1) + V() *2
     
   val b1 = V(-1) *3 *3 +
     V(-1) + V(-1) + VII(-1) + VII(-1) *3 *(3 +
-    1) + III() *3 + III() *2 + VI()
+    1) + III() *3 + III() *2 + VI() + II() *3
     
-  val b2 = I(-1) *4 + III(-1) *4 + VI(-1) *2
+  val b2 = I(-1) *4 + III(-1) *4 + VI(-1) *2 + V(-2)
   
   
   val tempo = 60
