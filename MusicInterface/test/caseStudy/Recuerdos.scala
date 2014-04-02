@@ -79,7 +79,7 @@ object Recuerdos extends App {
   val b2 = I(-1) *4 + III(-1) *4 + VI(-1) *2 + V(-2)
   
   
-  val tempo = 60
+  val tempo = 100
   val scale = Minor(A)
   
   /*

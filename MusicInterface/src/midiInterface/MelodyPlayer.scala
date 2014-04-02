@@ -12,7 +12,11 @@ import javax.sound.midi.ShortMessage
 import segmentSystem._
 import rythmics.BPM
 
-case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale) {
+
+/**
+ * Plays a given musicalSegment at fixed tempo in a provided scale, from the c
+ */
+case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: Int = 0, toQN: Int = -1) {
   
   
   
@@ -22,7 +26,7 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale) {
   // set Tempo
   setTempo
   // put events in midiTrack
-  createEventsPerSegment(melody, 0)
+  createEventsPerSegment(melody, -fromQN)
   // play the melody
   play
   
@@ -60,33 +64,22 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale) {
   }
   
   def createEventsPerNote(tone: Tone, duration: BPM, segtTimeStamp: Double): Double = {
-    midiTrack.add(new MidiEvent(new ShortMessage(
-            ShortMessage.NOTE_ON, 0, MidiToneExtractor(scale.pitchTone(tone)),
-            MelodyReader.DEFAULT_VELOCITY),
-            (segtTimeStamp * MelodyReader.DEFAULT_RESOLUTION).toLong))
-            
-    midiTrack.add(new MidiEvent(new ShortMessage(
-            ShortMessage.NOTE_OFF, 0, MidiToneExtractor(scale.pitchTone(tone)),
-            MelodyReader.DEFAULT_VELOCITY),
-            ((segtTimeStamp + duration.computed) * MelodyReader.DEFAULT_RESOLUTION).toLong))
-            
-    segtTimeStamp + duration.computed
-    
-    /*
-    case start :: starts => {
-      // println("ChordTimeStamp : " + chordTimeStamp)
-      // println("start : " + start)
+    // if segtTimeStamp is in given interval (toQN == -1 => no upperbound)
+    if (segtTimeStamp >= 0 && (segtTimeStamp < toQN-fromQN || toQN == -1)) {
       midiTrack.add(new MidiEvent(new ShortMessage(
-            ShortMessage.NOTE_ON, 0, MidiToneExtractor(note._1), MelodyReader.DEFAULT_VELOCITY),
-            ((chordTimeStamp + start) * MelodyReader.DEFAULT_RESOLUTION).toLong))
-      if (chordDuration > 0) {
-        createEventsPerNote((note._1, starts), chordTimeStamp, chordDuration - start)
-      }
+              ShortMessage.NOTE_ON, 0, MidiToneExtractor(scale.pitchTone(tone)),
+              MelodyReader.DEFAULT_VELOCITY),
+              (segtTimeStamp * MelodyReader.DEFAULT_RESOLUTION).toLong))
+              
+      midiTrack.add(new MidiEvent(new ShortMessage(
+              ShortMessage.NOTE_OFF, 0, MidiToneExtractor(scale.pitchTone(tone)),
+              MelodyReader.DEFAULT_VELOCITY),
+              ((segtTimeStamp + duration.computed) * MelodyReader.DEFAULT_RESOLUTION).toLong))
+    
     }
-    case Nil =>
-    * 
-    */
+    segtTimeStamp + duration.computed
   }
+  
   /*
   def createOffEvents(tone: Tone, timeStamp: Double): Unit = {
     midiTrack.add(new MidiEvent(new ShortMessage(
