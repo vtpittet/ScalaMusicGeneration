@@ -66,20 +66,34 @@ object Recuerdos extends App {
   
   val s1 = SS(SS(V(), IV(), III(), IV(), V(), V(),
     V(), VI(), VII(), VI(), V(), VI(), VII(), VII(),
-    VII(), VII(), III(1), II(1), I(1), II(1)), SS(I(1), VII().is))
+    VII(), VII(), III(1), II(1), I(1), II(1)), SS(I(1), VII().is),
+    SS(VII().is, VII().is, II(1).es, I(1), VII(), I(1)), SS(VII(), VI()),
+    SS(VI(), VI(), V(), IV(), III(), IV()), SS(III(), II()),
+    SS(II(), II()))
   
   val s2 = III() + II() + I() + II() + III() + III() +
     III() + IV() + V() + IV() + III() + IV() + V() + V() +
-    V() + V() + I(1) + VII() + VI() + IV(-1) + V() *2
+    V() + V() + I(1) + VII() + VI() + IV(-1) + V() *2 +
+    V() *2 + V() *2 + V() + VI() + IV() *2 +
+    IV() *2 + II() *2 + I() *2 + VII(-1).is *2 +
+    VII(-1).is *2
     
   val b1 = V(-1) *3 *3 +
     V(-1) + V(-1) + VII(-1) + VII(-1) *3 *(3 +
-    1) + III() *3 + III() *2 + VI() + II() *3
+    1) + III() *3 + III() *2 + VI() + II() *3 +
+    IV() *3 + III().is *3 + I() *3 + IV() + I() *(2 +
+    3 + 3) + V(-1).es *3 + V(-1) *3 +
+    V(-1) *3
     
-  val b2 = I(-1) *4 + III(-1) *4 + VI(-1) *2 + V(-2)
+  val b2 = I(-1) *(3 +
+    1) + III(-1) *(3 +
+    1) + VI(-1) *2 + V(-2) +
+    V(-2) + I(-1) + III(-1).is + IV(-1) +
+    IV(-1) *2 + VI(-2) + V(-2) +
+    V(-2)
   
   
-  val tempo = 100
+  val tempo = 60
   val scale = Minor(A)
   
   /*
@@ -92,5 +106,5 @@ object Recuerdos extends App {
   */
     
     
-  MelodyPlayer(compose(s1, s2, b1, b2), tempo, scale)
+  MelodyPlayer(compose(s1, s2, b1, b2) * 2, tempo, scale)
 }
