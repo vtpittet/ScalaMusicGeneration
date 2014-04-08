@@ -101,15 +101,14 @@ case class ParallelSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
   def expand(appCount: Int, expandF: => Note => MusicalSegment): ParallelSegment =
     ParallelSegment(melody.map(_.expand(appCount, expandF)))
   
-  def flatAll: ParallelSegment = ParallelSegment(melody.flatMap(_ match {
-    case ParallelSegment(pm) => pm.flatMap(_.flatAll match {
-      case SequentialSegment(s :: Nil) => s :: Nil
-      case ParallelSegment(pm) => pm
-      case other => other :: Nil
-    })
-    case other => other.flatAll :: Nil
+  def flatAll: ParallelSegment = ParallelSegment(melody.flatMap(_.flatAll match {
+    // by indyction hypothesis, pm contains only notes and sequentialSegment of lenght > 1
+    case ParallelSegment(pm) => pm
+    // by induction hypothesis, s can only be a parallelSegment of length > 1 or a note
+    case SequentialSegment(s :: Nil) => s.melody
+    // other cases are Note and sequential segment of length > 1, no extraction
+    case other => other :: Nil
   }))
-  
 }
 
 object ParallelSegment {
@@ -122,13 +121,10 @@ case class SequentialSegment(tracks: List[MusicalSegment]) extends MusicalSegmen
   def expand(appCount: Int, expandF: => Note => MusicalSegment): SequentialSegment =
     SequentialSegment(melody.map(_.expand(appCount, expandF)))
     
-  def flatAll: SequentialSegment = SequentialSegment(melody.flatMap(_ match {
-    case SequentialSegment(sm) => sm.flatMap(_.flatAll match {
-      case ParallelSegment(p :: Nil) => p :: Nil
-      case SequentialSegment(sm) => sm
-      case other => other :: Nil
-    })
-    case other => other.flatAll :: Nil
+  def flatAll: SequentialSegment = SequentialSegment(melody.flatMap(_.flatAll match {
+    case SequentialSegment(sm) => sm
+    case ParallelSegment(p :: Nil) => p.melody
+    case other => other :: Nil
   }))
 }
 
