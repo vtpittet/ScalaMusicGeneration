@@ -1,17 +1,23 @@
 package caseStudy
 
 import midiInterface.MelodyPlayer
-import tonalSystem._
-import tonalSystem.{S => tS}
 import rythmics.{E => rE}
 import rythmics.{H => rH}
-import rythmics.{Q => rQ}
 import rythmics.{T => rT}
-import utils.Print
-import segmentSystem.SequentialSegment
 import segmentSystem.MusicalSegment
-import segmentSystem.Note
+import segmentSystem.SequentialSegment
+import tonalSystem.A
+import tonalSystem.I
+import tonalSystem.II
+import tonalSystem.III
+import tonalSystem.IV
+import tonalSystem.Major
+import tonalSystem.Minor
+import tonalSystem.V
+import tonalSystem.VI
+import tonalSystem.VII
 import utils.SS
+import utils.Print
 
 object Recuerdos extends App {
 
@@ -64,37 +70,65 @@ object Recuerdos extends App {
   
   
   
-  val s1 = SS(SS(V(), IV(), III(), IV(), V(), V(),
+  val s11 = SS(SS(V(), IV(), III(), IV(), V(), V(),
     V(), VI(), VII(), VI(), V(), VI(), VII(), VII(),
     VII(), VII(), III(1), II(1), I(1), II(1)), SS(I(1), VII().is),
     SS(VII().is, VII().is, II(1).es, I(1), VII(), I(1)), SS(VII(), VI()),
     SS(VI(), VI(), V(), IV(), III(), IV()), SS(III(), II()),
     SS(II(), II()))
   
-  val s2 = III() + II() + I() + II() + III() + III() +
+  val s12 = III() + II() + I() + II() + III() + III() +
     III() + IV() + V() + IV() + III() + IV() + V() + V() +
     V() + V() + I(1) + VII() + VI() + IV(-1) + V() *2 +
     V() *2 + V() *2 + V() + VI() + IV() *2 +
     IV() *2 + II() *2 + I() *2 + VII(-1).is *2 +
     VII(-1).is *2
     
-  val b1 = V(-1) *3 *3 +
+  val b11 = V(-1) *3 *3 +
     V(-1) + V(-1) + VII(-1) + VII(-1) *3 *(3 +
     1) + III() *3 + III() *2 + VI() + II() *3 +
     IV() *3 + III().is *3 + I() *3 + IV() + I() *(2 +
     3 + 3) + V(-1).es *3 + V(-1) *3 +
     V(-1) *3
     
-  val b2 = I(-1) *(3 +
+  val b12 = I(-1) *(3 +
     1) + III(-1) *(3 +
     1) + VI(-1) *2 + V(-2) +
     V(-2) + I(-1) + III(-1).is + IV(-1) +
     IV(-1) *2 + VI(-2) + V(-2) +
     V(-2)
   
+  val part1 = compose(s11, s12, b11, b12)
+  
+  val s21 = SS(SS(V(), IV(), III(), IV(), V(), V(),
+    V(), V(), VI(), VI(), IV(1), VI()), SS(VI(), V()),
+    SS(V(), V(), I(1), I(1), VII(), IV().is), SS(VI(), V()),
+    SS(V(), V(), IV(), IV(), III(), II()), SS(II(), I()))
+  
+  val s22 = III() + II() + I() + II() + III() + III() +
+    III() + III() + IV() + IV() + II(1) + IV() + III() + III() +
+    III() + III() + I() + I() + II().is + II().is + III() + III() +
+    III() + III() + VI(-1).es + V(-1) + V(-1) + V(-2) + V(-1) + VI(-1)
+  
+  val b21 = V(-1) *3 *(3 +
+    1) + VI(-1) *3 + IV() *2 + VI(-1) + IV() + V(-1) *2 + // check
+    V(-1) *3 + VI(-1) + III() + VI(-1) + VII(-1) + IV().is + VII(-1) + VII(-1) *3 *(1 +
+    1) + VI(-1).es + IV(-1) + VI(-1).es + V(-1) *2 + IV(-1) + V(-1) *2 + VII(-1)
+  
+  val b22 = I(-1) *(3 +
+  4 +
+  1) + VI(-2) + VII(-2) + III(-1) +
+  III(-1) + II(-1) + V(-2) + I(-1)
+  
+  val part2 = compose(s21, s22, b21, b22)
+  
+  
+  
+  
   
   val tempo = 60
-  val scale = Minor(A)
+  val minScale = Minor(A)
+  val majScale = Major(A)
   
   /*
   val phrase1 = 
@@ -104,7 +138,11 @@ object Recuerdos extends App {
     bass2(I(-1) * 3)
   * 
   */
+  
+  
     
-    
-  MelodyPlayer(compose(s1, s2, b1, b2) * 2, tempo, scale)
+//  MelodyPlayer(part1, tempo, minScale)
+  MelodyPlayer(part2, tempo, majScale, 6*3)
 }
+
+
