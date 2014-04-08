@@ -80,7 +80,8 @@ sealed trait MusicalSegment {
   
   def notes: List[Note] = melody.flatMap(_.notes)
   
-  def toSNF: SequentialSegment = ???
+  // TODO implement
+  def toPNF: ParallelSegment = ???
   
   /**
    * This function ensure that the returned tree does not contain any
@@ -120,7 +121,7 @@ case class SequentialSegment(tracks: List[MusicalSegment]) extends MusicalSegmen
   
   def expand(appCount: Int, expandF: => Note => MusicalSegment): SequentialSegment =
     SequentialSegment(melody.map(_.expand(appCount, expandF)))
-    
+  
   def flatAll: SequentialSegment = SequentialSegment(melody.flatMap(_.flatAll match {
     case SequentialSegment(sm) => sm
     case ParallelSegment(p :: Nil) => p.melody
