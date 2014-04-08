@@ -3,6 +3,7 @@ package segmentSystem
 import rythmics.BPM
 import tonalSystem.Tone
 import tonalSystem.O
+import utils.PrettyPrinter
 
 sealed trait MusicalSegment {
   def melody: List[MusicalSegment]
@@ -81,7 +82,17 @@ sealed trait MusicalSegment {
   
   def toSNF: SequentialSegment = ???
   
+  /**
+   * This function ensure that the returned tree does not contain any
+   * directly nested SequentialSegment in SequentialSegment and 
+   * ParallelSegment in ParallelSegment.
+   * Additionally a melody with a single element will be extracted from
+   * it's wrapper (regardless of Parallel or Sequential) as it does
+   * not make any difference considering it as Parallel or Sequential.
+   */
   def flatAll: MusicalSegment
+  
+  override def toString: String = '\n' + PrettyPrinter(this)
 }
 
 case class ParallelSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
@@ -92,11 +103,13 @@ case class ParallelSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
   
   def flatAll: ParallelSegment = ParallelSegment(melody.flatMap(_ match {
     case ParallelSegment(pm) => pm.flatMap(_.flatAll match {
+      case SequentialSegment(s :: Nil) => s :: Nil
       case ParallelSegment(pm) => pm
       case other => other :: Nil
     })
     case other => other.flatAll :: Nil
   }))
+  
 }
 
 object ParallelSegment {
@@ -111,6 +124,7 @@ case class SequentialSegment(tracks: List[MusicalSegment]) extends MusicalSegmen
     
   def flatAll: SequentialSegment = SequentialSegment(melody.flatMap(_ match {
     case SequentialSegment(sm) => sm.flatMap(_.flatAll match {
+      case ParallelSegment(p :: Nil) => p :: Nil
       case SequentialSegment(sm) => sm
       case other => other :: Nil
     })
