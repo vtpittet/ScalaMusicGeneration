@@ -78,6 +78,10 @@ sealed trait MusicalSegment {
   */
   
   def notes: List[Note] = melody.flatMap(_.notes)
+  
+  def toSNF: SequentialSegment = ???
+  
+  def flatAll: MusicalSegment
 }
 
 case class ParallelSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
@@ -86,6 +90,13 @@ case class ParallelSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
   def expand(appCount: Int, expandF: => Note => MusicalSegment): ParallelSegment =
     ParallelSegment(melody.map(_.expand(appCount, expandF)))
   
+  def flatAll: ParallelSegment = ParallelSegment(melody.flatMap(_ match {
+    case ParallelSegment(pm) => pm.flatMap(_.flatAll match {
+      case ParallelSegment(pm) => pm
+      case other => other :: Nil
+    })
+    case other => other.flatAll :: Nil
+  }))
 }
 
 object ParallelSegment {
@@ -98,6 +109,13 @@ case class SequentialSegment(tracks: List[MusicalSegment]) extends MusicalSegmen
   def expand(appCount: Int, expandF: => Note => MusicalSegment): SequentialSegment =
     SequentialSegment(melody.map(_.expand(appCount, expandF)))
     
+  def flatAll: SequentialSegment = SequentialSegment(melody.flatMap(_ match {
+    case SequentialSegment(sm) => sm.flatMap(_.flatAll match {
+      case SequentialSegment(sm) => sm
+      case other => other :: Nil
+    })
+    case other => other.flatAll :: Nil
+  }))
 }
 
 object SequentialSegment {
@@ -115,6 +133,8 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
   } else {
     (expandF(this)).expand(appCount-1, expandF)
   }
+  
+  def flatAll: Note = this
   
   def is: Note = Note(tone is, duration)
   def es: Note = Note(tone es, duration)
