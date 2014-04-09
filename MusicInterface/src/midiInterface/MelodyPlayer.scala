@@ -16,19 +16,23 @@ import rythmics.BPM
 /**
  * Plays a given musicalSegment at fixed tempo in a provided scale, from the c
  */
-case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: Int = 0, toQN: Int = -1) {
+case class MelodyPlayer(melody: List[(MusicalSegment, Scale)], bpm: Int, fromQN: Int, toQN: Int) {
   
   
   
   // push melody in sequencer
-  val midiSequence: Sequence = new Sequence(Sequence.PPQ, MelodyReader.DEFAULT_RESOLUTION)
+  val midiSequence: Sequence = new Sequence(Sequence.PPQ, MelodyPlayer.DEFAULT_RESOLUTION)
   val midiTrack: Track = midiSequence.createTrack
   // set Tempo
   setTempo
   // put events in midiTrack
   // first noteoff then note on to avoid note erasure bug
-  createEventsPerSegment(melody, -fromQN, false)
-  createEventsPerSegment(melody, -fromQN, true)
+  
+  melody.foldLeft[Double](-fromQN)((segtTs, melodyWithScale) => {
+    val (melody, scale) = melodyWithScale
+    createEventsPerSegment(melody, scale, segtTs, false)
+    createEventsPerSegment(melody, scale, segtTs, true)
+  })
   // play the melody
   play
   
@@ -42,13 +46,13 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: 
     }
   }
   
-  def createEventsPerSegment(segt: MusicalSegment, segtTimeStamp: Double, noteOn: Boolean): Double = segt match {
+  def createEventsPerSegment(segt: MusicalSegment, scale: Scale, segtTimeStamp: Double, noteOn: Boolean): Double = segt match {
     case ParallelSegment(melody) =>
-      (for(segt <- melody) yield createEventsPerSegment(segt, segtTimeStamp, noteOn)).foldLeft(0.0)((x, y) => scala.math.max(x, y))
+      (for(segt <- melody) yield createEventsPerSegment(segt, scale, segtTimeStamp, noteOn)).foldLeft(0.0)((x, y) => scala.math.max(x, y))
     case SequentialSegment(melody) =>
-      melody.foldLeft(segtTimeStamp)((x, y) => createEventsPerSegment(y, x, noteOn))
+      melody.foldLeft(segtTimeStamp)((x, y) => createEventsPerSegment(y, scale, x, noteOn))
     case Note(tone, duration) =>
-      createEventsPerNote(tone, duration, segtTimeStamp, noteOn)
+      createEventsPerNote(tone, duration, scale, segtTimeStamp, noteOn)
     /*
     case chord :: Nil => {
       // Not neede case, let notes be at the end of melody
@@ -65,17 +69,17 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: 
     */
   }
   
-  def createEventsPerNote(tone: Tone, duration: BPM, segtTimeStamp: Double, noteOn: Boolean): Double = {
+  def createEventsPerNote(tone: Tone, duration: BPM, scale: Scale, segtTimeStamp: Double, noteOn: Boolean): Double = {
     // if segtTimeStamp is in given interval (toQN == -1 => no upperbound)
     if (segtTimeStamp >= 0 && (segtTimeStamp < toQN-fromQN || toQN == -1)) {
       if (noteOn) midiTrack.add(new MidiEvent(new ShortMessage(
               ShortMessage.NOTE_ON, 0, MidiToneExtractor(scale.pitchTone(tone)),
-              MelodyReader.DEFAULT_VELOCITY),
-              (segtTimeStamp * MelodyReader.DEFAULT_RESOLUTION).toLong))
+              MelodyPlayer.DEFAULT_VELOCITY),
+              (segtTimeStamp * MelodyPlayer.DEFAULT_RESOLUTION).toLong))
       else midiTrack.add(new MidiEvent(new ShortMessage(
               ShortMessage.NOTE_OFF, 0, MidiToneExtractor(scale.pitchTone(tone)),
-              MelodyReader.DEFAULT_VELOCITY),
-              ((segtTimeStamp + duration.computed) * MelodyReader.DEFAULT_RESOLUTION).toLong))
+              MelodyPlayer.DEFAULT_VELOCITY),
+              ((segtTimeStamp + duration.computed) * MelodyPlayer.DEFAULT_RESOLUTION).toLong))
     
     }
     segtTimeStamp + duration.computed
@@ -104,7 +108,10 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: 
   }
 }
 
-object MelodyReader {
+object MelodyPlayer {
   val DEFAULT_RESOLUTION: Int = 16
   val DEFAULT_VELOCITY: Int = 60
+  def apply(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: Int = 0, toQN: Int = -1): MelodyPlayer =
+    MelodyPlayer((melody, scale) :: Nil, bpm, fromQN, toQN)
+  def apply(bpm: Int, melody: (MusicalSegment, Scale)*): MelodyPlayer = MelodyPlayer(melody.toList, bpm, 0, -1)
 }
