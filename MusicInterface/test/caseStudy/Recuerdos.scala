@@ -126,7 +126,8 @@ object Recuerdos extends App {
   
   
   
-  val tempo = 60
+  
+  val tempo = 80
   val minScale = Minor(A)
   val majScale = Major(A)
   
@@ -141,8 +142,8 @@ object Recuerdos extends App {
   
   
     
-//  MelodyPlayer(part1, tempo, minScale)
-  MelodyPlayer(part2, tempo, majScale, 6*3)
+  MelodyPlayer(part1, tempo, minScale)
+  MelodyPlayer(part2, tempo, majScale)
 }
 
 

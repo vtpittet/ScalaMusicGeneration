@@ -26,7 +26,9 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: 
   // set Tempo
   setTempo
   // put events in midiTrack
-  createEventsPerSegment(melody, -fromQN)
+  // first noteoff then note on to avoid note erasure bug
+  createEventsPerSegment(melody, -fromQN, false)
+  createEventsPerSegment(melody, -fromQN, true)
   // play the melody
   play
   
@@ -40,13 +42,13 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: 
     }
   }
   
-  def createEventsPerSegment(segt: MusicalSegment, segtTimeStamp: Double): Double = segt match {
+  def createEventsPerSegment(segt: MusicalSegment, segtTimeStamp: Double, noteOn: Boolean): Double = segt match {
     case ParallelSegment(melody) =>
-      (for(segt <- melody) yield createEventsPerSegment(segt, segtTimeStamp)).foldLeft(0.0)((x, y) => scala.math.max(x, y))
+      (for(segt <- melody) yield createEventsPerSegment(segt, segtTimeStamp, noteOn)).foldLeft(0.0)((x, y) => scala.math.max(x, y))
     case SequentialSegment(melody) =>
-      melody.foldLeft(segtTimeStamp)((x, y) => createEventsPerSegment(y, x))
+      melody.foldLeft(segtTimeStamp)((x, y) => createEventsPerSegment(y, x, noteOn))
     case Note(tone, duration) =>
-      createEventsPerNote(tone, duration, segtTimeStamp)
+      createEventsPerNote(tone, duration, segtTimeStamp, noteOn)
     /*
     case chord :: Nil => {
       // Not neede case, let notes be at the end of melody
@@ -63,15 +65,14 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: 
     */
   }
   
-  def createEventsPerNote(tone: Tone, duration: BPM, segtTimeStamp: Double): Double = {
+  def createEventsPerNote(tone: Tone, duration: BPM, segtTimeStamp: Double, noteOn: Boolean): Double = {
     // if segtTimeStamp is in given interval (toQN == -1 => no upperbound)
     if (segtTimeStamp >= 0 && (segtTimeStamp < toQN-fromQN || toQN == -1)) {
-      midiTrack.add(new MidiEvent(new ShortMessage(
+      if (noteOn) midiTrack.add(new MidiEvent(new ShortMessage(
               ShortMessage.NOTE_ON, 0, MidiToneExtractor(scale.pitchTone(tone)),
               MelodyReader.DEFAULT_VELOCITY),
               (segtTimeStamp * MelodyReader.DEFAULT_RESOLUTION).toLong))
-              
-      midiTrack.add(new MidiEvent(new ShortMessage(
+      else midiTrack.add(new MidiEvent(new ShortMessage(
               ShortMessage.NOTE_OFF, 0, MidiToneExtractor(scale.pitchTone(tone)),
               MelodyReader.DEFAULT_VELOCITY),
               ((segtTimeStamp + duration.computed) * MelodyReader.DEFAULT_RESOLUTION).toLong))
