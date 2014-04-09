@@ -40,18 +40,27 @@ object Recuerdos extends App {
   def sopran2(s: MusicalSegment): MusicalSegment =
     s.+>(_ withDuration rE).+>( _ >> rE, identity).+>(_ << rE)
   
+    
+  def simpleSopran1(s: MusicalSegment): MusicalSegment = 
+    s.+>(_.withDuration(rT) *3 >> rT)
+  
   def stdSopran1(s: MusicalSegment): MusicalSegment =
-    s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2).+>(_ * 3 >> rT)
+    simpleSopran1(s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2))
   
   def specSopran1(s: MusicalSegment): MusicalSegment =
     s.+>(_.withDuration(rT).*(2).+>(_ *3 >> rT, _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5)) >> rT), _.withDuration(rT).*(4).+>(_ *3 >> rT))
   
-  // Alternate sopran1 composition for each melody of given sequentialSegment
+  // return composition method applying sequentially all args to the
+  // melody of composed segment
   // !! side-effect sensitive, depth of param must be controoled
-  def sopran1(s: SequentialSegment): MusicalSegment = {
-    val sIter = Stream.continually(List(stdSopran1(_), specSopran1(_))).flatten.iterator
-    SequentialSegment(s.melody.map(sIter.next()(_)))
+  def alternate(exps: MusicalSegment => MusicalSegment*): SequentialSegment => MusicalSegment = {
+    val expIter = Stream.continually(exps).flatten.iterator
+    (x: SequentialSegment) => SequentialSegment(x.melody.map(expIter.next()(_)))
   }
+  
+  def sopran1(s: SequentialSegment): MusicalSegment = alternate(stdSopran1, specSopran1)(s)
+  
+  
   def compose(s1: SequentialSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
     sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
@@ -122,28 +131,84 @@ object Recuerdos extends App {
   
   val part2 = compose(s21, s22, b21, b22)
   
+  def midTrans(m: MusicalSegment): MusicalSegment = m +> {_ withDuration rE} >> rE
   
+  def composeTrans(s: SequentialSegment, m: MusicalSegment, b: MusicalSegment) =
+    simpleSopran1(s) | midTrans(m) | bass2(b)
   
+  val sTrans22 = I() *3 + II() + III() + IV()
+  val mTrans22 = V(-1) + III(-1) + V(-1) + I() + II()
+  val bTrans22 = I(-1)
   
+  val trans22 = composeTrans(sTrans22, mTrans22, bTrans22)
   
+  val sTrans21 = I() *3 + II() + III().es + IV()
+  val mTrans21 = V(-1) *2 + VII(-1) + I() + II()
+  val bTrans21 = I(-1)
+  
+  val trans21 = composeTrans(sTrans21, mTrans21, bTrans21)
+  
+  def stdSopran31(s: MusicalSegment): MusicalSegment = simpleSopran1(s +> {_ *6})
+  def specSopran31(s: MusicalSegment): MusicalSegment = simpleSopran1(s +> {_ *2})
+  def sopran31(s: SequentialSegment): MusicalSegment = alternate(stdSopran31, specSopran31)(s)
+  
+  def compose3(s1: SequentialSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
+    sopran31(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
+  
+  val s31 = SS(SS(
+    I(), I()), SS(II(), III().es, IV()), SS(V(),
+    V(), V()), SS(IV(), III(), II()), SS(I(),
+    I(), I()), SS(II(), III().es, IV()), SS(V(),
+    V(), VII()), SS(VI(), V(), IV()), SS(III(),
+    III(), III()))
+  
+  val s32 =
+    (V(-1) + VI(-1).es + I() + III() +
+    III() + VII(-1) +> {_ *2}) + V(-1) + V(-2) + V(-1) + VI(-1) +
+    (V(-1) + VI(-1).es + I() + III() +
+    III() + V() +> {_ *2}) + III() + II() + I() + VI(-1) +
+    (I() + II(-1).is) *2
+  
+  val b31 =
+    (V(-1) + VI(-1).es *2 + V(-1) +
+    V(-1) + VII(-1) +> {_ *3}) + VI(-1) + V(-1) + IV(-1) + V(-1) + V(-1).is *2 +
+    (V(-1) + VI(-1).es *2 + V(-1) *(1 +
+    3) +> {_ *3}) + V(-1) *2 + I() +
+    (V(-1) + V(-2) + III(-1)) *2
+  
+  val b32 =
+    I(-1) *(4 +
+    1) + V(-2) *2 + I(-1) *(1 +
+    4 +
+    1) + V(-2) *2 + I(-1) *(1 +
+    2)
+  
+  val part3 = compose3(s31, s32, b31, b32)
+  
+  val end = I(-1) + V(-1) + I() + III() + V() + I(1) +> {_ withDuration rE} +
+    ((I(-1) | III() | I(1) | V(1)) + (I(-1) | III(-1) | V(-1) | I()) +> {_ withDuration (rH-)})
   
   val tempo = 80
   val minScale = Minor(A)
   val majScale = Major(A)
   
-  /*
-  val phrase1 = 
-    sopran1(V() + IV() + III() + IV() + V() + V()) |
-    sopran2(III() + II()+ I() + II() + III() + III()) |
-    bass1(V(-1) *3 *3) |
-    bass2(I(-1) * 3)
-  * 
-  */
+  // Full version
+  MelodyPlayer(
+    tempo,
+    (part1 *2, minScale),
+    (part2 + trans22 + part2 + trans21, majScale),
+    (part1, minScale),
+    (part2 + part3 + end, majScale)
+  )
   
   
-    
-  MelodyPlayer(part1, tempo, minScale)
-  MelodyPlayer(part2, tempo, majScale)
+  // Short version without repetitions
+  MelodyPlayer(
+    tempo,
+    (part1, minScale),
+    (part2 + part3 + end, majScale)
+  )
+  
 }
 
 
