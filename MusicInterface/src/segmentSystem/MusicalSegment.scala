@@ -6,7 +6,10 @@ import tonalSystem.O
 import utils.PrettyPrinter
 
 sealed trait MusicalSegment {
-  def melody: List[MusicalSegment]
+  val melody: List[MusicalSegment]
+  
+  val depth: Int = melody.maxBy(_.depth).depth + 1
+  val length: Double
   
   // parallel addition
   def |(that: MusicalSegment): ParallelSegment = ParallelSegment(this, that)
@@ -46,8 +49,6 @@ sealed trait MusicalSegment {
   
   def <<(duration: BPM*): SequentialSegment = SequentialSegment((this :: duration.map(O(_)).toList))
   
-  def length: Double = melody.foldLeft(0.0)((x, y) => x + y.length)
-  
   def +(toneRise: Int): MusicalSegment = +>((v: Note) => Note(v.tone + toneRise, v.duration))
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
   
@@ -78,7 +79,7 @@ sealed trait MusicalSegment {
   * 
   */
   
-  def notes: List[Note] = melody.flatMap(_.notes)
+  lazy val notes: List[Note] = melody.flatMap(_.notes)
   
   // TODO implement
   def toPNF: ParallelSegment = ???
@@ -96,8 +97,9 @@ sealed trait MusicalSegment {
   override def toString: String = '\n' + PrettyPrinter(this)
 }
 
-case class ParallelSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
-  def melody = tracks
+case class ParallelSegment(melody: List[MusicalSegment]) extends MusicalSegment{
+  
+  val length = melody.maxBy(_.length).length
   
   def expand(appCount: Int, expandF: => Note => MusicalSegment): ParallelSegment =
     ParallelSegment(melody.map(_.expand(appCount, expandF)))
@@ -116,8 +118,9 @@ object ParallelSegment {
   def apply(tracks: MusicalSegment*): ParallelSegment = ParallelSegment(tracks.toList)
 }
 
-case class SequentialSegment(tracks: List[MusicalSegment]) extends MusicalSegment{
-  def melody = tracks
+case class SequentialSegment(melody: List[MusicalSegment]) extends MusicalSegment{
+  
+  val length = melody.foldLeft(0.0)(_ + _.length)
   
   def expand(appCount: Int, expandF: => Note => MusicalSegment): SequentialSegment =
     SequentialSegment(melody.map(_.expand(appCount, expandF)))
@@ -135,8 +138,9 @@ object SequentialSegment {
 
 
 case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
-  def melody = this :: Nil
-  override def length = duration.computed
+  val melody = this :: Nil
+  override val depth = 0
+  override val length = duration.computed
   def expand(appCount: Int, expandF: => Note => MusicalSegment) = if(appCount < 1) {
     this
   } else if (appCount == 1) {
@@ -152,5 +156,5 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
   
   def withDuration(duration: BPM): Note = Note(tone, duration)
   
-  override def notes: List[Note] = this :: Nil
+  override lazy val notes: List[Note] = melody
 }
