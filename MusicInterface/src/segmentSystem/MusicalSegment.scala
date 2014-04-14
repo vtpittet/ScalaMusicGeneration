@@ -8,13 +8,45 @@ import utils.PrettyPrinter
 sealed trait MusicalSegment {
   val melody: List[MusicalSegment]
   
-  val depth: Int = melody.maxBy(_.depth).depth + 1
+  lazy val depth: Int = melody.maxBy(_.depth).depth + 1
   val length: Double
   
+  lazy val notes: List[Note] = melody.flatMap(_.notes)
+  
+  // addition
+  /*
+   * Note: the parameter depth represents the depth of resulting MusicalSegment
+   * 
+   * Implementation choice : in the case where depth > max depth of params this and that are put as
+   * melody of a new MusicalSegment, then this result is put itself as a melody in a new MusicalSegment
+   * as long as the resulting depth is smaller than the requested depth in the function call.
+   */
+  private def add[T <: MusicalSegment](depth: Int, builder: List[MusicalSegment] => T, that: MusicalSegment): T = {
+    if (this.depth > depth || that.depth > depth) this.add(scala.math.max(this.depth, that.depth), builder, that)
+    else if (this.depth < depth && that.depth < depth) {
+      def encloseToDepth(aimDepth: Int, segment: T): T = if (segment.depth < aimDepth) {
+        encloseToDepth(aimDepth, builder(List(segment)))
+      } else segment
+      encloseToDepth(depth, builder(List(this, that)))
+    }
+    else if (this.depth ==depth && that.depth ==depth) builder(this.melody ::: that.melody)
+    else if (this.depth < depth && that.depth ==depth) builder(this :: that.melody)
+    else/*if(this.depth ==depth && that.depth < depth)*/ builder(this.melody :+ that)
+  }
+  
   // parallel addition
-  def |(that: MusicalSegment): ParallelSegment = ParallelSegment(this, that)
+  def |(depth: Int, that: MusicalSegment): ParallelSegment = add(depth, ParallelSegment(_), that)
+  def |(that: MusicalSegment): ParallelSegment = this | (1, that)
+  def ||(that: MusicalSegment): ParallelSegment = this | (2, that)
+  def |||(that: MusicalSegment): ParallelSegment = this | (3, that)
+  def ||||(that: MusicalSegment): ParallelSegment = this | (4, that)
+  
   // sequential addition
-  def +(that: MusicalSegment): SequentialSegment = SequentialSegment(this, that)
+  def +(depth: Int, that: MusicalSegment): SequentialSegment = add(depth, SequentialSegment(_), that)
+  def +(that: MusicalSegment): SequentialSegment = this + (1, that)
+  def ++(that: MusicalSegment): SequentialSegment = this + (2, that)
+  def +++(that: MusicalSegment): SequentialSegment = this + (3, that)
+  def ++++(that: MusicalSegment): SequentialSegment = this + (4, that)
   
   
   /*
@@ -79,8 +111,6 @@ sealed trait MusicalSegment {
   * 
   */
   
-  lazy val notes: List[Note] = melody.flatMap(_.notes)
-  
   // TODO implement
   def toPNF: ParallelSegment = ???
   
@@ -139,7 +169,7 @@ object SequentialSegment {
 
 case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
   val melody = this :: Nil
-  override val depth = 0
+  override lazy val depth = 0
   override val length = duration.computed
   def expand(appCount: Int, expandF: => Note => MusicalSegment) = if(appCount < 1) {
     this
@@ -157,4 +187,5 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
   def withDuration(duration: BPM): Note = Note(tone, duration)
   
   override lazy val notes: List[Note] = melody
+  
 }
