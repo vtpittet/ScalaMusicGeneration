@@ -1,9 +1,8 @@
 package tonalSystem
 
-import segmentSystem.Note
-import rythmics.BPM._
 import rythmics.BPM
 import rythmics.Q
+import segmentSystem.Note
 
 
 sealed trait Tone {
@@ -84,6 +83,12 @@ sealed trait Tone {
   val alter: Option[Boolean]
   
   val octave: Int
+  
+}
+object Tone {
+  // implicit conversions for easier melody description
+  implicit val duration: BPM = Q
+  implicit def tone2Note(tone: Tone)(implicit duration: BPM) = Note(tone, duration)
 }
 
 case object O extends Tone {

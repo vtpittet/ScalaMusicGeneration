@@ -114,4 +114,5 @@ object MelodyPlayer {
   def apply(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: Int = 0, toQN: Int = -1): MelodyPlayer =
     MelodyPlayer((melody, scale) :: Nil, bpm, fromQN, toQN)
   def apply(bpm: Int, melody: (MusicalSegment, Scale)*): MelodyPlayer = MelodyPlayer(melody.toList, bpm, 0, -1)
+  def apply(bpm: Int, fromQN: Int, toQN: Int, melody: (MusicalSegment, Scale)*): MelodyPlayer = MelodyPlayer(melody.toList, bpm, fromQN, toQN)
 }

@@ -119,16 +119,30 @@ sealed trait MusicalSegment {
   override def toString: String = '\n' + PrettyPrinter(this)
 }
 
-case class ParallelSegment(melody: List[MusicalSegment]) extends MusicalSegment{
-  
-  val length = melody.maxBy(_.length).length
+trait Parallel extends MusicalSegment {
   
   // depth-controlled operation on parallel composition of parallel segments
-  def |(depth: Int, that: ParallelSegment): ParallelSegment = add(depth, ParallelSegment(_), that)
-  def |(that: ParallelSegment): ParallelSegment = this | (1, that)
-  def ||(that: ParallelSegment): ParallelSegment = this | (2, that)
-  def |||(that: ParallelSegment): ParallelSegment = this | (3, that)
-  def ||||(that: ParallelSegment): ParallelSegment = this | (4, that)
+  def |(depth: Int, that: MusicalSegment with Parallel): ParallelSegment = add(depth, ParallelSegment(_), that)
+  def |(that: MusicalSegment with Parallel): ParallelSegment = this | (1, that)
+  def ||(that: MusicalSegment with Parallel): ParallelSegment = this | (2, that)
+  def |||(that: MusicalSegment with Parallel): ParallelSegment = this | (3, that)
+  def ||||(that: MusicalSegment with Parallel): ParallelSegment = this | (4, that)
+}
+
+trait Sequential extends MusicalSegment {
+  
+  // depth-controlled operation on sequential composition of sequential segments
+  def +(depth: Int, that: MusicalSegment with Sequential): SequentialSegment = add(depth, SequentialSegment(_), that)
+  def +(that: MusicalSegment with Sequential): SequentialSegment = this + (1, that)
+  def ++(that: MusicalSegment with Sequential): SequentialSegment = this + (2, that)
+  def +++(that: MusicalSegment with Sequential): SequentialSegment = this + (3, that)
+  def ++++(that: MusicalSegment with Sequential): SequentialSegment = this + (4, that)
+}
+
+
+case class ParallelSegment(melody: List[MusicalSegment]) extends Parallel {
+  
+  val length = melody.maxBy(_.length).length
   
   def expand(appCount: Int, expandF: => Note => MusicalSegment): ParallelSegment =
     ParallelSegment(melody.map(_.expand(appCount, expandF)))
@@ -147,16 +161,9 @@ object ParallelSegment {
   def apply(tracks: MusicalSegment*): ParallelSegment = ParallelSegment(tracks.toList)
 }
 
-case class SequentialSegment(melody: List[MusicalSegment]) extends MusicalSegment{
+case class SequentialSegment(melody: List[MusicalSegment]) extends Sequential {
   
   val length = melody.foldLeft(0.0)(_ + _.length)
-  
-  // depth-controlled operation on sequential composition of sequential segments
-  def +(depth: Int, that: SequentialSegment): SequentialSegment = add(depth, SequentialSegment(_), that)
-  def +(that: SequentialSegment): SequentialSegment = this + (1, that)
-  def ++(that: SequentialSegment): SequentialSegment = this + (2, that)
-  def +++(that: SequentialSegment): SequentialSegment = this + (3, that)
-  def ++++(that: SequentialSegment): SequentialSegment = this + (4, that)
   
   def expand(appCount: Int, expandF: => Note => MusicalSegment): SequentialSegment =
     SequentialSegment(melody.map(_.expand(appCount, expandF)))
@@ -173,7 +180,7 @@ object SequentialSegment {
 }
 
 
-case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment{
+case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with Parallel with Sequential {
   val melody = this :: Nil
   override lazy val depth = 0
   override val length = duration.computed

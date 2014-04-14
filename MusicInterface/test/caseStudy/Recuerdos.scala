@@ -84,7 +84,14 @@ object Recuerdos extends App {
     VII().is + VII().is + II(1).es + I(1) + VII() + I(1), VII() + VI(),
     VI() + VI() + V() + IV() + III() + IV(), III() + II(),
     II() + II())
-  
+    
+  val s11newNew = (V() + IV() + III() + IV() + V() + V() +
+    V() + VI() + VII() + VI() + V() + VI() + VII() + VII() +
+    VII() + VII() + III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII().is) ++
+    (VII().is + VII().is + II(1).es + I(1) + VII() + I(1)) ++ (VII() + VI()) ++
+    (VI() + VI() + V() + IV() + III() + IV()) ++ (III() + II()) ++
+    (II() + II())
+    
   val s12 = III() + II() + I() + II() + III() + III() +
     III() + IV() + V() + IV() + III() + IV() + V() + V() +
     V() + V() + I(1) + VII() + VI() + IV(-1) + V() *2 +
@@ -106,7 +113,7 @@ object Recuerdos extends App {
     IV(-1) *2 + VI(-2) + V(-2) +
     V(-2)
   
-  val part1 = compose(s11, s12, b11, b12)
+  val part1 = compose(s11newNew, s12, b11, b12)
   
   val s21 = SS(SS(V(), IV(), III(), IV(), V(), V(),
     V(), V(), VI(), VI(), IV(1), VI()), SS(VI(), V()),
@@ -191,14 +198,22 @@ object Recuerdos extends App {
   val minScale = Minor(A)
   val majScale = Major(A)
   
+  
+  
+  println(PrettyPrinter(s11, minScale))
+  println(PrettyPrinter(s11new, minScale))
+  println(PrettyPrinter(s11newNew, minScale))
+  
 
   
   // Short version without repetitions
-  MelodyPlayer(
-    tempo,
-    (part1, minScale),
-    (part2 + part3 + end, majScale)
-  )
+//  MelodyPlayer(
+//    tempo,
+//    8*3,
+//    20 *3,
+//    (part1, minScale),
+//    (part2 + part3 + end, majScale)
+//  )
   
   // Full version
 //  MelodyPlayer(
