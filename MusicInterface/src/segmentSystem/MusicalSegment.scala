@@ -8,7 +8,7 @@ import utils.PrettyPrinter
 sealed trait MusicalSegment {
   val melody: List[MusicalSegment]
   
-  lazy val depth: Int = melody.maxBy(_.depth).depth + 1
+  lazy val depth: Int = if(!melody.isEmpty) melody.maxBy(_.depth).depth + 1 else 0
   val length: Double
   
   lazy val notes: List[Note] = melody.flatMap(_.notes)

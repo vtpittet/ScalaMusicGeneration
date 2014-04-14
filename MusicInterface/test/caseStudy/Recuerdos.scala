@@ -65,15 +65,6 @@ object Recuerdos extends App {
     sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
   
-  val m11S1 = I(1) + VII().is
-  val m11S2 = V() *2
-  val m11B1 = II() *3
-  val m11B2 = V(-2)
-  
-//  val m11 = compose(m11S1, m11S2, m11B1, m11B2, true)
-  
-  
-  
   
   
   
@@ -85,6 +76,13 @@ object Recuerdos extends App {
     SS(VII().is, VII().is, II(1).es, I(1), VII(), I(1)), SS(VII(), VI()),
     SS(VI(), VI(), V(), IV(), III(), IV()), SS(III(), II()),
     SS(II(), II()))
+    
+  val s11new = SS(V() + IV() + III() + IV() + V() + V() +
+    V() + VI() + VII() + VI() + V() + VI() + VII() + VII() +
+    VII() + VII() + III(1) + II(1) + I(1) + II(1), I(1) + VII().is,
+    VII().is + VII().is + II(1).es + I(1) + VII() + I(1), VII() + VI(),
+    VI() + VI() + V() + IV() + III() + IV(), III() + II(),
+    II() + II())
   
   val s12 = III() + II() + I() + II() + III() + III() +
     III() + IV() + V() + IV() + III() + IV() + V() + V() +
@@ -192,22 +190,40 @@ object Recuerdos extends App {
   val minScale = Minor(A)
   val majScale = Major(A)
   
-  // Full version
-  MelodyPlayer(
-    tempo,
-    (part1 *2, minScale),
-    (part2 + trans22 + part2 + trans21, majScale),
-    (part1, minScale),
-    (part2 + part3 + end, majScale)
-  )
   
+  val m11S1 = SS(SS(), SS(I(1), VII().is))
+  val m11S2 = V() *2
+  val m11B1 = II() *3
+  val m11B2 = V(-2)
+  
+  val m11 = compose(m11S1, m11S2, m11B1, m11B2)
+  
+  
+  
+//  MelodyPlayer(
+//      tempo,
+//      (m11, minScale)
+//  )
+//  
   
   // Short version without repetitions
   MelodyPlayer(
+    List((part1, minScale),
+    (part2 + part3 + end, majScale)),
     tempo,
-    (part1, minScale),
-    (part2 + part3 + end, majScale)
+    0,
+    1
   )
+  
+  // Full version
+//  MelodyPlayer(
+//    tempo,
+//    (part1 *2, minScale),
+//    (part2 + trans22 + part2 + trans21, majScale),
+//    (part1, minScale),
+//    (part2 + part3 + end, majScale)
+//  )
+  
   
 }
 
