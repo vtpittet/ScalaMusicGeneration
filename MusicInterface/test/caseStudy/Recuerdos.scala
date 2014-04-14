@@ -18,6 +18,7 @@ import tonalSystem.VI
 import tonalSystem.VII
 import utils.SS
 import utils.Print
+import utils.PrettyPrinter
 
 object Recuerdos extends App {
 
@@ -190,29 +191,13 @@ object Recuerdos extends App {
   val minScale = Minor(A)
   val majScale = Major(A)
   
-  
-  val m11S1 = SS(SS(), SS(I(1), VII().is))
-  val m11S2 = V() *2
-  val m11B1 = II() *3
-  val m11B2 = V(-2)
-  
-  val m11 = compose(m11S1, m11S2, m11B1, m11B2)
-  
-  
-  
-//  MelodyPlayer(
-//      tempo,
-//      (m11, minScale)
-//  )
-//  
+
   
   // Short version without repetitions
   MelodyPlayer(
-    List((part1, minScale),
-    (part2 + part3 + end, majScale)),
     tempo,
-    0,
-    1
+    (part1, minScale),
+    (part2 + part3 + end, majScale)
   )
   
   // Full version
