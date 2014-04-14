@@ -101,6 +101,12 @@ sealed trait MusicalSegment {
   
   def expand(appCount: Int, expandF: => MusicalSegment => MusicalSegment): MusicalSegment
   * 
+  * 
+  * First idea of generalization does not work. Cannot cast, checkType on type parameter
+  * Need to investigate on partial function to solve this proble.
+  * 
+  * 
+  * 
   */
   
   // TODO implement
