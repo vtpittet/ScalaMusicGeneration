@@ -19,8 +19,11 @@ import tonalSystem.VII
 import utils.SS
 import utils.Print
 import utils.PrettyPrinter
+import utils.MelodyWriter
 
-object Recuerdos extends App {
+object Recuerdos extends App with MelodyWriter {
+  
+  val t = I() + I
   
   // sets duration to rH-
   def bass2(b: MusicalSegment): MusicalSegment = b.+> {_.withDuration(rH-)}
@@ -56,18 +59,18 @@ object Recuerdos extends App {
     sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
   
-  val s11 = (V() + IV() + III() + IV() + V() + V() +
-    V() + VI() + VII() + VI() + V() + VI() + VII() + VII() +
-    VII() + VII() + III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII().is) ++
-    (VII().is + VII().is + II(1).es + I(1) + VII() + I(1)) ++ (VII() + VI()) ++
-    (VI() + VI() + V() + IV() + III() + IV()) ++ (III() + II()) ++
-    (II() + II())
+  val s11 = (V() + IV + III + IV + V + V +
+    V + VI + VII + VI + V + VI + VII + VII +
+    VII + VII + III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII.is) ++
+    (VII().is + VII.is + II(1).es + I(1) + VII + I(1)) ++ (VII() + VI) ++
+    (VI() + VI + V + IV + III + IV) ++ (III() + II) ++
+    (II() + II)
     
-  val s12 = III() + II() + I() + II() + III() + III() +
-    III() + IV() + V() + IV() + III() + IV() + V() + V() +
-    V() + V() + I(1) + VII() + VI() + IV(-1) + V() *2 +
-    V() *2 + V() *2 + V() + VI() + IV() *2 +
-    IV() *2 + II() *2 + I() *2 + VII(-1).is *2 +
+  val s12 = III() + II + I + II + III + III +
+    III + IV + V + IV + III + IV + V + V +
+    V + V + I(1) + VII + VI + IV(-1) + V *2 +
+    V *2 + V *2 + V + VI + IV *2 +
+    IV *2 + II *2 + I *2 + VII(-1).is *2 +
     VII(-1).is *2
     
   val b11 = V(-1) *3 *3 +

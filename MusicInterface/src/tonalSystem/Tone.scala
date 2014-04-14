@@ -85,11 +85,6 @@ sealed trait Tone {
   val octave: Int
   
 }
-object Tone {
-  // implicit conversions for easier melody description
-  implicit val duration: BPM = Q
-  implicit def tone2Note(tone: Tone)(implicit duration: BPM) = Note(tone, duration)
-}
 
 case object O extends Tone {
   val octave = 0
