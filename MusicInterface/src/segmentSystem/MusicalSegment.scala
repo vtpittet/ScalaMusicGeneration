@@ -73,7 +73,7 @@ sealed trait MusicalSegment {
   
   def <<(duration: BPM*): SequentialSegment = SequentialSegment((this :: duration.map(O(_)).toList))
   
-  def +(toneRise: Int): MusicalSegment = +>((v: Note) => Note(v.tone + toneRise, v.duration))
+  def +(toneRise: Int): MusicalSegment = +>((v: Note) => Note(v.tone increaseBy toneRise, v.duration))
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
   
   // divides duration of all notes by frac

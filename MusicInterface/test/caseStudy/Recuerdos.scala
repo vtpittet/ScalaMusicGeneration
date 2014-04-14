@@ -23,8 +23,6 @@ import utils.MelodyWriter
 
 object Recuerdos extends App with MelodyWriter {
   
-  val t = I() + I
-  
   // sets duration to rH-
   def bass2(b: MusicalSegment): MusicalSegment = b.+> {_.withDuration(rH-)}
   
@@ -59,14 +57,14 @@ object Recuerdos extends App with MelodyWriter {
     sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
   
-  val s11 = (V() + IV + III + IV + V + V +
+  val s11 = (V + IV + III + IV + V + V +
     V + VI + VII + VI + V + VI + VII + VII +
     VII + VII + III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII.is) ++
-    (VII().is + VII.is + II(1).es + I(1) + VII + I(1)) ++ (VII() + VI) ++
-    (VI() + VI + V + IV + III + IV) ++ (III() + II) ++
-    (II() + II)
+    (VII.is + VII.is + II(1).es + I(1) + VII + I(1)) ++ (VII + VI) ++
+    (VI + VI + V + IV + III + IV) ++ (III + II) ++
+    (II + II)
     
-  val s12 = III() + II + I + II + III + III +
+  val s12 = III + II + I + II + III + III +
     III + IV + V + IV + III + IV + V + V +
     V + V + I(1) + VII + VI + IV(-1) + V *2 +
     V *2 + V *2 + V + VI + IV *2 +
@@ -75,8 +73,8 @@ object Recuerdos extends App with MelodyWriter {
     
   val b11 = V(-1) *3 *3 +
     V(-1) + V(-1) + VII(-1) + VII(-1) *3 *(3 +
-    1) + III() *3 + III() *2 + VI() + II() *3 +
-    IV() *3 + III().is *3 + I() *3 + IV() + I() *(2 +
+    1) + III *3 + III *2 + VI + II *3 +
+    IV *3 + III.is *3 + I *3 + IV + I *(2 +
     3 + 3) + V(-1).es *3 + V(-1) *3 +
     V(-1) *3
     
@@ -89,19 +87,19 @@ object Recuerdos extends App with MelodyWriter {
   
   val part1 = compose(s11, s12, b11, b12)
   
-  val s21 = (V() + IV() + III() + IV() + V() + V() +
-    V() + V() + VI() + VI() + IV(1) + VI()) ++ (VI() + V()) ++
-    (V() + V() + I(1) + I(1) + VII() + IV().is) ++ (VI() + V()) ++
-    (V() + V() + IV() + IV() + III() + II()) ++ (II() + I())
+  val s21 = (V + IV + III + IV + V + V +
+    V + V + VI + VI + IV(1) + VI) ++ (VI + V) ++
+    (V + V + I(1) + I(1) + VII + IV.is) ++ (VI + V) ++
+    (V + V + IV + IV + III + II) ++ (II + I)
   
-  val s22 = III() + II() + I() + II() + III() + III() +
-    III() + III() + IV() + IV() + II(1) + IV() + III() + III() +
-    III() + III() + I() + I() + II().is + II().is + III() + III() +
-    III() + III() + VI(-1).es + V(-1) + V(-1) + V(-2) + V(-1) + VI(-1)
+  val s22 = III + II + I + II + III + III +
+    III + III + IV + IV + II(1) + IV + III + III +
+    III + III + I + I + II.is + II.is + III + III +
+    III + III + VI(-1).es + V(-1) + V(-1) + V(-2) + V(-1) + VI(-1)
   
   val b21 = V(-1) *3 *(3 +
-    1) + VI(-1) *3 + IV() *2 + VI(-1) + IV() + V(-1) *2 + // check
-    V(-1) *3 + VI(-1) + III() + VI(-1) + VII(-1) + IV().is + VII(-1) + VII(-1) *3 *(1 +
+    1) + VI(-1) *3 + IV *2 + VI(-1) + IV + V(-1) *2 + // check
+    V(-1) *3 + VI(-1) + III + VI(-1) + VII(-1) + IV.is + VII(-1) + VII(-1) *3 *(1 +
     1) + VI(-1).es + IV(-1) + VI(-1).es + V(-1) *2 + IV(-1) + V(-1) *2 + VII(-1)
   
   val b22 = I(-1) *(3 +
@@ -116,14 +114,14 @@ object Recuerdos extends App with MelodyWriter {
   def composeTrans(s: SequentialSegment, m: MusicalSegment, b: MusicalSegment) =
     simpleSopran1(s) | midTrans(m) | bass2(b)
   
-  val sTrans22 = I() *3 + II() + III() + IV()
-  val mTrans22 = V(-1) + III(-1) + V(-1) + I() + II()
+  val sTrans22 = I *3 + II + III + IV
+  val mTrans22 = V(-1) + III(-1) + V(-1) + I + II
   val bTrans22 = I(-1)
   
   val trans22 = composeTrans(sTrans22, mTrans22, bTrans22)
   
-  val sTrans21 = I() *3 + II() + III().es + IV()
-  val mTrans21 = V(-1) *2 + VII(-1) + I() + II()
+  val sTrans21 = I *3 + II + III.es + IV
+  val mTrans21 = V(-1) *2 + VII(-1) + I + II
   val bTrans21 = I(-1)
   
   val trans21 = composeTrans(sTrans21, mTrans21, bTrans21)
@@ -136,24 +134,24 @@ object Recuerdos extends App with MelodyWriter {
     sopran31(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
   val s31 = (
-    I() + I()) ++ (II() + III().es + IV()) ++ (V() +
-    V() + V()) ++ (IV() + III() + II()) ++ (I() +
-    I() + I()) ++ (II() + III().es + IV()) ++ (V() +
-    V() + VII()) ++ (VI() + V() + IV()) ++ (III() +
-    III() + III())
+    I + I) ++ (II + III.es + IV) ++ (V +
+    V + V) ++ (IV + III + II) ++ (I +
+    I + I) ++ (II + III.es + IV) ++ (V +
+    V + VII) ++ (VI + V + IV) ++ (III +
+    III + III)
   
   val s32 =
-    (V(-1) + VI(-1).es + I() + III() +
-    III() + VII(-1) +> {_ *2}) + V(-1) + V(-2) + V(-1) + VI(-1) +
-    (V(-1) + VI(-1).es + I() + III() +
-    III() + V() +> {_ *2}) + III() + II() + I() + VI(-1) +
-    (I() + II(-1).is) *2
+    (V(-1) + VI(-1).es + I + III +
+    III + VII(-1) +> {_ *2}) + V(-1) + V(-2) + V(-1) + VI(-1) +
+    (V(-1) + VI(-1).es + I + III +
+    III + V +> {_ *2}) + III + II + I + VI(-1) +
+    (I + II(-1).is) *2
   
   val b31 =
     (V(-1) + VI(-1).es *2 + V(-1) +
     V(-1) + VII(-1) +> {_ *3}) + VI(-1) + V(-1) + IV(-1) + V(-1) + V(-1).is *2 +
     (V(-1) + VI(-1).es *2 + V(-1) *(1 +
-    3) +> {_ *3}) + V(-1) *2 + I() +
+    3) +> {_ *3}) + V(-1) *2 + I +
     (V(-1) + V(-2) + III(-1)) *2
   
   val b32 =
@@ -165,8 +163,8 @@ object Recuerdos extends App with MelodyWriter {
   
   val part3 = compose3(s31, s32, b31, b32)
   
-  val end = I(-1) + V(-1) + I() + III() + V() + I(1) +> {_ withDuration rE} +
-    ((I(-1) | III() | I(1) | V(1)) + (I(-1) | III(-1) | V(-1) | I()) +> {_ withDuration (rH-)})
+  val end = I(-1) + V(-1) + I + III + V + I(1) +> {_ withDuration rE} +
+    ((I(-1) | III | I(1) | V(1)) + (I(-1) | III(-1) | V(-1) | I) +> {_ withDuration (rH-)})
   
   val tempo = 80
   val minScale = Minor(A)

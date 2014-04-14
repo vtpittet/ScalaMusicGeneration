@@ -4,10 +4,12 @@ import tonalSystem.I
 import utils.SS
 import utils.PS
 import org.scalatest.FunSuite
+import utils.MelodyWriter
+import segmentSystem.MusicalSegment
 
-class FlatAllTest extends FunSuite {
+class FlatAllTest extends FunSuite with MelodyWriter {
   
-  val i = I()
+  val i: MusicalSegment = I
   
   test("tests correct and full recursion over SS, and keeping PS") {
     

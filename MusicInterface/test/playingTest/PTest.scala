@@ -9,18 +9,19 @@ import segmentSystem.Note
 import rythmics.BPM
 import rythmics.T
 import rythmics.{ S => rS}
+import utils.MelodyWriter
 
-object PTest extends App {
+object PTest extends App with MelodyWriter {
   
   
-  multiRecMelody
+  recMelody
   
   def recMelody {
     
     val scale = Minor(C)
     val tempo = 60
     
-    val song = I(rS).+>(4)(_ *+ (_+2, _-3, identity)) *| (_ >> (rS-))
+    val song = I(0, rS).+>(4)(_ *+ (_+2, _-3, identity)) *| (_ >> (rS-))
     
     
     MelodyPlayer(song, tempo, scale)
@@ -32,7 +33,7 @@ object PTest extends App {
     val scale = Minor(C)
     val tempo = 60
     
-    val song = (I() + II() + III()).+>(2)(_ /2, _ /0.5)
+    val song = (I + II + III).+>(2)(_ /2, _ /0.5)
     MelodyPlayer(song, tempo, scale)
   }
   
@@ -41,7 +42,7 @@ object PTest extends App {
     val scale = Major(C)
     val tempo = 120
   
-    val song = ((I() *+ (_+1, _+2, x=>x)) * 2 *+ (_ + 2)) *| (O() * 8 + _)
+    val song = ((I *+ (_+1, _+2, x=>x)) * 2 *+ (_ + 2)) *| (O() * 8 + _)
   
     MelodyPlayer(song, tempo, scale)
   

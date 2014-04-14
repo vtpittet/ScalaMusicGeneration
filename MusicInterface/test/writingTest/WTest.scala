@@ -7,12 +7,13 @@ import segmentSystem.Note
 import segmentSystem.SimpleMelody
 import tonalSystem._
 import utils.Print
+import utils.MelodyWriter
 
-object WTest extends App {
+object WTest extends App with MelodyWriter {
   
 //  val harp = SimpleMelody((I, 1, 0), (III, 1, 0), (V, 1, 0), (VII, 1, 0))
   
-  val scale = I() + II() + III() + IV () + V() + VI() + VII() + I(Q, 1)
+  val scale = I + II + III + IV + V + VI + VII + I(1)
   
   println("G# Major")
   Print(scale, Major(G(0, 1)))
@@ -35,7 +36,7 @@ object WTest extends App {
   Print(full)
   
   val newOSegt = O(Q) * 4
-  val newSegt = I() + II() + III() + I()
+  val newSegt = I + II + III + I
   val newFull = newSegt + (newSegt + 2) | newOSegt + newSegt
   
   println
@@ -46,7 +47,7 @@ object WTest extends App {
   
   println
   println("similar but not same")
-  Print( ((I() *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
+  Print( ((I *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
   */
   
