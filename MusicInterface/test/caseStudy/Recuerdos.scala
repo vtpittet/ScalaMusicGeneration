@@ -21,16 +21,6 @@ import utils.Print
 import utils.PrettyPrinter
 
 object Recuerdos extends App {
-
-  
-  /*
-  val s1 = V() + IV() + III() + IV() + V() + V()
-  
-  val s2 = V() + VI() + VII() + VI() + V() + VI() + VII() + VII()
-  
-  val s3 = VII() + VII() + III(1) + II(1) + I(1) + II(1) + I(1) + VII().is
-  * 
-  */
   
   // sets duration to rH-
   def bass2(b: MusicalSegment): MusicalSegment = b.+> {_.withDuration(rH-)}
@@ -66,26 +56,7 @@ object Recuerdos extends App {
     sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
   
-  
-  
-  
-  
-  
-  val s11 = SS(SS(V(), IV(), III(), IV(), V(), V(),
-    V(), VI(), VII(), VI(), V(), VI(), VII(), VII(),
-    VII(), VII(), III(1), II(1), I(1), II(1)), SS(I(1), VII().is),
-    SS(VII().is, VII().is, II(1).es, I(1), VII(), I(1)), SS(VII(), VI()),
-    SS(VI(), VI(), V(), IV(), III(), IV()), SS(III(), II()),
-    SS(II(), II()))
-    
-  val s11new = SS(V() + IV() + III() + IV() + V() + V() +
-    V() + VI() + VII() + VI() + V() + VI() + VII() + VII() +
-    VII() + VII() + III(1) + II(1) + I(1) + II(1), I(1) + VII().is,
-    VII().is + VII().is + II(1).es + I(1) + VII() + I(1), VII() + VI(),
-    VI() + VI() + V() + IV() + III() + IV(), III() + II(),
-    II() + II())
-    
-  val s11newNew = (V() + IV() + III() + IV() + V() + V() +
+  val s11 = (V() + IV() + III() + IV() + V() + V() +
     V() + VI() + VII() + VI() + V() + VI() + VII() + VII() +
     VII() + VII() + III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII().is) ++
     (VII().is + VII().is + II(1).es + I(1) + VII() + I(1)) ++ (VII() + VI()) ++
@@ -113,12 +84,12 @@ object Recuerdos extends App {
     IV(-1) *2 + VI(-2) + V(-2) +
     V(-2)
   
-  val part1 = compose(s11newNew, s12, b11, b12)
+  val part1 = compose(s11, s12, b11, b12)
   
-  val s21 = SS(SS(V(), IV(), III(), IV(), V(), V(),
-    V(), V(), VI(), VI(), IV(1), VI()), SS(VI(), V()),
-    SS(V(), V(), I(1), I(1), VII(), IV().is), SS(VI(), V()),
-    SS(V(), V(), IV(), IV(), III(), II()), SS(II(), I()))
+  val s21 = (V() + IV() + III() + IV() + V() + V() +
+    V() + V() + VI() + VI() + IV(1) + VI()) ++ (VI() + V()) ++
+    (V() + V() + I(1) + I(1) + VII() + IV().is) ++ (VI() + V()) ++
+    (V() + V() + IV() + IV() + III() + II()) ++ (II() + I())
   
   val s22 = III() + II() + I() + II() + III() + III() +
     III() + III() + IV() + IV() + II(1) + IV() + III() + III() +
@@ -161,12 +132,12 @@ object Recuerdos extends App {
   def compose3(s1: SequentialSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
     sopran31(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
-  val s31 = SS(SS(
-    I(), I()), SS(II(), III().es, IV()), SS(V(),
-    V(), V()), SS(IV(), III(), II()), SS(I(),
-    I(), I()), SS(II(), III().es, IV()), SS(V(),
-    V(), VII()), SS(VI(), V(), IV()), SS(III(),
-    III(), III()))
+  val s31 = (
+    I() + I()) ++ (II() + III().es + IV()) ++ (V() +
+    V() + V()) ++ (IV() + III() + II()) ++ (I() +
+    I() + I()) ++ (II() + III().es + IV()) ++ (V() +
+    V() + VII()) ++ (VI() + V() + IV()) ++ (III() +
+    III() + III())
   
   val s32 =
     (V(-1) + VI(-1).es + I() + III() +
@@ -197,23 +168,16 @@ object Recuerdos extends App {
   val tempo = 80
   val minScale = Minor(A)
   val majScale = Major(A)
-  
-  
-  
-  println(PrettyPrinter(s11, minScale))
-  println(PrettyPrinter(s11new, minScale))
-  println(PrettyPrinter(s11newNew, minScale))
-  
 
   
   // Short version without repetitions
-//  MelodyPlayer(
-//    tempo,
-//    8*3,
-//    20 *3,
-//    (part1, minScale),
-//    (part2 + part3 + end, majScale)
-//  )
+  MelodyPlayer(
+    tempo,
+    (part1, minScale),
+    (part2, majScale),
+    (part3, majScale),
+    (end, majScale)
+  )
   
   // Full version
 //  MelodyPlayer(

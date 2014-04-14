@@ -119,6 +119,11 @@ sealed trait MusicalSegment {
   override def toString: String = '\n' + PrettyPrinter(this)
 }
 
+/*
+ * Depth-controlling operators moved to those traits to allow Note implementig them.
+ * Need extending Musical Segment to overload correctly default |, + operators
+ * defined in MusicalSegment
+ */
 trait Parallel extends MusicalSegment {
   
   // depth-controlled operation on parallel composition of parallel segments
