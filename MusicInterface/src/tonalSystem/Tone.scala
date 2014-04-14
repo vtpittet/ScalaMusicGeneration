@@ -50,15 +50,15 @@ sealed trait Tone {
     case O => O
   }
   
-  def +(tones: Int): Tone = if (tones < 0) {
-    prev + (tones + 1)
+  def increaseBy(tones: Int): Tone = if (tones < 0) {
+    prev increaseBy (tones + 1)
   } else if (tones == 0) {
     this
   } else {
-    next + (tones - 1)
+    next increaseBy (tones - 1)
   }
   
-  def -(tones: Int): Tone = this + (-tones)
+  def decreaseBy(tones: Int): Tone = this increaseBy (-tones)
   
   def stepsTo(that: Tone): Int = {
     if (this == O || that == O) 0
@@ -93,47 +93,24 @@ case object O extends Tone {
     Note(O, duration)
 }
 
-case class I(val octave: Int, val alter: Option[Boolean]) extends Tone
-case class II(val octave: Int, val alter: Option[Boolean]) extends Tone
-case class III(val octave: Int, val alter: Option[Boolean]) extends Tone
-case class IV(val octave: Int, val alter: Option[Boolean]) extends Tone
-case class V(val octave: Int, val alter: Option[Boolean]) extends Tone
-case class VI(val octave: Int, val alter: Option[Boolean]) extends Tone
-case class VII(val octave: Int, val alter: Option[Boolean]) extends Tone
-
-
-trait ApplyToNote {
-  
-  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note
-  def apply(octave: Int): Note = apply(Q, octave)
+trait ApplyToNote { self: Tone =>
+  def apply(octave: Int, alter: Option[Boolean]): Tone
+  def apply(octave: Int, duration: BPM): Note = Note(apply(octave, None), duration)
 }
 
-object I extends I(0, None) with ApplyToNote {
-  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
-    Note(I(octave, alter), duration)
-}
-object II extends II(0, None) with ApplyToNote {
-  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
-    Note(II(octave, alter), duration)
-}
-object III extends III(0, None) with ApplyToNote {
-  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
-    Note(III(octave, alter), duration)
-}
-object IV extends IV(0, None) with ApplyToNote {
-  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
-    Note(IV(octave, alter), duration)
-}
-object V extends V(0, None) with ApplyToNote {
-  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
-    Note(V(octave, alter), duration)
-}
-object VI extends VI(0, None) with ApplyToNote {
-  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
-    Note(VI(octave, alter), duration)
-}
-object VII extends VII(0, None) with ApplyToNote {
-  def apply(duration: BPM = Q, octave: Int = 0, alter: Option[Boolean] = None): Note =
-    Note(VII(octave, alter), duration)
-}
+case class I(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+case class II(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+case class III(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+case class IV(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+case class V(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+case class VI(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+case class VII(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+
+object I extends I(0, None) with ApplyToNote
+object II extends II(0, None) with ApplyToNote
+object III extends III(0, None) with ApplyToNote
+object IV extends IV(0, None) with ApplyToNote
+object V extends V(0, None) with ApplyToNote
+object VI extends VI(0, None) with ApplyToNote
+object VII extends VII(0, None) with ApplyToNote
 
