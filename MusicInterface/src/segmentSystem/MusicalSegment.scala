@@ -84,7 +84,7 @@ sealed trait MusicalSegment {
     expand(iter.next())
   }
   
-  def ++>(transfs: Transform[Note]*): MusicalSegment = {
+  def ++>(transfs: Transform*): MusicalSegment = {
     def expandFS(counter: Int = 0): Stream[Note => MusicalSegment] = {
       (transfs find { t =>
         counter >= t.from &&
