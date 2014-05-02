@@ -21,7 +21,9 @@ object PTest extends App with MelodyWriter {
     val scale = Minor(C)
     val tempo = 60
     
-    val song = I(0, rS).+>(4)(_ *+ (_+2, _-3, identity)) *| (_ >> (rS-))
+    val song = I(0, rS).appN(4) { s =>
+      s.+>(_ *+ (_+2, _-3, identity)) *| (_ >> (rS-))
+    }
     
     
     MelodyPlayer(song, tempo, scale)
@@ -33,7 +35,9 @@ object PTest extends App with MelodyWriter {
     val scale = Minor(C)
     val tempo = 60
     
-    val song = (I + II + III).+>(2)(_ /2, _ /0.5)
+    val song = (I + II + III).appN(2) { s =>
+      s.+>(_ /2, _ /0.5)
+    }
     MelodyPlayer(song, tempo, scale)
   }
   

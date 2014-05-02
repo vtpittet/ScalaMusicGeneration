@@ -79,14 +79,17 @@ sealed trait MusicalSegment {
   // divides duration of all notes by frac
   def /(frac: Double): MusicalSegment = +>((v: Note) => Note(v.tone, v.duration / frac))
   
-  def +>(expandF: Note => MusicalSegment*): MusicalSegment = +>(1)(expandF:_*)
-  
-  def +>(appCount: Int)(expandF: Note => MusicalSegment*): MusicalSegment = {
+  def +>(expandF: Note => MusicalSegment*): MusicalSegment = {
     val iter = Stream.continually(expandF).flatten.iterator
-    expand(appCount, iter.next())
+    expand(iter.next())
   }
   
-  def expand(appCount: Int, expandF: => Note => MusicalSegment): MusicalSegment
+  def expand(expandF: => Note => MusicalSegment): MusicalSegment
+  
+  def appN(appCount: Int)(function: MusicalSegment => MusicalSegment): MusicalSegment = {
+    if (appCount > 1) this
+    else function(this).appN(appCount - 1)(function)
+  }
   
   /*
    * TODO : this is implementable, how without many code duplication ?
@@ -130,24 +133,24 @@ sealed trait MusicalSegment {
  * Need extending Musical Segment to overload correctly default |, + operators
  * defined in MusicalSegment
  */
-trait Parallel extends MusicalSegment {
+sealed trait Parallel extends MusicalSegment {
   
   // depth-controlled operation on parallel composition of parallel segments
-  def |(depth: Int, that: MusicalSegment with Parallel): ParallelSegment = add(depth, ParallelSegment(_), that)
-  def |(that: MusicalSegment with Parallel): ParallelSegment = this | (1, that)
-  def ||(that: MusicalSegment with Parallel): ParallelSegment = this | (2, that)
-  def |||(that: MusicalSegment with Parallel): ParallelSegment = this | (3, that)
-  def ||||(that: MusicalSegment with Parallel): ParallelSegment = this | (4, that)
+  def |*(depth: Int, that: MusicalSegment with Parallel): ParallelSegment = add(depth, ParallelSegment(_), that)
+  def |(that: MusicalSegment with Parallel): ParallelSegment = this |* (1, that)
+  def ||(that: MusicalSegment with Parallel): ParallelSegment = this |* (2, that)
+  def |||(that: MusicalSegment with Parallel): ParallelSegment = this |* (3, that)
+  def ||||(that: MusicalSegment with Parallel): ParallelSegment = this |* (4, that)
 }
 
-trait Sequential extends MusicalSegment {
+sealed trait Sequential extends MusicalSegment {
   
   // depth-controlled operation on sequential composition of sequential segments
-  def +(depth: Int, that: MusicalSegment with Sequential): SequentialSegment = add(depth, SequentialSegment(_), that)
-  def +(that: MusicalSegment with Sequential): SequentialSegment = this + (1, that)
-  def ++(that: MusicalSegment with Sequential): SequentialSegment = this + (2, that)
-  def +++(that: MusicalSegment with Sequential): SequentialSegment = this + (3, that)
-  def ++++(that: MusicalSegment with Sequential): SequentialSegment = this + (4, that)
+  def +*(depth: Int, that: MusicalSegment with Sequential): SequentialSegment = add(depth, SequentialSegment(_), that)
+  def +(that: MusicalSegment with Sequential): SequentialSegment = this +* (1, that)
+  def ++(that: MusicalSegment with Sequential): SequentialSegment = this +* (2, that)
+  def +++(that: MusicalSegment with Sequential): SequentialSegment = this +* (3, that)
+  def ++++(that: MusicalSegment with Sequential): SequentialSegment = this +* (4, that)
 }
 
 
@@ -155,8 +158,8 @@ case class ParallelSegment(melody: List[MusicalSegment]) extends Parallel {
   
   val length = melody.maxBy(_.length).length
   
-  def expand(appCount: Int, expandF: => Note => MusicalSegment): ParallelSegment =
-    ParallelSegment(melody.map(_.expand(appCount, expandF)))
+  def expand(expandF: => Note => MusicalSegment): ParallelSegment =
+    ParallelSegment(melody.map(_.expand(expandF)))
   
   def flatAll: ParallelSegment = ParallelSegment(melody.flatMap(_.flatAll match {
     // by indyction hypothesis, pm contains only notes and sequentialSegment of lenght > 1
@@ -176,8 +179,8 @@ case class SequentialSegment(melody: List[MusicalSegment]) extends Sequential {
   
   val length = melody.foldLeft(0.0)(_ + _.length)
   
-  def expand(appCount: Int, expandF: => Note => MusicalSegment): SequentialSegment =
-    SequentialSegment(melody.map(_.expand(appCount, expandF)))
+  def expand(expandF: => Note => MusicalSegment): SequentialSegment =
+    SequentialSegment(melody.map(_.expand(expandF)))
   
   def flatAll: SequentialSegment = SequentialSegment(melody.flatMap(_.flatAll match {
     case SequentialSegment(sm) => sm
@@ -195,13 +198,7 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with P
   val melody = this :: Nil
   override lazy val depth = 0
   override val length = duration.computed
-  def expand(appCount: Int, expandF: => Note => MusicalSegment) = if(appCount < 1) {
-    this
-  } else if (appCount == 1) {
-    expandF(this)
-  } else {
-    (expandF(this)).expand(appCount-1, expandF)
-  }
+  def expand(expandF: => Note => MusicalSegment) = expandF(this)
   
   def flatAll: Note = this
   

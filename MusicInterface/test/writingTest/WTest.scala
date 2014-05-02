@@ -1,13 +1,12 @@
 package writingTest
 
-import rythmics.BPM
-import rythmics.Q
+import rythmics.{E => rE}
 import segmentSystem.Note
 import segmentSystem.Note
-import segmentSystem.SimpleMelody
 import tonalSystem._
-import utils.Print
 import utils.MelodyWriter
+import utils.Print
+import segmentSystem.MusicalSegment
 
 object WTest extends App with MelodyWriter {
   
@@ -34,7 +33,6 @@ object WTest extends App with MelodyWriter {
   val full = segt1 + segt2 | segt0 + segt1
   
   Print(full)
-  
   val newOSegt = O(Q) * 4
   val newSegt = I + II + III + I
   val newFull = newSegt + (newSegt + 2) | newOSegt + newSegt
@@ -50,5 +48,6 @@ object WTest extends App with MelodyWriter {
   Print( ((I *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
   */
-  
+  val foo: MusicalSegment = I + IV + (II, rE) + (III, rE)
+  print(foo)
 }

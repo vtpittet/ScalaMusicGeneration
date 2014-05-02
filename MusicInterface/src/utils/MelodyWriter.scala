@@ -15,4 +15,5 @@ trait MelodyWriter {
   
   // implicit conversions for easier melody description
   implicit def tone2Note(tone: Tone)(implicit duration: BPM) = Note(tone, Q)
+  implicit def toneWithDuration2Note(td: (Tone, BPM)) = Note(td._1, td._2)
 }
