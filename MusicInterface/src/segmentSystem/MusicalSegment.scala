@@ -1,8 +1,8 @@
 package segmentSystem
 
 import rythmics.BPM
-import tonalSystem.Tone
 import tonalSystem.O
+import tonalSystem.Tone
 import utils.PrettyPrinter
 
 sealed trait MusicalSegment {
@@ -83,6 +83,19 @@ sealed trait MusicalSegment {
     val iter = Stream.continually(expandF).flatten.iterator
     expand(iter.next())
   }
+  
+  def ++>(transfs: Transform[Note]*): MusicalSegment = {
+    def expandFS(counter: Int = 0): Stream[Note => MusicalSegment] = {
+      (transfs find { t =>
+        counter >= t.from &&
+        (counter < t.to || t.to < 0) &&
+        (counter-t.from) % t.period == 0
+      } getOrElse Transform.identity).apply #:: expandFS(counter + 1)
+    }
+    val iter = expandFS(0).iterator
+    expand(iter.next())
+  }
+  
   
   def expand(expandF: => Note => MusicalSegment): MusicalSegment
   
