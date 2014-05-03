@@ -48,10 +48,18 @@ sealed trait MusicalSegment {
   
   // parallel addition
   def |(that: MusicalSegment): ParallelSegment = ParallelSegment(this, that)
+  /* use cases for readablility and consistency. should be able to call those ops on any arg*/
+  def |*(depth: Int, that: MusicalSegment): ParallelSegment = this | that
+  def ||(that: MusicalSegment): ParallelSegment = this | that
+  def |||(that: MusicalSegment): ParallelSegment = this | that
+  def ||||(that: MusicalSegment): ParallelSegment = this | that
   
   // sequential addition
   def +(that: MusicalSegment): SequentialSegment = SequentialSegment(this, that)
-  
+  def +*(depth: Int, that: MusicalSegment): SequentialSegment = this + that
+  def ++(that: MusicalSegment): SequentialSegment = this + that
+  def +++(that: MusicalSegment): SequentialSegment = this + that
+  def ++++(that: MusicalSegment): SequentialSegment = this + that
   
   /*
    * Note that parallel multiplication is nearly idempotent as the same melody is replayed at the same time
@@ -59,7 +67,7 @@ sealed trait MusicalSegment {
    */
   def *(repetitions: Int): SequentialSegment = SequentialSegment(List.fill(repetitions)(this))
   
-//  TODO is it good to assume identity at each beginning of definition ?
+  // assume identity at the beginning of each definition
   def *+(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = {
     val applications = Stream.continually(transf).flatten.take(apps)
     multiTransf(SequentialSegment(_), applications:_*)
@@ -104,11 +112,14 @@ sealed trait MusicalSegment {
   
   def ++>(transfs: Transform*): MusicalSegment = {
     def expandFS(counter: Int = 0): TStream = {
-      (transfs find { t =>
+      (transfs filter { t =>
         counter >= t.from &&
         (counter < t.to || t.to < 0) &&
         (counter-t.from) % t.period == 0
-      } getOrElse Transform.identity).apply #:: expandFS(counter + 1)
+      } match {
+        case Nil => Transform.identity.apply
+        case ts => ts map {_.apply} reduceRight {_ orElse _}
+      }) #:: expandFS(counter + 1)
     }
     expand(expandFS(0))._1
   }
@@ -117,12 +128,16 @@ sealed trait MusicalSegment {
   private def expand(expandF: TStream): (MusicalSegment, TStream) = {
     if (expandF.head.isDefinedAt(this)) {
       (expandF.head(this), expandF.tail)
-    } else {
-      val (newMelody, newExpandF) = melody.foldLeft((List.empty[MusicalSegment], expandF)) { (t, m) =>
-        val (expM, tStr) = m.expand(t._2)
-        (expM :: t._1, tStr)
+    } else this match {
+      case n: Note => (n, expandF) // to prevent infinite recursion
+      case _ => {
+        val (newMelody, newExpandF) = melody.foldLeft((List.empty[MusicalSegment], expandF)) {
+          (t, m) =>val (expM, tStr) = m.expand(t._2)
+          (expM :: t._1, tStr)
+        }
+        (buildFromMelody(newMelody.reverse), newExpandF)
       }
-      (buildFromMelody(newMelody.reverse), newExpandF)
+        
     }
   }
   

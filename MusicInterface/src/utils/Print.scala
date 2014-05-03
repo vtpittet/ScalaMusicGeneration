@@ -9,13 +9,14 @@ import segmentSystem.ParallelSegment
 object PrettyPrinter {
   private val defaultIdent = "  "
   def apply(melody: MusicalSegment, scale: Scale = Major(C), ident: String = ""): String = melody match {
-    case Note(tone, duration) => scale.pitchTone(tone) + "," + duration.computed
+    case Note(tone, duration) => "" + scale.pitchTone(tone) + duration.computed
     case SequentialSegment(tracks) => {
-      tracks.foldLeft("(")(_ + apply(_, scale, ident)) + ")"
+      val tempS = tracks.foldLeft("(")(_ + apply(_, scale, ident) + ", ")
+      tempS.substring(0, tempS.length-2)+ ")"
     }
     case ParallelSegment(tracks) => {
       
-      tracks.foldLeft("(")(
+      tracks.foldLeft("(\n")(
             _ + ident + defaultIdent + apply(
                   _, scale, ident + defaultIdent) + '\n') +
         ident + ")"

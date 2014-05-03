@@ -10,6 +10,7 @@ object ShortCuts extends App {
   
 //  for(i <- 0 to 100) println(f(i*i/50))
   
+  
 }
 
 object FactoryWithExtremlyLongAndAnnoyingNameHoweverUsedALotInTheCode {

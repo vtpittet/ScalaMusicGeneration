@@ -7,6 +7,7 @@ import tonalSystem._
 import utils.MelodyWriter
 import utils.Print
 import segmentSystem.MusicalSegment
+import segmentSystem.SequentialSegment
 
 object WTest extends App with MelodyWriter {
   
@@ -48,6 +49,8 @@ object WTest extends App with MelodyWriter {
   Print( ((I *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
   */
-  val foo: MusicalSegment = I + IV + (II, rE) + (III, rE)
-  print(foo)
+  val mBefore = (I + I) || (I + I) || (I | I)
+  
+  println(mBefore)
+  
 }
