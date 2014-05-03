@@ -16,6 +16,9 @@ sealed trait MusicalSegment {
   val melody: List[MusicalSegment]
   
   lazy val depth: Int = if(!melody.isEmpty) melody.maxBy(_.depth).depth + 1 else 0
+  
+  val parDepth: Int
+  val seqDepth: Int
   val length: Double
   
   lazy val notes: List[Note] = melody.flatMap(_.notes)
@@ -96,7 +99,6 @@ sealed trait MusicalSegment {
           { case n: Note => f(n)}
         }
     }
-//    val iter = Stream.continually(pfs).flatten.iterator
     expand(Stream.continually(pfs).flatten)._1
   }
   
@@ -108,7 +110,6 @@ sealed trait MusicalSegment {
         (counter-t.from) % t.period == 0
       } getOrElse Transform.identity).apply #:: expandFS(counter + 1)
     }
-//    val iter = expandFS(0).iterator
     expand(expandFS(0))._1
   }
   
@@ -129,27 +130,6 @@ sealed trait MusicalSegment {
     if (appCount > 1) this
     else function(this).appN(appCount - 1)(function)
   }
-  
-  /*
-   * TODO : this is implementable, how without many code duplication ?
-   * - builder of instances (how to ?)
-   * 
-   * 
-  def +>(expandF: MusicalSegment => MusicalSegment*): MusicalSegment = +>(1, expandF:_*)
-  def +>(appCount: Int, expandF: MusicalSegment => MusicalSegment*): MusicalSegment = {
-    val iter = Stream.continually(expandF).flatten.iterator
-    expand(appCount, iter.next)
-  }
-  
-  def expand(appCount: Int, expandF: => MusicalSegment => MusicalSegment): MusicalSegment
-  * 
-  * 
-  * First idea of generalization does not work. Cannot cast, checkType on type parameter
-  * Need to investigate on partial function to solve this proble.
-  * 
-  * 
-  * 
-  */
   
   // TODO implement
   def toPNF: ParallelSegment = ???
@@ -196,6 +176,8 @@ sealed trait Sequential extends MusicalSegment {
 case class ParallelSegment(melody: List[MusicalSegment]) extends Parallel {
   
   val length = melody.maxBy(_.length).length
+  val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).depth + 1 else 0
+  val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).depth else 0
   
   val buildFromMelody: List[MusicalSegment] => ParallelSegment = ParallelSegment(_)
   
@@ -216,6 +198,8 @@ object ParallelSegment {
 case class SequentialSegment(melody: List[MusicalSegment]) extends Sequential {
   
   val length = melody.foldLeft(0.0)(_ + _.length)
+  val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).depth else 0
+  val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).depth + 1 else 0
   
   val buildFromMelody: List[MusicalSegment] => SequentialSegment = SequentialSegment(_)
   
@@ -233,8 +217,10 @@ object SequentialSegment {
 
 case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with Parallel with Sequential {
   val melody = this :: Nil
+  val length = duration.computed
+  val parDepth = 0
+  val seqDepth = 0
   override lazy val depth = 0
-  override val length = duration.computed
   
   val buildFromMelody: List[MusicalSegment] => Note = x => this
   
