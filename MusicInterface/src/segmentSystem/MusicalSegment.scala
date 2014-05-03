@@ -20,7 +20,7 @@ sealed trait MusicalSegment {
   
   lazy val notes: List[Note] = melody.flatMap(_.notes)
   
-  def buildFromMelody(m: List[MusicalSegment]): MusicalSegment
+  val buildFromMelody: List[MusicalSegment] => MusicalSegment
   
   // addition
   /*
@@ -125,15 +125,6 @@ sealed trait MusicalSegment {
     }
   }
   
-  /*
-   * Used to overcome bug when an expand function gets consumed even if not applied
-   * which in inconsistent with expected +> behavior
-   */
-  private[segmentSystem] def requeue(f: PartialFunction[MusicalSegment,MusicalSegment],
-        fs: => PartialFunction[MusicalSegment, MusicalSegment]):
-        Iterator[PartialFunction[MusicalSegment, MusicalSegment]] =
-    (f #:: Stream.continually(fs)).iterator
-  
   def appN(appCount: Int)(function: MusicalSegment => MusicalSegment): MusicalSegment = {
     if (appCount > 1) this
     else function(this).appN(appCount - 1)(function)
@@ -206,13 +197,7 @@ case class ParallelSegment(melody: List[MusicalSegment]) extends Parallel {
   
   val length = melody.maxBy(_.length).length
   
-  def expand(expandF: => PartialFunction[MusicalSegment, MusicalSegment]): MusicalSegment = {
-    val f = expandF
-    val newIter = requeue(f, expandF)
-    f.applyOrElse(this, (ms: MusicalSegment) =>
-      ParallelSegment(ms.melody.map(_.expand(newIter.next()))
-    ))
-  }
+  val buildFromMelody: List[MusicalSegment] => ParallelSegment = ParallelSegment(_)
   
   def flatAll: ParallelSegment = ParallelSegment(melody.flatMap(_.flatAll match {
     // by indyction hypothesis, pm contains only notes and sequentialSegment of lenght > 1
@@ -232,14 +217,7 @@ case class SequentialSegment(melody: List[MusicalSegment]) extends Sequential {
   
   val length = melody.foldLeft(0.0)(_ + _.length)
   
-  def expand(expandF: => PartialFunction[MusicalSegment, MusicalSegment]): MusicalSegment = {
-    val f = expandF
-    val newIter = requeue(f, expandF)
-    f.applyOrElse(this, (ms: MusicalSegment) =>
-      SequentialSegment(ms.melody.map(_.expand(newIter.next()))
-    ))
-  }
-    
+  val buildFromMelody: List[MusicalSegment] => SequentialSegment = SequentialSegment(_)
   
   def flatAll: SequentialSegment = SequentialSegment(melody.flatMap(_.flatAll match {
     case SequentialSegment(sm) => sm
@@ -257,14 +235,8 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with P
   val melody = this :: Nil
   override lazy val depth = 0
   override val length = duration.computed
-
-  def expand(expandF: => PartialFunction[MusicalSegment, MusicalSegment]): MusicalSegment = {
-    val f = expandF
-    val newIter = requeue(f, expandF)
-    f.applyOrElse(this, (ms: MusicalSegment) =>
-      ParallelSegment(ms.melody.map(_.expand(newIter.next()))
-    ))
-  }
+  
+  val buildFromMelody: List[MusicalSegment] => Note = x => this
   
   def flatAll: Note = this
   
