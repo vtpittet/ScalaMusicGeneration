@@ -89,9 +89,9 @@ sealed trait MusicalSegment {
     builder(List.fill(transf.size + 1)(iter.next()(this)))
   }
   
-  def >>(duration: BPM*): SequentialSegment = SequentialSegment(duration.foldRight(this :: Nil)((d, s) => O(d) :: s))
+  def >>(durations: BPM*): SequentialSegment = SequentialSegment(durations.map(O(_)).toList ::: (this :: Nil))
   
-  def <<(duration: BPM*): SequentialSegment = SequentialSegment((this :: duration.map(O(_)).toList))
+  def <<(durations: BPM*): SequentialSegment = SequentialSegment((this :: durations.map(O(_)).toList))
   
   def +(toneRise: Int): MusicalSegment = +>((v: Note) => Note(v.tone increaseBy toneRise, v.duration))
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
@@ -142,7 +142,7 @@ sealed trait MusicalSegment {
   }
   
   def appN(appCount: Int)(function: MusicalSegment => MusicalSegment): MusicalSegment = {
-    if (appCount > 1) this
+    if (appCount < 1) this
     else function(this).appN(appCount - 1)(function)
   }
   

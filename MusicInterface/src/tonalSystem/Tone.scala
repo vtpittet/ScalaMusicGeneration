@@ -93,11 +93,6 @@ case object O extends Tone {
     Note(O, duration)
 }
 
-trait ApplyToNote { self: Tone =>
-  def apply(octave: Int, alter: Option[Boolean]): Tone
-  def apply(octave: Int, duration: BPM): Note = Note(apply(octave, None), duration)
-}
-
 case class I(val octave: Int, val alter: Option[Boolean] = None) extends Tone
 case class II(val octave: Int, val alter: Option[Boolean] = None) extends Tone
 case class III(val octave: Int, val alter: Option[Boolean] = None) extends Tone
@@ -106,11 +101,11 @@ case class V(val octave: Int, val alter: Option[Boolean] = None) extends Tone
 case class VI(val octave: Int, val alter: Option[Boolean] = None) extends Tone
 case class VII(val octave: Int, val alter: Option[Boolean] = None) extends Tone
 
-object I extends I(0, None) with ApplyToNote
-object II extends II(0, None) with ApplyToNote
-object III extends III(0, None) with ApplyToNote
-object IV extends IV(0, None) with ApplyToNote
-object V extends V(0, None) with ApplyToNote
-object VI extends VI(0, None) with ApplyToNote
-object VII extends VII(0, None) with ApplyToNote
+object I extends I(0, None)
+object II extends II(0, None)
+object III extends III(0, None)
+object IV extends IV(0, None)
+object V extends V(0, None)
+object VI extends VI(0, None)
+object VII extends VII(0, None)
 

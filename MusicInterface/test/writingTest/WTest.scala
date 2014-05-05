@@ -49,8 +49,5 @@ object WTest extends App with MelodyWriter {
   Print( ((I *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
   */
-  val mBefore = (I + I) || (I + I) || (I | I)
-  
-  println(mBefore)
   
 }

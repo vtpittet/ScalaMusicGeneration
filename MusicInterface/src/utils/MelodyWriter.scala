@@ -19,9 +19,7 @@ trait MelodyWriter {
   type MS = MusicalSegment
   type N = Note
   
-  implicit val duration: BPM = Q
-  
   // implicit conversions for easier melody description
-  implicit def tone2Note(tone: Tone)(implicit duration: BPM) = Note(tone, Q)
-  implicit def toneWithDuration2Note(td: (Tone, BPM)) = Note(td._1, td._2)
+  implicit def tone2Note(tone: Tone) = Note(tone, Q)
+  implicit def tone2NoteBuilderWithDuration(tone: Tone): BPM => Note = Note(tone, _)
 }
