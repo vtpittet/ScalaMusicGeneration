@@ -44,7 +44,7 @@ object Recuerdos extends App with MelodyWriter {
   
   // return composition method applying sequentially all args to the
   // melody of composed segment
-  // !! side-effect sensitive, depth of param must be controoled
+  // !! side-effect sensitive, depth of param must be controlled
   def alternate(exps: MusicalSegment => MusicalSegment*): SequentialSegment => MusicalSegment = {
     val expIter = Stream.continually(exps).flatten.iterator
     (x: SequentialSegment) => SequentialSegment(x.melody.map(expIter.next()(_)))

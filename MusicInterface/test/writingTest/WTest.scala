@@ -8,6 +8,7 @@ import utils.MelodyWriter
 import utils.Print
 import segmentSystem.MusicalSegment
 import segmentSystem.SequentialSegment
+import segmentSystem.Transform
 
 object WTest extends App with MelodyWriter {
   
@@ -49,5 +50,9 @@ object WTest extends App with MelodyWriter {
   Print( ((I *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
   */
+  val m = (I + I) || (I + I) || (I | I)
   
+  def f(m: MS): MS = m ++> (
+      Transform({case s: PS if (s.depth == 1) => s*2}, 1, 0, -1)
+  )
 }
