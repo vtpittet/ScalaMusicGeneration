@@ -16,8 +16,16 @@ class ClassPredicate[+ T <: MusicalSegment](cPred: PartialFunction[MusicalSegmen
     new ClassPredicate(super.orElse(that))
   }
 }
+object ClassPredicate {
+  implicit class TransfListBuilder[T <: MusicalSegment](cp: ClassPredicate[T]) {
+    // the following method cannot stand in ClassPredicate because T would appear in contraviariant position.
+    def thenDo(f: T => MusicalSegment, period: Int = 1, from: Int = 0, to: Int = -1): TransformList[T] = {
+      new TransformList(cp, Transform(f, period, from, to)::Nil)
+    }
+  }
+}
 
-object NoteP extends ClassPredicate[Note](_ match {case n: Note => n})
-object SeqP extends ClassPredicate[SequentialSegment](_ match {case s: SequentialSegment => s})
-object ParP extends ClassPredicate[ParallelSegment](_ match {case p: ParallelSegment => p})
-object MusP extends ClassPredicate[MusicalSegment](_ match {case m: MusicalSegment => m})
+object IsNote extends ClassPredicate[Note](_ match {case n: Note => n})
+object IsSeq extends ClassPredicate[SequentialSegment](_ match {case s: SequentialSegment => s})
+object IsPar extends ClassPredicate[ParallelSegment](_ match {case p: ParallelSegment => p})
+object IsMus extends ClassPredicate[MusicalSegment](_ match {case m: MusicalSegment => m})

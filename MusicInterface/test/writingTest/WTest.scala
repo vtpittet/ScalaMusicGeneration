@@ -9,6 +9,8 @@ import utils.Print
 import segmentSystem.MusicalSegment
 import segmentSystem.SequentialSegment
 import segmentSystem.Transform
+import segmentSystem.IsSeq
+import segmentSystem.IsNote
 
 object WTest extends App with MelodyWriter {
   
@@ -52,7 +54,6 @@ object WTest extends App with MelodyWriter {
   */
   val m = (I + I) || (I + I) || (I | I)
   
-  def f(m: MS): MS = m ++> (
-      Transform({case s: PS if (s.depth == 1) => s*2}, 1, 0, -1)
-  )
+  def f(m: MS): MS = m ++> (IsSeq given (_.depth == 1) thenDo (_ *2))
+  println(f(m))
 }

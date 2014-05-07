@@ -99,29 +99,12 @@ sealed trait MusicalSegment {
   // divides duration of all notes by frac
   def /(frac: Double): MusicalSegment = +>((v: Note) => Note(v.tone, v.duration / frac))
   
-  def +>(expandF: Note => MusicalSegment*): MusicalSegment = {
-    val pfs = {
-      expandF.map[
-        PartialFunction[MusicalSegment, MusicalSegment],
-        Seq[PartialFunction[MusicalSegment, MusicalSegment]]] { f => 
-          { case n: Note => f(n)}
-        }
-    }
-    expand(Stream.continually(pfs).flatten)._1
-  }
+  def +>(expandF: Note => MusicalSegment*): MusicalSegment = ++> (new TransformList(IsNote, expandF.zipWithIndex.foldRight(List.empty[Transform[Note]]) {(t, l) => 
+    Transform(t._1, expandF.size, t._2, -1) :: l
+  }))
   
-  def ++>(transfs: Transform*): MusicalSegment = {
-    def expandFS(counter: Int = 0): TStream = {
-      (transfs filter { t =>
-        counter >= t.from &&
-        (counter < t.to || t.to < 0) &&
-        (counter-t.from) % t.period == 0
-      } match {
-        case Nil => Transform.identity.apply
-        case ts => ts map {_.apply} reduceRight {_ orElse _}
-      }) #:: expandFS(counter + 1)
-    }
-    expand(expandFS(0))._1
+  def ++>[T <: MusicalSegment](transfs: TransformList[T] = TransformList.identity): MusicalSegment = {
+    expand(transfs.toStream)._1
   }
   
   
@@ -137,7 +120,6 @@ sealed trait MusicalSegment {
         }
         (buildFromMelody(newMelody.reverse), newExpandF)
       }
-        
     }
   }
   

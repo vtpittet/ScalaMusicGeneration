@@ -1,13 +1,13 @@
 package segment
 
-import org.scalatest.FunSuite
+import segmentSystem.IsNote
 import tonalSystem.I
 import utils.MelodyWriter
-import segmentSystem.NoteP
-import segmentSystem.SeqP
-import segmentSystem.ParP
-import segmentSystem.ClassPredicate
+import segmentSystem.IsSeq
+import org.scalatest.FunSuite
 import tonalSystem.II
+import segmentSystem.IsPar
+
 
 class PredicateTests extends FunSuite with MelodyWriter {
 
@@ -15,27 +15,27 @@ class PredicateTests extends FunSuite with MelodyWriter {
   val s: MS = I + I
   val p: MS = I | I
   
-  val nos = NoteP orElse SeqP
-  val nop = NoteP orElse ParP
-  val sop = SeqP orElse ParP
-  val nosop = NoteP orElse SeqP orElse ParP
+  val nos = IsNote orElse IsNote
+  val nop = IsNote orElse IsPar
+  val sop = IsSeq orElse IsPar
+  val nosop = IsNote orElse IsSeq orElse IsPar
   
   test("note predicate") {
-    assert(NoteP.isDefinedAt(n))
-    assert(!NoteP.isDefinedAt(s))
-    assert(!NoteP.isDefinedAt(p))
+    assert(IsNote.isDefinedAt(n))
+    assert(!IsNote.isDefinedAt(s))
+    assert(!IsNote.isDefinedAt(p))
   }
   
   test("seq predicate") {
-    assert(SeqP.isDefinedAt(s))
-    assert(!SeqP.isDefinedAt(n))
-    assert(!SeqP.isDefinedAt(p))
+    assert(IsSeq.isDefinedAt(s))
+    assert(!IsSeq.isDefinedAt(n))
+    assert(!IsSeq.isDefinedAt(p))
   }
   
   test("par predicate") {
-    assert(ParP.isDefinedAt(p))
-    assert(!ParP.isDefinedAt(n))
-    assert(!ParP.isDefinedAt(s))
+    assert(IsPar.isDefinedAt(p))
+    assert(!IsPar.isDefinedAt(n))
+    assert(!IsPar.isDefinedAt(s))
   }
   
   test("note orElse seq") {
@@ -63,20 +63,20 @@ class PredicateTests extends FunSuite with MelodyWriter {
   }
   
   test("note pred with bool fun") {
-    val nb = NoteP given {_.tone == I}
+    val nb = IsNote given {_.tone == I}
     assert(nb.isDefinedAt(n))
     assert(!nb.isDefinedAt(n+1))
   }
   
   test("seq pred with bool fun") {
-    val sb = SeqP given {_.depth > 1}
+    val sb = IsSeq given {_.depth > 1}
     val ss = I ++ I
     assert(sb.isDefinedAt(ss))
     assert(!sb.isDefinedAt(s))
   }
   
   test("combining two different class pred") {
-    val sbonb = (SeqP given {_.depth > 1}) orElse (NoteP given {_.tone == I})
+    val sbonb = (IsSeq given {_.depth > 1}) orElse (IsNote given {_.tone == I})
     val st = I ++ I
     val sf = I + I
     val nt: N = I
