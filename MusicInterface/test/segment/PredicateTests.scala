@@ -69,14 +69,14 @@ class PredicateTests extends FunSuite with MelodyWriter {
   }
   
   test("seq pred with bool fun") {
-    val sb = IsSeq given {_.depth > 1}
+    val sb = IsSeq given {_.height > 1}
     val ss = I ++ I
     assert(sb.isDefinedAt(ss))
     assert(!sb.isDefinedAt(s))
   }
   
   test("combining two different class pred") {
-    val sbonb = (IsSeq given {_.depth > 1}) orElse (IsNote given {_.tone == I})
+    val sbonb = (IsSeq given {_.height > 1}) orElse (IsNote given {_.tone == I})
     val st = I ++ I
     val sf = I + I
     val nt: N = I

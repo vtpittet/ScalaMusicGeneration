@@ -15,7 +15,7 @@ sealed trait MusicalSegment {
   
   val melody: List[MusicalSegment]
   
-  lazy val depth: Int = if(!melody.isEmpty) melody.maxBy(_.depth).depth + 1 else 0
+  lazy val height: Int = if(!melody.isEmpty) melody.maxBy(_.height).height + 1 else 0
   
   val parDepth: Int
   val seqDepth: Int
@@ -34,15 +34,15 @@ sealed trait MusicalSegment {
    * as long as the resulting depth is smaller than the requested depth in the function call.
    */
   private[segmentSystem] def add[T <: MusicalSegment](depth: Int, builder: List[MusicalSegment] => T, that: MusicalSegment): T = {
-    if (this.depth > depth || that.depth > depth) this.add(scala.math.max(this.depth, that.depth), builder, that)
-    else if (this.depth < depth && that.depth < depth) {
-      def encloseToDepth(aimDepth: Int, segment: T): T = if (segment.depth < aimDepth) {
+    if (this.height > depth || that.height > depth) this.add(scala.math.max(this.height, that.height), builder, that)
+    else if (this.height < depth && that.height < depth) {
+      def encloseToDepth(aimDepth: Int, segment: T): T = if (segment.height < aimDepth) {
         encloseToDepth(aimDepth, builder(List(segment)))
       } else segment
       encloseToDepth(depth, builder(List(this, that)))
     }
-    else if (this.depth ==depth && that.depth ==depth) builder(this.melody ::: that.melody)
-    else if (this.depth < depth && that.depth ==depth) builder(this :: that.melody)
+    else if (this.height ==depth && that.height ==depth) builder(this.melody ::: that.melody)
+    else if (this.height < depth && that.height ==depth) builder(this :: that.melody)
     else/*if(this.depth ==depth && that.depth < depth)*/ builder(this.melody :+ that)
   }
   
@@ -99,23 +99,29 @@ sealed trait MusicalSegment {
   // divides duration of all notes by frac
   def /(frac: Double): MusicalSegment = +>((v: Note) => Note(v.tone, v.duration / frac))
   
-  def +>(expandF: Note => MusicalSegment*): MusicalSegment = ++> (new TransformList(IsNote, expandF.zipWithIndex.foldRight(List.empty[Transform[Note]]) {(t, l) => 
-    Transform(t._1, expandF.size, t._2, -1) :: l
-  }))
+  def +>(expandF: Note => MusicalSegment*): MusicalSegment = expand(IsNote, expandF:_*)
+  /*
+   * expand following given selector, applying periodically functions in given order
+   */
+  def expand[T <: MusicalSegment](selector: ClassPredicate[T], expandF: T => MusicalSegment*): MusicalSegment = {
+    ++> (new TransformList(selector, expandF.zipWithIndex.foldRight(List.empty[Transform[T]]) {(t, l) => 
+      Transform(t._1, expandF.size, t._2, -1) :: l
+    }))
+  }
   
   def ++>[T <: MusicalSegment](transfs: TransformList[T] = TransformList.identity): MusicalSegment = {
-    expand(transfs.toStream)._1
+    expandRec(transfs.toStream)._1
   }
   
   
-  private def expand(expandF: TStream): (MusicalSegment, TStream) = {
+  private def expandRec(expandF: TStream): (MusicalSegment, TStream) = {
     if (expandF.head.isDefinedAt(this)) {
       (expandF.head(this), expandF.tail)
     } else this match {
       case n: Note => (n, expandF) // to prevent infinite recursion
       case _ => {
         val (newMelody, newExpandF) = melody.foldLeft((List.empty[MusicalSegment], expandF)) {
-          (t, m) =>val (expM, tStr) = m.expand(t._2)
+          (t, m) =>val (expM, tStr) = m.expandRec(t._2)
           (expM :: t._1, tStr)
         }
         (buildFromMelody(newMelody.reverse), newExpandF)
@@ -173,8 +179,8 @@ sealed trait Sequential extends MusicalSegment {
 case class ParallelSegment(melody: List[MusicalSegment]) extends Parallel {
   
   val length = melody.maxBy(_.length).length
-  val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).depth + 1 else 0
-  val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).depth else 0
+  val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).height + 1 else 0
+  val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).height else 0
   
   val buildFromMelody: List[MusicalSegment] => ParallelSegment = ParallelSegment(_)
   
@@ -195,8 +201,8 @@ object ParallelSegment {
 case class SequentialSegment(melody: List[MusicalSegment]) extends Sequential {
   
   val length = melody.foldLeft(0.0)(_ + _.length)
-  val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).depth else 0
-  val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).depth + 1 else 0
+  val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).height else 0
+  val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).height + 1 else 0
   
   val buildFromMelody: List[MusicalSegment] => SequentialSegment = SequentialSegment(_)
   
@@ -217,7 +223,7 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with P
   val length = duration.computed
   val parDepth = 0
   val seqDepth = 0
-  override lazy val depth = 0
+  override lazy val height = 0
   
   val buildFromMelody: List[MusicalSegment] => Note = x => this
   

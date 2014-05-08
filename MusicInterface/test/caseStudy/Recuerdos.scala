@@ -20,6 +20,7 @@ import utils.SS
 import utils.Print
 import utils.PrettyPrinter
 import utils.MelodyWriter
+import segmentSystem.IsSeq
 
 object Recuerdos extends App with MelodyWriter {
   
@@ -46,8 +47,7 @@ object Recuerdos extends App with MelodyWriter {
   // melody of composed segment
   // !! side-effect sensitive, depth of param must be controlled
   def alternate(exps: MusicalSegment => MusicalSegment*): SequentialSegment => MusicalSegment = {
-    val expIter = Stream.continually(exps).flatten.iterator
-    (x: SequentialSegment) => SequentialSegment(x.melody.map(expIter.next()(_)))
+    _ expand (IsSeq given (_.height==1), exps:_*)
   }
   
   def sopran1(s: SequentialSegment): MusicalSegment = alternate(stdSopran1, specSopran1)(s)
