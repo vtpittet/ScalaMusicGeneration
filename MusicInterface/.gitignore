@@ -2,6 +2,3 @@ target/
 bin/
 readmes/
 .cache
-.classpath
-.project
-.settings/
