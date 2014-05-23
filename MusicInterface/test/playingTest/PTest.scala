@@ -26,7 +26,7 @@ object PTest extends App with MelodyWriter {
     } *| (_ >> (rS-))
     
     
-    MelodyPlayer(song, tempo, scale)
+    MelodyPlayer(song withScale scale, tempo)
 //    Print(song, scale)
   }
   
@@ -38,7 +38,7 @@ object PTest extends App with MelodyWriter {
     val song = (I + II + III).appN(2) { s =>
       s.+>(_ /2, _ /0.5)
     }
-    MelodyPlayer(song, tempo, scale)
+    MelodyPlayer(song withScale scale, tempo)
   }
   
   def sampleMelody {
@@ -48,7 +48,7 @@ object PTest extends App with MelodyWriter {
   
     val song = ((I *+ (_+1, _+2, x=>x)) * 2 *+ (_ + 2)) *| (O() * 8 + _)
   
-    MelodyPlayer(song, tempo, scale)
+    MelodyPlayer(song withScale scale, tempo)
   
   
   

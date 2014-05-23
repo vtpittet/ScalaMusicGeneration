@@ -173,20 +173,20 @@ object Recuerdos extends App with MelodyWriter {
   
   // Short version without repetitions
   MelodyPlayer(
-    tempo,
-    (part1, minScale),
-    (part2, majScale),
-    (part3, majScale),
-    (end, majScale)
+    (part1 withScale minScale)
+    + (part2 withScale majScale)
+    + (part3 withScale majScale)
+    + (end withScale majScale),
+    tempo
   )
   
-  // Full version
+//   Full version
 //  MelodyPlayer(
-//    tempo,
-//    (part1 *2, minScale),
-//    (part2 + trans22 + part2 + trans21, majScale),
-//    (part1, minScale),
-//    (part2 + part3 + end, majScale)
+//    (part1 *2 withScale minScale)
+//    + (part2 + trans22 + part2 + trans21 withScale majScale)
+//    + (part1 withScale minScale)
+//    + (part2 + part3 + end withScale majScale),
+//    tempo
 //  )
   
   

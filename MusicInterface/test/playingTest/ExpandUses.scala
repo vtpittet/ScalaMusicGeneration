@@ -33,5 +33,5 @@ object ExpandUses extends App with MelodyWriter {
   
   play(step2)
   
-  def play(m: MS) = MelodyPlayer(m, tempo, scale)
+  def play(m: MS) = MelodyPlayer(m withScale scale, tempo)
 }
