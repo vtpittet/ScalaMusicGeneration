@@ -16,12 +16,13 @@ import rythmics.BPM
 /**
  * Plays a given musicalSegment at fixed tempo in a provided scale, from the c
  */
-case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int, toQN: Int) {
+case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN: Int = -1) {
+  import MelodyPlayer._
   
   
   
   // push melody in sequencer
-  val midiSequence: Sequence = new Sequence(Sequence.PPQ, MelodyPlayer.DEFAULT_RESOLUTION)
+  val midiSequence: Sequence = new Sequence(Sequence.PPQ, DEFAULT_RESOLUTION)
   val midiTrack: Track = midiSequence.createTrack
   // set Tempo
   setTempo
@@ -71,12 +72,12 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int, toQN: Int
     if (segtTimeStamp >= 0 && (segtTimeStamp < toQN-fromQN || toQN == -1)) {
       if (noteOn) midiTrack.add(new MidiEvent(new ShortMessage(
               ShortMessage.NOTE_ON, 0, MidiToneExtractor(scale.pitchTone(tone)),
-              MelodyPlayer.DEFAULT_VELOCITY),
-              (segtTimeStamp * MelodyPlayer.DEFAULT_RESOLUTION).toLong))
+              DEFAULT_VELOCITY),
+              (segtTimeStamp * DEFAULT_RESOLUTION).toLong))
       else midiTrack.add(new MidiEvent(new ShortMessage(
               ShortMessage.NOTE_OFF, 0, MidiToneExtractor(scale.pitchTone(tone)),
-              MelodyPlayer.DEFAULT_VELOCITY),
-              ((segtTimeStamp + duration.computed) * MelodyPlayer.DEFAULT_RESOLUTION).toLong))
+              DEFAULT_VELOCITY),
+              ((segtTimeStamp + duration.computed) * DEFAULT_RESOLUTION).toLong))
     
     }
     segtTimeStamp + duration.computed
