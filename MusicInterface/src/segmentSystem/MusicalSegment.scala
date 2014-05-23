@@ -97,7 +97,7 @@ sealed trait MusicalSegment {
   
   def <<(durations: BPM*): SequentialSegment = sequentialBuilder((this :: durations.map(O(_)).toList))
   
-  def +(toneRise: Int): MusicalSegment = +>((v: Note) => Note(v.tone increaseBy toneRise, v.duration))
+  def +(toneRise: Int): MusicalSegment = +>(_ + toneRise)
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
   
   // divides duration of all notes by frac
@@ -245,6 +245,8 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with P
   def withDuration(duration: BPM): Note = Note(tone, duration)
   
   override lazy val notes: List[Note] = melody
+  
+  override def +(toneRise: Int): Note = Note(tone increaseBy toneRise, duration)
 }
 
 case class Parallel(tracks: List[MusicalSegment]) extends ParallelSegment(tracks) {
