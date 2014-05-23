@@ -18,7 +18,7 @@ object PTest extends App with MelodyWriter {
   
   def recMelody {
     
-    val scale = Minor(C)
+    implicit val scale = Minor(C)
     val tempo = 60
     
     val song = I(rS).appN(4) { s =>
@@ -26,29 +26,29 @@ object PTest extends App with MelodyWriter {
     } *| (_ >> (rS-))
     
     
-    MelodyPlayer(song withScale scale, tempo)
+    MelodyPlayer(song, tempo)
 //    Print(song, scale)
   }
   
   def multiRecMelody {
     
-    val scale = Minor(C)
+    implicit val scale = Minor(C)
     val tempo = 60
     
     val song = (I + II + III).appN(2) { s =>
       s.+>(_ /2, _ /0.5)
     }
-    MelodyPlayer(song withScale scale, tempo)
+    MelodyPlayer(song, tempo)
   }
   
   def sampleMelody {
   
-    val scale = Major(C)
+    implicit val scale = Major(C)
     val tempo = 120
   
     val song = ((I *+ (_+1, _+2, x=>x)) * 2 *+ (_ + 2)) *| (O() * 8 + _)
   
-    MelodyPlayer(song withScale scale, tempo)
+    MelodyPlayer(song, tempo)
   
   
   
