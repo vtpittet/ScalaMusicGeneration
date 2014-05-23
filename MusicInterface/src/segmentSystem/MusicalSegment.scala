@@ -101,7 +101,9 @@ sealed trait MusicalSegment {
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
   
   // divides duration of all notes by frac
+  // TODO move down to Note
   def /(frac: Double): MusicalSegment = +>((v: Note) => Note(v.tone, v.duration / frac))
+  def withScale(scale: Scale): MusicalSegment = +>(_ withScale scale)
   
   def +>(expandF: Note => MusicalSegment*): MusicalSegment = expand(IsNote, expandF:_*)
   /*
@@ -228,7 +230,8 @@ object SequentialSegment {
 }
 
 
-case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with ParallelComposable with SequentialComposable {
+case class Note(val tone: Tone, val duration: BPM)(implicit val scale: Scale = Major(C))
+      extends MusicalSegment with ParallelComposable with SequentialComposable {
   val melody = this :: Nil
   val length = duration.computed
   val parDepth = 0
@@ -247,6 +250,8 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with P
   override lazy val notes: List[Note] = melody
   
   override def +(toneRise: Int): Note = Note(tone increaseBy toneRise, duration)
+  override def withScale(scale: Scale) = Note(tone, duration)(scale)
+  
 }
 
 case class Parallel(tracks: List[MusicalSegment]) extends ParallelSegment(tracks) {
