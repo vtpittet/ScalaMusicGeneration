@@ -15,6 +15,7 @@ sealed trait MusicalSegment {
   
   val melody: List[MusicalSegment]
   
+  
   lazy val height: Int = if(!melody.isEmpty) melody.maxBy(_.height).height + 1 else 0
   
   val parDepth: Int
@@ -162,20 +163,20 @@ sealed trait ParallelComposable extends MusicalSegment {
   
   // depth-controlled operation on parallel composition of parallel segments
   def |*(depth: Int, that: MusicalSegment with ParallelComposable): ParallelSegment = add(depth, parallelBuilder(_), that)
-  def |(that: MusicalSegment with ParallelComposable): ParallelSegment = ParallelComposable.this |* (1, that)
-  def ||(that: MusicalSegment with ParallelComposable): ParallelSegment = ParallelComposable.this |* (2, that)
-  def |||(that: MusicalSegment with ParallelComposable): ParallelSegment = ParallelComposable.this |* (3, that)
-  def ||||(that: MusicalSegment with ParallelComposable): ParallelSegment = ParallelComposable.this |* (4, that)
+  def |(that: MusicalSegment with ParallelComposable): ParallelSegment = this |* (1, that)
+  def ||(that: MusicalSegment with ParallelComposable): ParallelSegment = this |* (2, that)
+  def |||(that: MusicalSegment with ParallelComposable): ParallelSegment = this |* (3, that)
+  def ||||(that: MusicalSegment with ParallelComposable): ParallelSegment = this |* (4, that)
 }
 
 sealed trait SequentialComposable extends MusicalSegment {
   
   // depth-controlled operation on sequential composition of sequential segments
   def +*(depth: Int, that: MusicalSegment with SequentialComposable): SequentialSegment = add(depth, sequentialBuilder(_), that)
-  def +(that: MusicalSegment with SequentialComposable): SequentialSegment = SequentialComposable.this +* (1, that)
-  def ++(that: MusicalSegment with SequentialComposable): SequentialSegment = SequentialComposable.this +* (2, that)
-  def +++(that: MusicalSegment with SequentialComposable): SequentialSegment = SequentialComposable.this +* (3, that)
-  def ++++(that: MusicalSegment with SequentialComposable): SequentialSegment = SequentialComposable.this +* (4, that)
+  def +(that: MusicalSegment with SequentialComposable): SequentialSegment = this +* (1, that)
+  def ++(that: MusicalSegment with SequentialComposable): SequentialSegment = this +* (2, that)
+  def +++(that: MusicalSegment with SequentialComposable): SequentialSegment = this +* (3, that)
+  def ++++(that: MusicalSegment with SequentialComposable): SequentialSegment = this +* (4, that)
 }
 
 
@@ -244,7 +245,6 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with P
   def withDuration(duration: BPM): Note = Note(tone, duration)
   
   override lazy val notes: List[Note] = melody
-  
 }
 
 case class Parallel(tracks: List[MusicalSegment]) extends ParallelSegment(tracks) {
