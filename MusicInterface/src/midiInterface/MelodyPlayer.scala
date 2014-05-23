@@ -16,7 +16,7 @@ import rythmics.BPM
 /**
  * Plays a given musicalSegment at fixed tempo in a provided scale, from the c
  */
-case class MelodyPlayer(melody: List[(MusicalSegment, Scale)], bpm: Int, fromQN: Int, toQN: Int) {
+case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int, toQN: Int) {
   
   
   
@@ -28,11 +28,8 @@ case class MelodyPlayer(melody: List[(MusicalSegment, Scale)], bpm: Int, fromQN:
   // put events in midiTrack
   // first noteoff then note on to avoid note erasure bug
   
-  melody.foldLeft[Double](-fromQN)((segtTs, melodyWithScale) => {
-    val (melody, scale) = melodyWithScale
-    createEventsPerSegment(melody, scale, segtTs, false)
-    createEventsPerSegment(melody, scale, segtTs, true)
-  })
+  createEventsPerSegment(melody, -fromQN, false)
+  createEventsPerSegment(melody, -fromQN, true)
   // play the melody
   play
   
@@ -46,13 +43,13 @@ case class MelodyPlayer(melody: List[(MusicalSegment, Scale)], bpm: Int, fromQN:
     }
   }
   
-  def createEventsPerSegment(segt: MusicalSegment, scale: Scale, segtTimeStamp: Double, noteOn: Boolean): Double = segt match {
+  def createEventsPerSegment(segt: MusicalSegment, segtTimeStamp: Double, noteOn: Boolean): Double = segt match {
     case ParallelSegment(melody) =>
-      (for(segt <- melody) yield createEventsPerSegment(segt, scale, segtTimeStamp, noteOn)).foldLeft(0.0)((x, y) => scala.math.max(x, y))
+      (for(segt <- melody) yield createEventsPerSegment(segt, segtTimeStamp, noteOn)).foldLeft(0.0)((x, y) => scala.math.max(x, y))
     case SequentialSegment(melody) =>
-      melody.foldLeft(segtTimeStamp)((x, y) => createEventsPerSegment(y, scale, x, noteOn))
-    case Note(tone, duration) =>
-      createEventsPerNote(tone, duration, scale, segtTimeStamp, noteOn)
+      melody.foldLeft(segtTimeStamp)((x, y) => createEventsPerSegment(y, x, noteOn))
+    case n @ Note(tone, duration) =>
+      createEventsPerNote(tone, duration, n.scale, segtTimeStamp, noteOn)
     /*
     case chord :: Nil => {
       // Not neede case, let notes be at the end of melody
@@ -111,8 +108,8 @@ case class MelodyPlayer(melody: List[(MusicalSegment, Scale)], bpm: Int, fromQN:
 object MelodyPlayer {
   val DEFAULT_RESOLUTION: Int = 16
   val DEFAULT_VELOCITY: Int = 60
-  def apply(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: Int = 0, toQN: Int = -1): MelodyPlayer =
-    MelodyPlayer((melody, scale) :: Nil, bpm, fromQN, toQN)
-  def apply(bpm: Int, melody: (MusicalSegment, Scale)*): MelodyPlayer = MelodyPlayer(melody.toList, bpm, 0, -1)
-  def apply(bpm: Int, fromQN: Int, toQN: Int, melody: (MusicalSegment, Scale)*): MelodyPlayer = MelodyPlayer(melody.toList, bpm, fromQN, toQN)
+//  def apply(melody: MusicalSegment, bpm: Int, scale: Scale, fromQN: Int = 0, toQN: Int = -1): MelodyPlayer =
+//    MelodyPlayer((melody, scale) :: Nil, bpm, fromQN, toQN)
+//  def apply(bpm: Int, melody: (MusicalSegment, Scale)*): MelodyPlayer = MelodyPlayer(melody.toList, bpm, 0, -1)
+//  def apply(bpm: Int, fromQN: Int, toQN: Int, melody: (MusicalSegment, Scale)*): MelodyPlayer = MelodyPlayer(melody.toList, bpm, fromQN, toQN)
 }
