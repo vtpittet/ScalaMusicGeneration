@@ -1,7 +1,7 @@
 package playingTest
 
 import utils.MelodyWriter
-import tonalSystem.I
+import tonalSystem.Tone._
 import segmentSystem.IsNote
 import rythmics.E
 import segmentSystem.Note

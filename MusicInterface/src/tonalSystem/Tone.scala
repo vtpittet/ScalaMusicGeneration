@@ -6,7 +6,7 @@ import segmentSystem.Note
 
 
 sealed trait Tone {
-  
+  import Tone._
   
   
   
@@ -83,29 +83,30 @@ sealed trait Tone {
   val alter: Option[Boolean]
   
   val octave: Int
-  
 }
 
-case object O extends Tone {
-  val octave = 0
-  val alter = None
-  def apply(duration: BPM = Q): Note =
-    Note(O, duration)
+object Tone {
+    case object O extends Tone {
+    val octave = 0
+    val alter = None
+    def apply(duration: BPM = Q): Note =
+      Note(O, duration)
+  }
+
+  case class I(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+  case class II(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+  case class III(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+  case class IV(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+  case class V(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+  case class VI(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+  case class VII(val octave: Int, val alter: Option[Boolean] = None) extends Tone
+
+  object I extends I(0, None)
+  object II extends II(0, None)
+  object III extends III(0, None)
+  object IV extends IV(0, None)
+  object V extends V(0, None)
+  object VI extends VI(0, None)
+  object VII extends VII(0, None)
 }
-
-case class I(val octave: Int, val alter: Option[Boolean] = None) extends Tone
-case class II(val octave: Int, val alter: Option[Boolean] = None) extends Tone
-case class III(val octave: Int, val alter: Option[Boolean] = None) extends Tone
-case class IV(val octave: Int, val alter: Option[Boolean] = None) extends Tone
-case class V(val octave: Int, val alter: Option[Boolean] = None) extends Tone
-case class VI(val octave: Int, val alter: Option[Boolean] = None) extends Tone
-case class VII(val octave: Int, val alter: Option[Boolean] = None) extends Tone
-
-object I extends I(0, None)
-object II extends II(0, None)
-object III extends III(0, None)
-object IV extends IV(0, None)
-object V extends V(0, None)
-object VI extends VI(0, None)
-object VII extends VII(0, None)
 

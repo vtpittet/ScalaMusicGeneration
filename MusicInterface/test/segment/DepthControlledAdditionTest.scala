@@ -2,6 +2,7 @@ package segment
 
 import org.scalatest.FunSuite
 import tonalSystem._
+import tonalSystem.Tone._
 import utils.SS
 import utils.MelodyWriter
 

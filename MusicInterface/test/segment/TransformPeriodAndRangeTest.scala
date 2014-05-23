@@ -2,7 +2,7 @@ package segment
 
 import utils.MelodyWriter
 import org.scalatest.FunSuite
-import tonalSystem._
+import tonalSystem.Tone._
 import segmentSystem.Note
 import segmentSystem.MusicalSegment
 import midiInterface.MelodyPlayer

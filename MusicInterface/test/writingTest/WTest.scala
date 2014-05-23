@@ -4,6 +4,7 @@ import rythmics.{E => rE}
 import segmentSystem.Note
 import segmentSystem.Note
 import tonalSystem._
+import tonalSystem.Tone._
 import utils.MelodyWriter
 import utils.Print
 import segmentSystem.MusicalSegment

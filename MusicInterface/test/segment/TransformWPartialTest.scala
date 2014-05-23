@@ -2,11 +2,10 @@ package segment
 
 import utils.MelodyWriter
 import org.scalatest.FunSuite
-import tonalSystem.I
 import segmentSystem.SequentialSegment
 import segmentSystem.MusicalSegment
 import segmentSystem.ParallelSegment
-import tonalSystem.II
+import tonalSystem.Tone._
 import segmentSystem.Transform
 import segmentSystem.IsNote
 import segmentSystem.IsSeq

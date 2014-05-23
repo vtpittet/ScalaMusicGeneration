@@ -1,6 +1,7 @@
 package playingTest
 
 import tonalSystem._
+import tonalSystem.Tone._
 import midiInterface.MelodyPlayer
 import utils.Print
 import rythmics.Q

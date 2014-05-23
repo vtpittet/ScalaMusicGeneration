@@ -1,11 +1,10 @@
 package segment
 
 import segmentSystem.IsNote
-import tonalSystem.I
+import tonalSystem.Tone._
 import utils.MelodyWriter
 import segmentSystem.IsSeq
 import org.scalatest.FunSuite
-import tonalSystem.II
 import segmentSystem.IsPar
 
 

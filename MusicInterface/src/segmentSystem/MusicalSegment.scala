@@ -1,8 +1,8 @@
 package segmentSystem
 
 import rythmics.BPM
-import tonalSystem.O
 import tonalSystem.Tone
+import tonalSystem.Tone._
 import utils.PrettyPrinter
 import tonalSystem.Scale
 import tonalSystem.Major

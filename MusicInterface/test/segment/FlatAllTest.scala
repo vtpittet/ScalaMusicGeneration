@@ -1,6 +1,6 @@
 package segment
 
-import tonalSystem.I
+import tonalSystem.Tone._
 import utils.SS
 import utils.PS
 import org.scalatest.FunSuite

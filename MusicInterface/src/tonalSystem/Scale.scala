@@ -1,6 +1,7 @@
 package tonalSystem
 
 import scala.collection.immutable.Stream
+import Tone._
 
 // TODO Solve key signature cannot be in Scale trait !!!
 sealed trait Scale {

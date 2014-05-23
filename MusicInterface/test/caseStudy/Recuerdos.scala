@@ -7,15 +7,9 @@ import rythmics.{T => rT}
 import segmentSystem.MusicalSegment
 import segmentSystem.SequentialSegment
 import tonalSystem.A
-import tonalSystem.I
-import tonalSystem.II
-import tonalSystem.III
-import tonalSystem.IV
+import tonalSystem.Tone._
 import tonalSystem.Major
 import tonalSystem.Minor
-import tonalSystem.V
-import tonalSystem.VI
-import tonalSystem.VII
 import utils.SS
 import utils.Print
 import utils.PrettyPrinter

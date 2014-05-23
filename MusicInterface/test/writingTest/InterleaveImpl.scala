@@ -1,7 +1,6 @@
 package writingTest
 
-import tonalSystem.III
-import tonalSystem.I
+import tonalSystem.Tone._
 import utils.Print
 import utils.MelodyWriter
 
