@@ -15,7 +15,7 @@ class PredicateTests extends FunSuite with MelodyWriter {
   val s: MS = I + I
   val p: MS = I | I
   
-  val nos = IsNote orElse IsNote
+  val nos = IsNote orElse IsSeq
   val nop = IsNote orElse IsPar
   val sop = IsSeq orElse IsPar
   val nosop = IsNote orElse IsSeq orElse IsPar

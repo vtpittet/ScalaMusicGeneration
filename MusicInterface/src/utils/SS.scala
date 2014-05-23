@@ -2,7 +2,8 @@ package utils
 
 import segmentSystem.SequentialSegment
 import segmentSystem.MusicalSegment
+import segmentSystem.Sequential
 
 object SS {
- def apply(tracks: MusicalSegment*): SequentialSegment = SequentialSegment(tracks.toList)
+ def apply(tracks: MusicalSegment*): SequentialSegment = Sequential(tracks.toList)
 }

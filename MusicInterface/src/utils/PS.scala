@@ -2,7 +2,8 @@ package utils
 
 import segmentSystem.ParallelSegment
 import segmentSystem.MusicalSegment
+import segmentSystem.Parallel
 
 object PS {
-  def apply(tracks: MusicalSegment*): ParallelSegment = ParallelSegment(tracks.toList)
+  def apply(tracks: MusicalSegment*): ParallelSegment = Parallel(tracks.toList)
 }

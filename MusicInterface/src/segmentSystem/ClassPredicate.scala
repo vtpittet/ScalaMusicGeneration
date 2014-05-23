@@ -26,6 +26,6 @@ object ClassPredicate {
 }
 
 object IsNote extends ClassPredicate[Note](_ match {case n: Note => n})
-object IsSeq extends ClassPredicate[SequentialSegment](_ match {case s: SequentialSegment => s})
-object IsPar extends ClassPredicate[ParallelSegment](_ match {case p: ParallelSegment => p})
+object IsSeq extends ClassPredicate[Sequential](_ match {case s: Sequential => s})
+object IsPar extends ClassPredicate[Parallel](_ match {case p: Parallel => p})
 object IsMus extends ClassPredicate[MusicalSegment](_ match {case m: MusicalSegment => m})

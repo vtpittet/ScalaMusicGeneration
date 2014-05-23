@@ -25,6 +25,9 @@ sealed trait MusicalSegment {
   
   val buildFromMelody: List[MusicalSegment] => MusicalSegment
   
+  val parallelBuilder: List[MusicalSegment] => ParallelSegment = Parallel(_)
+  val sequentialBuilder: List[MusicalSegment] => SequentialSegment = Sequential(_)
+  
   // addition
   /*
    * Note: the parameter depth represents the depth of resulting MusicalSegment
@@ -47,7 +50,7 @@ sealed trait MusicalSegment {
   }
   
   // parallel addition
-  def |(that: MusicalSegment): ParallelSegment = ParallelSegment(this, that)
+  def |(that: MusicalSegment): ParallelSegment = parallelBuilder(List(this, that))
   /* use cases for readablility and consistency. should be able to call those ops on any arg*/
   def |*(depth: Int, that: MusicalSegment): ParallelSegment = this | that
   def ||(that: MusicalSegment): ParallelSegment = this | that
@@ -55,7 +58,7 @@ sealed trait MusicalSegment {
   def ||||(that: MusicalSegment): ParallelSegment = this | that
   
   // sequential addition
-  def +(that: MusicalSegment): SequentialSegment = SequentialSegment(this, that)
+  def +(that: MusicalSegment): SequentialSegment = sequentialBuilder(List(this, that))
   def +*(depth: Int, that: MusicalSegment): SequentialSegment = this + that
   def ++(that: MusicalSegment): SequentialSegment = this + that
   def +++(that: MusicalSegment): SequentialSegment = this + that
@@ -65,33 +68,33 @@ sealed trait MusicalSegment {
    * Note that parallel multiplication is nearly idempotent as the same melody is replayed at the same time
    * def *(repetitions: Int): ParallelSegment = ParallelSegment(List.fill(repetitions)(this))
    */
-  def *(repetitions: Int): SequentialSegment = SequentialSegment(List.fill(repetitions)(this))
+  def *(repetitions: Int): SequentialSegment = sequentialBuilder(List.fill(repetitions)(this))
   
   // assume identity at the beginning of each definition
   def *+(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = {
     val applications = Stream.continually(transf).flatten.take(apps)
-    multiTransf(SequentialSegment(_), applications:_*)
+    multiTransf(sequentialBuilder(_), applications:_*)
   }
   
   def *|(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = {
     val applications = Stream.continually(transf).flatten.take(apps)
-    multiTransf(ParallelSegment(_), applications:_*)
+    multiTransf(parallelBuilder(_), applications:_*)
   }
   
   
   def *+(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = 
-    multiTransf(SequentialSegment(_), transf:_*)
+    multiTransf(sequentialBuilder(_), transf:_*)
   def *|(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = 
-    multiTransf(ParallelSegment(_), transf:_*)
+    multiTransf(parallelBuilder(_), transf:_*)
   
   private def multiTransf[T <: MusicalSegment](builder: (List[MusicalSegment]) => T, transf: ((MusicalSegment) => MusicalSegment)*): T = {
     val iter = (((x: MusicalSegment) => x) +: transf).iterator
     builder(List.fill(transf.size + 1)(iter.next()(this)))
   }
   
-  def >>(durations: BPM*): SequentialSegment = SequentialSegment(durations.map(O(_)).toList ::: (this :: Nil))
+  def >>(durations: BPM*): SequentialSegment = sequentialBuilder(durations.map(O(_)).toList ::: (this :: Nil))
   
-  def <<(durations: BPM*): SequentialSegment = SequentialSegment((this :: durations.map(O(_)).toList))
+  def <<(durations: BPM*): SequentialSegment = sequentialBuilder((this :: durations.map(O(_)).toList))
   
   def +(toneRise: Int): MusicalSegment = +>((v: Note) => Note(v.tone increaseBy toneRise, v.duration))
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
@@ -155,36 +158,36 @@ sealed trait MusicalSegment {
  * Need extending Musical Segment to overload correctly default |, + operators
  * defined in MusicalSegment
  */
-sealed trait Parallel extends MusicalSegment {
+sealed trait ParallelComposable extends MusicalSegment {
   
   // depth-controlled operation on parallel composition of parallel segments
-  def |*(depth: Int, that: MusicalSegment with Parallel): ParallelSegment = add(depth, ParallelSegment(_), that)
-  def |(that: MusicalSegment with Parallel): ParallelSegment = this |* (1, that)
-  def ||(that: MusicalSegment with Parallel): ParallelSegment = this |* (2, that)
-  def |||(that: MusicalSegment with Parallel): ParallelSegment = this |* (3, that)
-  def ||||(that: MusicalSegment with Parallel): ParallelSegment = this |* (4, that)
+  def |*(depth: Int, that: MusicalSegment with ParallelComposable): ParallelSegment = add(depth, parallelBuilder(_), that)
+  def |(that: MusicalSegment with ParallelComposable): ParallelSegment = ParallelComposable.this |* (1, that)
+  def ||(that: MusicalSegment with ParallelComposable): ParallelSegment = ParallelComposable.this |* (2, that)
+  def |||(that: MusicalSegment with ParallelComposable): ParallelSegment = ParallelComposable.this |* (3, that)
+  def ||||(that: MusicalSegment with ParallelComposable): ParallelSegment = ParallelComposable.this |* (4, that)
 }
 
-sealed trait Sequential extends MusicalSegment {
+sealed trait SequentialComposable extends MusicalSegment {
   
   // depth-controlled operation on sequential composition of sequential segments
-  def +*(depth: Int, that: MusicalSegment with Sequential): SequentialSegment = add(depth, SequentialSegment(_), that)
-  def +(that: MusicalSegment with Sequential): SequentialSegment = this +* (1, that)
-  def ++(that: MusicalSegment with Sequential): SequentialSegment = this +* (2, that)
-  def +++(that: MusicalSegment with Sequential): SequentialSegment = this +* (3, that)
-  def ++++(that: MusicalSegment with Sequential): SequentialSegment = this +* (4, that)
+  def +*(depth: Int, that: MusicalSegment with SequentialComposable): SequentialSegment = add(depth, sequentialBuilder(_), that)
+  def +(that: MusicalSegment with SequentialComposable): SequentialSegment = SequentialComposable.this +* (1, that)
+  def ++(that: MusicalSegment with SequentialComposable): SequentialSegment = SequentialComposable.this +* (2, that)
+  def +++(that: MusicalSegment with SequentialComposable): SequentialSegment = SequentialComposable.this +* (3, that)
+  def ++++(that: MusicalSegment with SequentialComposable): SequentialSegment = SequentialComposable.this +* (4, that)
 }
 
 
-case class ParallelSegment(melody: List[MusicalSegment]) extends Parallel {
+abstract class ParallelSegment(val melody: List[MusicalSegment]) extends ParallelComposable {
   
   val length = melody.maxBy(_.length).length
   val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).height + 1 else 0
   val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).height else 0
   
-  val buildFromMelody: List[MusicalSegment] => ParallelSegment = ParallelSegment(_)
+  val buildFromMelody: List[MusicalSegment] => ParallelSegment
   
-  def flatAll: ParallelSegment = ParallelSegment(melody.flatMap(_.flatAll match {
+  def flatAll: ParallelSegment = buildFromMelody(melody.flatMap(_.flatAll match {
     // by indyction hypothesis, pm contains only notes and sequentialSegment of lenght > 1
     case ParallelSegment(pm) => pm
     // by induction hypothesis, s can only be a parallelSegment of length > 1 or a note
@@ -195,18 +198,21 @@ case class ParallelSegment(melody: List[MusicalSegment]) extends Parallel {
 }
 
 object ParallelSegment {
-  def apply(tracks: MusicalSegment*): ParallelSegment = ParallelSegment(tracks.toList)
+//  def apply(tracks: MusicalSegment*): ParallelSegment = ParallelSegment(tracks.toList)
+  def unapply(parallelSegment: ParallelSegment): Option[List[MusicalSegment]] = {
+    Some(parallelSegment.melody)
+  }
 }
 
-case class SequentialSegment(melody: List[MusicalSegment]) extends Sequential {
+abstract class SequentialSegment(val melody: List[MusicalSegment]) extends SequentialComposable {
   
   val length = melody.foldLeft(0.0)(_ + _.length)
   val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).height else 0
   val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).height + 1 else 0
   
-  val buildFromMelody: List[MusicalSegment] => SequentialSegment = SequentialSegment(_)
+  val buildFromMelody: List[MusicalSegment] => SequentialSegment
   
-  def flatAll: SequentialSegment = SequentialSegment(melody.flatMap(_.flatAll match {
+  def flatAll: SequentialSegment = buildFromMelody(melody.flatMap(_.flatAll match {
     case SequentialSegment(sm) => sm
     case ParallelSegment(p :: Nil) => p.melody
     case other => other :: Nil
@@ -214,11 +220,14 @@ case class SequentialSegment(melody: List[MusicalSegment]) extends Sequential {
 }
 
 object SequentialSegment {
-  def apply(tracks: MusicalSegment*): SequentialSegment = SequentialSegment(tracks.toList)
+//  def apply(tracks: MusicalSegment*): SequentialSegment = SequentialSegment(tracks.toList)
+  def unapply(sequentialSegment: SequentialSegment): Option[List[MusicalSegment]] = {
+    Some(sequentialSegment.melody)
+  }
 }
 
 
-case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with Parallel with Sequential {
+case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with ParallelComposable with SequentialComposable {
   val melody = this :: Nil
   val length = duration.computed
   val parDepth = 0
@@ -237,3 +246,14 @@ case class Note(val tone: Tone, val duration: BPM) extends MusicalSegment with P
   override lazy val notes: List[Note] = melody
   
 }
+
+case class Parallel(tracks: List[MusicalSegment]) extends ParallelSegment(tracks) {
+  val buildFromMelody = Parallel(_)
+}
+case class Sequential(tracks: List[MusicalSegment]) extends SequentialSegment(tracks) {
+  val buildFromMelody = Sequential(_)
+}
+
+
+
+

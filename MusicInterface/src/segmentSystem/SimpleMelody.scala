@@ -4,6 +4,7 @@ import rythmics.BPM
 import tonalSystem.Tone
 
 class SimpleMelody(notes: List[Note]) extends SequentialSegment(notes) {
+  val buildFromMelody = (x: List[MusicalSegment]) => SimpleMelody(x.flatMap(_.notes))
   def +:(rawNote:(Tone, Int, Int)): SimpleMelody = rawNote match {
     case (tone, bpm, frac) => SimpleMelody(Note(tone, BPM(bpm, frac)) :: notes)
   }
