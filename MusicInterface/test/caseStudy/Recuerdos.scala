@@ -161,6 +161,7 @@ object Recuerdos extends App with MelodyWriter {
     ((I(-1) | III | I(1) | V(1)) + (I(-1) | III(-1) | V(-1) | I) +> {_ withDuration (rH-)})
   
   val tempo = 80
+  val instrument = 0
   val minScale = Minor(A)
   val majScale = Major(A)
 
@@ -171,7 +172,10 @@ object Recuerdos extends App with MelodyWriter {
     + (part2 withScale majScale)
     + (part3 withScale majScale)
     + (end withScale majScale),
-    tempo
+    tempo,
+//    fromQN = 0,
+//    toQN = 3,
+    instrument = instrument
   )
   
 //   Full version

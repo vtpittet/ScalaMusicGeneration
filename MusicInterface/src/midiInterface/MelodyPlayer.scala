@@ -16,7 +16,7 @@ import rythmics.BPM
 /**
  * Plays a given musicalSegment at fixed tempo in a provided scale, from the c
  */
-case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN: Int = -1) {
+case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN: Int = -1, instrument: Int = 0) {
   import MelodyPlayer._
   
   
@@ -26,6 +26,7 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN:
   val midiTrack: Track = midiSequence.createTrack
   // set Tempo
   setTempo
+  setInstrument
   // put events in midiTrack
   // first noteoff then note on to avoid note erasure bug
   
@@ -43,6 +44,12 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN:
       Array[Byte](fourBytesArray(1), fourBytesArray(2), fourBytesArray(3))
     }
   }
+  
+  def setInstrument = {
+     val instrumentChange = new ShortMessage()
+     instrumentChange.setMessage(ShortMessage.PROGRAM_CHANGE, 0, instrument ,0)
+     midiTrack.add(new MidiEvent(instrumentChange,0))
+   }
   
   def createEventsPerSegment(segt: MusicalSegment, segtTimeStamp: Double, noteOn: Boolean): Double = segt match {
     case ParallelSegment(melody) =>
@@ -98,8 +105,13 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN:
     sequencer.setSequence(midiSequence)
     sequencer.start
     println("Running ..")
-    while(sequencer.isRunning()) if (System.currentTimeMillis % 1000 == 0) {
-      println("Running ...")
+    var prevTs = System.currentTimeMillis
+    while(sequencer.isRunning()) {
+      var ct = System.currentTimeMillis
+      if (ct % 1000 == 0 && ct != prevTs) {
+        prevTs = ct
+        println("Running ...")
+      }
     }
     println("done!")
     sequencer.close()
