@@ -173,8 +173,8 @@ object Recuerdos extends App with MelodyWriter {
     + (part3 withScale majScale)
     + (end withScale majScale),
     tempo,
-//    fromQN = 0,
-//    toQN = 3,
+    fromQN = 0,
+    toQN = 3,
     instrument = instrument
   )
   

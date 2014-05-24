@@ -230,7 +230,10 @@ object SequentialSegment {
 }
 
 
-case class Note(val tone: Tone, val duration: BPM)(implicit val scale: Scale = Major(C))
+case class Note(val tone: Tone, val duration: BPM)(
+      implicit val scale: Scale = Major(C),
+      implicit override val parallelBuilder : List[MusicalSegment] => ParallelSegment = Parallel(_),
+      implicit override val sequentialBuilder : List[MusicalSegment] => SequentialSegment = Sequential(_))
       extends MusicalSegment with ParallelComposable with SequentialComposable {
   val melody = this :: Nil
   val length = duration.computed

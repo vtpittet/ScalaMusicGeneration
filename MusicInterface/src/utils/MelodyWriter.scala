@@ -10,6 +10,8 @@ import segmentSystem.MusicalSegment
 import tonalSystem.Major
 import tonalSystem.Scale
 import tonalSystem.C
+import segmentSystem.Parallel
+import segmentSystem.Sequential
 
 /**
  * Keeps useful implicit definitions as conversion from tone to Note
@@ -23,6 +25,12 @@ trait MelodyWriter {
   type N = Note
   
   // implicit conversions for easier melody description
-  implicit def tone2Note(tone: Tone)(implicit scale: Scale = Major(C)) = Note(tone, Q)
-  implicit def tone2NoteBuilderWithDuration(tone: Tone)(implicit scale: Scale = Major(C)): BPM => Note = Note(tone, _)
+  implicit def tone2Note(tone: Tone)(implicit
+        scale: Scale = Major(C),
+        parallelBuilder: List[MusicalSegment] => ParallelSegment = Parallel(_),
+        sequentialBuilder: List[MusicalSegment] => SequentialSegment = Sequential(_)) = Note(tone, Q)
+  implicit def tone2NoteBuilderWithDuration(tone: Tone)(implicit
+        scale: Scale = Major(C),
+        parallelBuilder: List[MusicalSegment] => ParallelSegment = Parallel(_),
+        sequentialBuilder: List[MusicalSegment] => SequentialSegment = Sequential(_)): BPM => Note = Note(tone, _)
 }
