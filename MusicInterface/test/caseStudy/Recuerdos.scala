@@ -53,9 +53,9 @@ object Recuerdos extends App with MelodyWriter {
   
   val s11 = (V + IV + III + IV + V + V +
     V + VI + VII + VI + V + VI + VII + VII +
-    VII + VII + III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII.is) ++
-    (VII.is + VII.is + II(1).es + I(1) + VII + I(1)) ++ (VII + VI) ++
-    (VI + VI + V + IV + III + IV) ++ (III + II) ++
+    VII + VII + III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII.is) +
+    (VII.is + VII.is + II(1).es + I(1) + VII + I(1)) + (VII + VI) +
+    (VI + VI + V + IV + III + IV) + (III + II) +
     (II + II)
     
   val s12 = III + II + I + II + III + III +
@@ -82,9 +82,9 @@ object Recuerdos extends App with MelodyWriter {
   val part1 = compose(s11, s12, b11, b12)
   
   val s21 = (V + IV + III + IV + V + V +
-    V + V + VI + VI + IV(1) + VI) ++ (VI + V) ++
-    (V + V + I(1) + I(1) + VII + IV.is) ++ (VI + V) ++
-    (V + V + IV + IV + III + II) ++ (II + I)
+    V + V + VI + VI + IV(1) + VI) ++ (VI + V) +
+    (V + V + I(1) + I(1) + VII + IV.is) + (VI + V) +
+    (V + V + IV + IV + III + II) + (II + I)
   
   val s22 = III + II + I + II + III + III +
     III + III + IV + IV + II(1) + IV + III + III +
@@ -128,10 +128,10 @@ object Recuerdos extends App with MelodyWriter {
     sopran31(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
   val s31 = (
-    I + I) ++ (II + III.es + IV) ++ (V +
-    V + V) ++ (IV + III + II) ++ (I +
-    I + I) ++ (II + III.es + IV) ++ (V +
-    V + VII) ++ (VI + V + IV) ++ (III +
+    I + I) ++ (II + III.es + IV) + (V +
+    V + V) + (IV + III + II) + (I +
+    I + I) + (II + III.es + IV) + (V +
+    V + VII) + (VI + V + IV) + (III +
     III + III)
   
   val s32 =

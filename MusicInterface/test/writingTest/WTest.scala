@@ -53,7 +53,7 @@ object WTest extends App with MelodyWriter {
   Print( ((I *+ (_+1, _+2, identity(_))) *+ (_+2)) *| ((O(Q) * 4)+_) )
   
   */
-  val m = (I + I) || (I + I) || (I | I)
+  val m = (I + I) || (I + I) | (I | I)
   
   def f(m: MS): MS = m ++> (IsSeq given (_.height == 1) thenDo (_ *2))
   println(f(m))

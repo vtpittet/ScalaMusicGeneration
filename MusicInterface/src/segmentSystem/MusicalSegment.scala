@@ -269,8 +269,16 @@ case class Note(val tone: Tone, val duration: BPM)(
   
   val buildFromMelody: List[MusicalSegment] => Note = x => this
   
-  def +(that: MusicalSegment) = this ++ that
-  def |(that: MusicalSegment) = this || that
+  // allow to include a lhs note in a sequential segment
+  def +(that: MusicalSegment) = that match {
+    case s @ SequentialSegment(melody) => s.buildFromMelody(this :: melody)
+    case _ => this ++ that
+  }
+  // allow to include a lhs note in a parallel segment
+  def |(that: MusicalSegment) = that match {
+    case p @ ParallelSegment(melody) => p.buildFromMelody(this :: melody)
+    case _ => this || that
+  }
   
   def flatAll: Note = this
   

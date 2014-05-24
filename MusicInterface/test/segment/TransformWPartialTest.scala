@@ -13,9 +13,9 @@ import segmentSystem.IsSeq
 class TransformWPartialTest extends FunSuite with MelodyWriter {
   
   test("apply to sequentialSegment only") {
-    val mBefore = (I + I) || (I + I) || (I | I)
+    val mBefore = (I + I) || (I + I) | (I | I)
     val mAfter = mBefore ++> (IsSeq thenDo (_ *2))
-    val mExpected = (I + I) *2 | (I + I) *2 | (I | I)
+    val mExpected = (I + I) *2 || (I + I) *2 | (I | I)
     assert(mAfter == mExpected)
   }
   
