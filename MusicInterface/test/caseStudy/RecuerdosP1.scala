@@ -58,16 +58,16 @@ object RecuerdosP1 extends App with MelodyWriter {
   
   def sopran1(s: MusicalSegment): MusicalSegment = {
 //    alternate(stdSopran1, specSopran1)(s)
-//    s ++> (IsStd thenDo (stdSopran1(_))) ++> (IsSpec thenDo (specSopran1(_)))
-    s ++> (IsNote thenDo
-      (n => {
-        (n *3 >> rT) + (n + (n/1.5 *+ (_ + 1, identity)) >> rT)
-      }, 8, 20) or
-      (_.*(3).>>(rT) * 4, 8, 21) or
-      (_.*(3).>>(rT) * 4, 2) or
-      (_.*(3).>>(rT) * 2, 2, 1)
-    
-    )
+    s ++> (IsStd thenDo (stdSopran1(_))) ++> (IsSpec thenDo (specSopran1(_)))
+//    s ++> (IsNote thenDo
+//      (n => {
+//        (n *3 >> rT) + (n + (n/1.5 *+ (_ + 1, identity)) >> rT)
+//      }, 8, 20) or
+//      (_.*(3).>>(rT) * 4, 8, 21) or
+//      (_.*(3).>>(rT) * 4, 2) or
+//      (_.*(3).>>(rT) * 2, 2, 1)
+//    
+//    )
   }
   
   
@@ -76,19 +76,19 @@ object RecuerdosP1 extends App with MelodyWriter {
   
   
   def s11Pattern1(base: N, finalStep: Int): SS = {
-    base *+ (_-1, _-2, _-1, _*3, _+finalStep)// swapTo {StdSop(_)}
+    base *+ (_-1, _-2, _-1, _*3, _+finalStep) //swapTo {StdSop(_)}
   }
   def s11Pattern2(base: N, altStart: Int = 0, altEnd: Int = 0): MS = {
-    // heavy definitions ! How to do it lighter ?
-    
-//    (base *+ (_-1, _-2, _-1) swapTo {StdSop(_)}) ++
-//    (base-2 + (base-3) swapTo {SpecSop(_)}) +
-//    ((base-3) *2 swapTo {StdSop(_)})
     def alterWith(a: Int): Note => Note = a match {
       case x if x == 1 => _.is
       case x if x == -1 => _.es
       case _ => identity
     }
+    // heavy definitions ! How to do it lighter ?
+    
+//    (base *+ (_-1, _-2, _-1) swapTo {StdSop(_)}) ++
+//    (base-2 + (base-3) swapTo {SpecSop(_)}) +
+//    ((base-3) *2 swapTo {StdSop(_)})
     
     (base *6) +> (alterWith(altStart)(_), _-1, _-2, _-1, _-2, alterWith(altEnd)(_).-(3)*3)
   }
@@ -111,16 +111,30 @@ object RecuerdosP1 extends App with MelodyWriter {
     */
   }
     
-  val s12 =
+  val s12 = {
+    implicit val noteDuration = rE
+    s11Pattern1(III, 1) +
+    s11Pattern1(V, 0) +
+    /*
     III + II + I + II + III + III + III + IV +
     V + IV + III + IV + V + V + V + V +
+    */
     I(1) + VII + VI + IV(-1) + V *2 + V *2 +
     V *2 + V + VI + IV *2 + IV *2 +
     II *2 + I *2 + VII(-1).is *2 + VII(-1).is *2
-    
+  }
+  
+  def b11Pattern1(base: Note, finalStep: Int): SS = {
+    base * 11 + (base+finalStep)
+  }
+  
   val b11 =
+    b11Pattern1(V(-1), 1) +
+    b11Pattern1(VII(-1), 0) +
+    /*
     V(-1) *3 *3 + V(-1) + V(-1) + VII(-1) +
     VII(-1) *3 *(3 + 1) +
+    */
     III *3 + III *2 + VI + II *3 + IV *3 +
     III.is *3 + I *3 + IV + I *(2 + 3 +
     3) + V(-1).es *3 + V(-1) *3 + V(-1) *3
@@ -142,7 +156,7 @@ object RecuerdosP1 extends App with MelodyWriter {
   // Short version without repetitions
   MelodyPlayer(
     Sequential(Nil)
-    + ((V + VII + III(1) + II(1) + V) withScale minScale)
+    + ((s12) withScale minScale)
     ,
     tempo,
 //    fromQN = 3*15,
