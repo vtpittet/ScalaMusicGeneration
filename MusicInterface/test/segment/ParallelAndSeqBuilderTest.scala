@@ -15,6 +15,9 @@ class ParallelAndSeqBuilderTest extends FunSuite with MelodyWriter {
   val melody = I ++ I ++ I ++ I ++ I
   //             A    B    C    Seq
   
+  val song = (I ++ I) ++ (I ++ I).swapTo(AbisLevel(_))
+  //            A     B     Abis
+  
   test("ALevel selection") {
     val after = melody ++> (IsA thenDo (_ + 1))
     val expected = II ++ II ++ I ++ I ++ I
@@ -38,23 +41,47 @@ class ParallelAndSeqBuilderTest extends FunSuite with MelodyWriter {
     val expected = V ++ V ++ V ++ V ++ V
     assert(after == expected)
   }
+  
+  test("A but not Abis selection") {
+    val after = song ++> (IsA thenDo (_ + 1))
+    val expected = (II ++ II) ++ (I ++ I).swapTo(AbisLevel(_))
+    assert(after == expected)
+  }
+  
+  test("Abis but not A selection") {
+    val after = song ++> (IsAbis thenDo (_ + 2))
+    val expected = (I ++ I) ++ (III ++ III).swapTo(AbisLevel(_))
+    assert(after == expected)
+  }
+  
+  test("Common holder for A, Abis") {
+    val after = song ++> (IsB thenDo (_ + 3))
+    val expected = (IV ++ IV) ++ (IV ++ IV).swapTo(AbisLevel(_))
+    assert(after == expected)
+  }
 }
 
 
-case class ALevel(m: List[MusicalSegment]) extends SequentialSegment(m) {
+case class ALevel(melody: List[MusicalSegment]) extends SequentialSegment {
   val buildFromMelody = ALevel(_)
   override val sequentialBuilder = BLevel(_)
 }
 
-case class BLevel(m: List[MusicalSegment]) extends SequentialSegment(m) {
+case class AbisLevel(melody: List[MusicalSegment]) extends SequentialSegment {
+  val buildFromMelody = AbisLevel(_)
+  override val sequentialBuilder = BLevel(_)
+}
+
+case class BLevel(melody: List[MusicalSegment]) extends SequentialSegment {
   val buildFromMelody = BLevel(_)
   override val sequentialBuilder = CLevel(_)
 }
 
-case class CLevel(m: List[MusicalSegment]) extends SequentialSegment(m) {
+case class CLevel(melody: List[MusicalSegment]) extends SequentialSegment {
   val buildFromMelody = CLevel(_)
 }
 
 object IsA extends ClassPredicate[ALevel](_ match {case n: ALevel => n})
+object IsAbis extends ClassPredicate[AbisLevel](_ match {case n: AbisLevel => n})
 object IsB extends ClassPredicate[BLevel](_ match {case n: BLevel => n})
 object IsC extends ClassPredicate[CLevel](_ match {case n: CLevel => n})

@@ -152,6 +152,10 @@ sealed trait MusicalSegment {
     else function(this).appN(appCount - 1)(function)
   }
   
+  def swapTo[T <: MusicalSegment](builder: List[MusicalSegment] => T): T = {
+    builder(melody)
+  }
+  
   // TODO implement
   def toPNF: ParallelSegment = ???
   
@@ -202,7 +206,7 @@ sealed trait SequentialComposable extends MusicalSegment {
 }
 
 
-abstract class ParallelSegment(val melody: List[MusicalSegment]) extends ParallelComposable {
+abstract class ParallelSegment extends ParallelComposable {
   
   val length = melody.maxBy(_.length).length
   val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).height + 1 else 0
@@ -230,7 +234,7 @@ object ParallelSegment {
   }
 }
 
-abstract class SequentialSegment(val melody: List[MusicalSegment]) extends SequentialComposable {
+abstract class SequentialSegment extends SequentialComposable {
   
   val length = melody.foldLeft(0.0)(_ + _.length)
   val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).height else 0
@@ -294,10 +298,10 @@ case class Note(val tone: Tone, val duration: BPM)(
   
 }
 
-case class Parallel(tracks: List[MusicalSegment]) extends ParallelSegment(tracks) {
+case class Parallel(melody: List[MusicalSegment]) extends ParallelSegment {
   val buildFromMelody = Parallel(_)
 }
-case class Sequential(tracks: List[MusicalSegment]) extends SequentialSegment(tracks) {
+case class Sequential(melody: List[MusicalSegment]) extends SequentialSegment {
   val buildFromMelody = Sequential(_)
 }
 
