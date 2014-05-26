@@ -63,22 +63,22 @@ class ParallelAndSeqBuilderTest extends FunSuite with MelodyWriter {
 
 
 case class ALevel(melody: List[MusicalSegment]) extends SequentialSegment {
-  val buildFromMelody = ALevel(_)
+  override val buildFromMelody = ALevel(_)
   override val sequentialBuilder = BLevel(_)
 }
 
 case class AbisLevel(melody: List[MusicalSegment]) extends SequentialSegment {
-  val buildFromMelody = AbisLevel(_)
+  override val buildFromMelody = AbisLevel(_)
   override val sequentialBuilder = BLevel(_)
 }
 
 case class BLevel(melody: List[MusicalSegment]) extends SequentialSegment {
-  val buildFromMelody = BLevel(_)
+  override val buildFromMelody = BLevel(_)
   override val sequentialBuilder = CLevel(_)
 }
 
 case class CLevel(melody: List[MusicalSegment]) extends SequentialSegment {
-  val buildFromMelody = CLevel(_)
+  override val buildFromMelody = CLevel(_)
 }
 
 object IsA extends ClassPredicate[ALevel](_ match {case n: ALevel => n})

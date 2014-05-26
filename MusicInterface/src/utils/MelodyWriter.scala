@@ -26,9 +26,12 @@ trait MelodyWriter {
   
   // implicit conversions for easier melody description
   implicit def tone2Note(tone: Tone)(implicit
+        noteDuration: BPM = Q,
         scale: Scale = Major(C),
         parallelBuilder: List[MusicalSegment] => ParallelSegment = Parallel(_),
-        sequentialBuilder: List[MusicalSegment] => SequentialSegment = Sequential(_)) = Note(tone, Q)
+        sequentialBuilder: List[MusicalSegment] => SequentialSegment = Sequential(_)) = {
+    Note(tone, noteDuration)
+  }
   implicit def tone2NoteBuilderWithDuration(tone: Tone)(implicit
         scale: Scale = Major(C),
         parallelBuilder: List[MusicalSegment] => ParallelSegment = Parallel(_),

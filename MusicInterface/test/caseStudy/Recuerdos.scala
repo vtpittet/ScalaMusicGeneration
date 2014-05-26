@@ -15,8 +15,12 @@ import utils.Print
 import utils.PrettyPrinter
 import utils.MelodyWriter
 import segmentSystem.IsSeq
+import segmentSystem.Sequential
+import segmentSystem.ClassPredicate
+import segmentSystem.IsNote
 
 object Recuerdos extends App with MelodyWriter {
+  
   
   // sets duration to rH-
   def bass2(b: MusicalSegment): MusicalSegment = b.+> {_.withDuration(rH-)}
@@ -44,40 +48,42 @@ object Recuerdos extends App with MelodyWriter {
     _ expand (IsSeq given (_.height==1), exps:_*)
   }
   
-  def sopran1(s: SequentialSegment): MusicalSegment = alternate(stdSopran1, specSopran1)(s)
+  def sopran1(s: SequentialSegment): MusicalSegment = {
+    alternate(stdSopran1, specSopran1)(s)
+  }
   
   
   def compose(s1: SequentialSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
     sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
   
-  
-  val s11 = (V + IV + III + IV + V + V +
-    V + VI + VII + VI + V + VI + VII + VII +
-    VII + VII + III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII.is) +
-    (VII.is + VII.is + II(1).es + I(1) + VII + I(1)) + (VII + VI) +
-    (VI + VI + V + IV + III + IV) + (III + II) +
-    (II + II)
+  val s11 = {
+    (V + IV + III + IV + V + V + V + VI +
+    VII + VI + V + VI + VII + VII + VII + VII +
+    III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII/*.is*/) + (VII/*.is*/ + VII/*.is*/ +
+    II(1)/*.es*/ + I(1) + VII + I(1)) + (VII + VI) + (VI + VI +
+    V + IV + III + IV) + (III + II) + (II + II)
+  }
     
-  val s12 = III + II + I + II + III + III +
-    III + IV + V + IV + III + IV + V + V +
-    V + V + I(1) + VII + VI + IV(-1) + V *2 +
-    V *2 + V *2 + V + VI + IV *2 +
-    IV *2 + II *2 + I *2 + VII(-1).is *2 +
-    VII(-1).is *2
+  val s12 =
+    III + II + I + II + III + III + III + IV +
+    V + IV + III + IV + V + V + V + V +
+    I(1) + VII + VI + IV(-1) + V *2 + V *2 +
+    V *2 + V + VI + IV *2 + IV *2 +
+    II *2 + I *2 + VII(-1).is *2 + VII(-1).is *2
     
-  val b11 = V(-1) *3 *3 +
-    V(-1) + V(-1) + VII(-1) + VII(-1) *3 *(3 +
-    1) + III *3 + III *2 + VI + II *3 +
-    IV *3 + III.is *3 + I *3 + IV + I *(2 +
-    3 + 3) + V(-1).es *3 + V(-1) *3 +
-    V(-1) *3
+  val b11 =
+    V(-1) *3 *3 + V(-1) + V(-1) + VII(-1) +
+    VII(-1) *3 *(3 + 1) +
+    III *3 + III *2 + VI + II *3 + IV *3 +
+    III.is *3 + I *3 + IV + I *(2 + 3 +
+    3) + V(-1).es *3 + V(-1) *3 + V(-1) *3
     
-  val b12 = I(-1) *(3 +
-    1) + III(-1) *(3 +
-    1) + VI(-1) *2 + V(-2) +
-    V(-2) + I(-1) + III(-1).is + IV(-1) +
-    IV(-1) *2 + VI(-2) + V(-2) +
-    V(-2)
+  val b12 =
+    I(-1) *(3 + 1) +
+    III(-1) *(3 + 1) +
+    VI(-1) *2 + V(-2) + V(-2) +
+    I(-1) + III(-1).is + IV(-1) + IV(-1) +
+    IV(-1) + VI(-2) + V(-2) + V(-2)
   
   val part1 = compose(s11, s12, b11, b12)
   
@@ -165,16 +171,17 @@ object Recuerdos extends App with MelodyWriter {
   val minScale = Minor(A)
   val majScale = Major(A)
 
-  
   // Short version without repetitions
   MelodyPlayer(
-    (part1 withScale minScale)
-    + (part2 withScale majScale)
-    + (part3 withScale majScale)
-    + (end withScale majScale),
+    Sequential(Nil)
+    + (part1 withScale minScale)
+//    + (part2 withScale majScale)
+//    + (part3 withScale majScale)
+//    + (end withScale majScale)
+    ,
     tempo,
-    fromQN = 0,
-    toQN = 3,
+//    fromQN = 3*15,
+//    toQN = 3*15,
     instrument = instrument
   )
   

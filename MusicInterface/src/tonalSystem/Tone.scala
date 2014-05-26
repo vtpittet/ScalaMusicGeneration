@@ -86,7 +86,7 @@ sealed trait Tone {
 }
 
 object Tone {
-    case object O extends Tone {
+  case object O extends Tone {
     val octave = 0
     val alter = None
     def apply(duration: BPM = Q): Note =
