@@ -112,6 +112,9 @@ sealed trait MusicalSegment {
   def +(toneRise: Int): MusicalSegment = +>(_ + toneRise)
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
   
+  def is: MusicalSegment = +>(_ is)
+  def es: MusicalSegment = +>(_ es)
+  
   // divides duration of all notes by frac
   // TODO move down to Note
   def /(frac: Double): MusicalSegment = +>((v: Note) => Note(v.tone, v.duration / frac))
@@ -303,8 +306,8 @@ case class Note(val tone: Tone, val duration: BPM)(
   
   def flatAll: Note = this
   
-  def is: Note = Note(tone is, duration)
-  def es: Note = Note(tone es, duration)
+  override def is: Note = Note(tone is, duration)
+  override def es: Note = Note(tone es, duration)
   
   def withDuration(duration: BPM): Note = Note(tone, duration)
   

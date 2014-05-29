@@ -76,7 +76,7 @@ object RecuerdosP1 extends App with MelodyWriter {
   
   
   def s11Pattern1(base: N, finalStep: Int): SS = {
-    base *+ (_-1, _-2, _-1, _*3, _+finalStep) //swapTo {StdSop(_)}
+    base *+ (_-1, _-2, _-1, _*3, _+finalStep) swapTo {StdSop(_)}
   }
   def s11Pattern2(base: N, altStart: Int = 0, altEnd: Int = 0): MS = {
     def alterWith(a: Int): Note => Note = a match {
@@ -90,7 +90,12 @@ object RecuerdosP1 extends App with MelodyWriter {
 //    (base-2 + (base-3) swapTo {SpecSop(_)}) +
 //    ((base-3) *2 swapTo {StdSop(_)})
     
-    (base *6) +> (alterWith(altStart)(_), _-1, _-2, _-1, _-2, alterWith(altEnd)(_).-(3)*3)
+    val m = (base *6) +> (alterWith(altStart)(_), _-1, _-2, _-1, _-2, alterWith(altEnd)(_).-(3)*3)
+    
+    m.flatAll.groupBy(2) ++> (
+        IsSeq given(_.height == 1)
+        thenDo (_ swapTo (SpecSop(_)), 1, 2, 3)
+        or (_ swapTo (StdSop(_))))
   }
   
   val s11 = {
@@ -115,13 +120,18 @@ object RecuerdosP1 extends App with MelodyWriter {
     implicit val noteDuration = rE
     s11Pattern1(III, 1) +
     s11Pattern1(V, 0) +
+    (I(1) *+ (_-1, _-2, _-11, _ -3, _-3, _-3, _-3)) +
+    (V *+ (_-0, _-0, _+1, _-1, _-1, _-1, _-1)) +
+    (II *+ (_-0, _-1, _-1, _.is-2, _.is-2, _.is-2, _.is-2))
     /*
     III + II + I + II + III + III + III + IV +
     V + IV + III + IV + V + V + V + V +
+
+    I(1) + VII + VI + IV(-1) + V *4 +
+    V *2 + V + VI + IV *4 +
+    II *2 + I *2 + VII(-1).is *4
+    * 
     */
-    I(1) + VII + VI + IV(-1) + V *2 + V *2 +
-    V *2 + V + VI + IV *2 + IV *2 +
-    II *2 + I *2 + VII(-1).is *2 + VII(-1).is *2
   }
   
   def b11Pattern1(base: Note, finalStep: Int): SS = {
@@ -129,7 +139,7 @@ object RecuerdosP1 extends App with MelodyWriter {
   }
   
   val b11 =
-    b11Pattern1(V(-1), 1) +
+    b11Pattern1(V(-1), 2) +
     b11Pattern1(VII(-1), 0) +
     /*
     V(-1) *3 *3 + V(-1) + V(-1) + VII(-1) +
@@ -156,11 +166,11 @@ object RecuerdosP1 extends App with MelodyWriter {
   // Short version without repetitions
   MelodyPlayer(
     Sequential(Nil)
-    + ((s12) withScale minScale)
+    + ((part1) withScale minScale)
     ,
     tempo,
-//    fromQN = 3*15,
-//    toQN = 3*15,
+//    fromQN = 3*3,
+//    toQN = 3*4,
     instrument = instrument
   )
 }
