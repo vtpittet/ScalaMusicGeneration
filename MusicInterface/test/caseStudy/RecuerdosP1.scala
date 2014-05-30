@@ -10,9 +10,9 @@ import midiInterface.MelodyPlayer
 import rythmics.{T=>rT}
 import rythmics.{E=>rE}
 import rythmics.{H=>rH}
-import segmentSystem.IsNote
+import segmentSystem.ClassPredicate.isNote
 import tonalSystem.A
-import segmentSystem.IsSeq
+import segmentSystem.ClassPredicate.isSeq
 import segmentSystem.Sequential
 import tonalSystem.Tone._
 import segmentSystem.ClassPredicate
@@ -53,13 +53,13 @@ object RecuerdosP1 extends App with MelodyWriter {
   // melody of composed segment
   // !! side-effect sensitive, depth of param must be controlled
   def alternate(exps: MusicalSegment => MusicalSegment*): SequentialSegment => MusicalSegment = {
-    _ expand (IsSeq given (_.height==1), exps:_*)
+    _ expand (isSeq given (_.height==1), exps:_*)
   }
   
   def sopran1(s: MusicalSegment): MusicalSegment = {
 //    alternate(stdSopran1, specSopran1)(s)
     s ++> (IsStd thenDo (stdSopran1(_))) ++> (IsSpec thenDo (specSopran1(_)))
-//    s ++> (IsNote thenDo
+//    s ++> (isNote thenDo
 //      (n => {
 //        (n *3 >> rT) + (n + (n/1.5 *+ (_ + 1, identity)) >> rT)
 //      }, 8, 20) or
@@ -93,7 +93,7 @@ object RecuerdosP1 extends App with MelodyWriter {
     val m = (base *6) +> (alterWith(altStart)(_), _-1, _-2, _-1, _-2, alterWith(altEnd)(_).-(3)*3)
     
     m.flatAll.groupBy(2) ++> (
-        IsSeq given(_.height == 1)
+        isSeq given(_.height == 1)
         thenDo (_ swapTo (SpecSop(_)), 1, 2, 3)
         or (_ swapTo (StdSop(_))))
   }

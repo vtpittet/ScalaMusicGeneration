@@ -1,5 +1,7 @@
 package segmentSystem
 
+import segmentSystem.ClassPredicate.isMus
+
 class TransformList[T <: MusicalSegment](selector: ClassPredicate[T], transfs: List[Transform[T]] = Nil) {
   
   type TStream = Stream[PartialFunction[MusicalSegment, MusicalSegment]]
@@ -27,7 +29,7 @@ object TransformList {
   implicit def classPredicate2TransfList[T <: MusicalSegment](cp: ClassPredicate[T]): TransformList[T] = {
     new TransformList(cp, Nil)
   }
-  def identity: TransformList[MusicalSegment] = IsMus thenDo (x => x)
+  def identity: TransformList[MusicalSegment] = isMus thenDo (x => x)
 }
 
 case class Transform[T <: MusicalSegment](apply: T => MusicalSegment, period: Int, from: Int, to: Int)

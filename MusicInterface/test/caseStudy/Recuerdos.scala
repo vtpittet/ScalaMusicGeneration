@@ -14,10 +14,10 @@ import utils.SS
 import utils.Print
 import utils.PrettyPrinter
 import utils.MelodyWriter
-import segmentSystem.IsSeq
+import segmentSystem.ClassPredicate.isSeq
 import segmentSystem.Sequential
 import segmentSystem.ClassPredicate
-import segmentSystem.IsNote
+import segmentSystem.ClassPredicate.isNote
 
 object Recuerdos extends App with MelodyWriter {
   
@@ -45,7 +45,7 @@ object Recuerdos extends App with MelodyWriter {
   // melody of composed segment
   // !! side-effect sensitive, depth of param must be controlled
   def alternate(exps: MusicalSegment => MusicalSegment*): SequentialSegment => MusicalSegment = {
-    _ expand (IsSeq given (_.height==1), exps:_*)
+    _ expand (isSeq given (_.height==1), exps:_*)
   }
   
   def sopran1(s: SequentialSegment): MusicalSegment = {

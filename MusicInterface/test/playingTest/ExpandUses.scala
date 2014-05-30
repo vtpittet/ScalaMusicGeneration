@@ -2,14 +2,14 @@ package playingTest
 
 import utils.MelodyWriter
 import tonalSystem.Tone._
-import segmentSystem.IsNote
+import segmentSystem.ClassPredicate.isNote
 import rythmics.E
 import segmentSystem.Note
 import segmentSystem.MusicalSegment
 import midiInterface.MelodyPlayer
 import tonalSystem.Major
 import tonalSystem.C
-import segmentSystem.IsSeq
+import segmentSystem.ClassPredicate.isSeq
 
 object ExpandUses extends App with MelodyWriter {
   
@@ -27,9 +27,9 @@ object ExpandUses extends App with MelodyWriter {
 //  play(base)
   
   
-  val step1 = base ++> (IsNote thenDo (t0, 2))
+  val step1 = base ++> (isNote thenDo (t0, 2))
   
-  val step2 = step1 ++> (IsSeq given (_.height == 1) thenDo (t2, 2, 1) or (t1))
+  val step2 = step1 ++> (isSeq given (_.height == 1) thenDo (t2, 2, 1) or (t1))
   
   play(step2)
   

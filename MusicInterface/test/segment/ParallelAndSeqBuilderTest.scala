@@ -6,7 +6,7 @@ import segmentSystem.MusicalSegment
 import utils.MelodyWriter
 import segmentSystem.ClassPredicate
 import tonalSystem.Tone._
-import segmentSystem.IsSeq
+import segmentSystem.ClassPredicate.isSeq
 
 class ParallelAndSeqBuilderTest extends FunSuite with MelodyWriter {
 
@@ -37,7 +37,7 @@ class ParallelAndSeqBuilderTest extends FunSuite with MelodyWriter {
   }
   
   test("Seq default top level selection") {
-    val after = melody ++> (IsSeq thenDo (_ + 4))
+    val after = melody ++> (isSeq thenDo (_ + 4))
     val expected = V ++ V ++ V ++ V ++ V
     assert(after == expected)
   }

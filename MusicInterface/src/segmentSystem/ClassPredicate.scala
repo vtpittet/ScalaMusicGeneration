@@ -23,9 +23,9 @@ object ClassPredicate {
       new TransformList(cp, Transform(f, period, from, to)::Nil)
     }
   }
-}
 
-object IsNote extends ClassPredicate[Note](_ match {case n: Note => n})
-object IsSeq extends ClassPredicate[Sequential](_ match {case s: Sequential => s})
-object IsPar extends ClassPredicate[Parallel](_ match {case p: Parallel => p})
-object IsMus extends ClassPredicate[MusicalSegment](_ match {case m: MusicalSegment => m})
+  object isNote extends ClassPredicate[Note](_ match {case n: Note => n})
+  object isSeq extends ClassPredicate[Sequential](_ match {case s: Sequential => s})
+  object isPar extends ClassPredicate[Parallel](_ match {case p: Parallel => p})
+  object isMus extends ClassPredicate[MusicalSegment](_ match {case m: MusicalSegment => m})
+}

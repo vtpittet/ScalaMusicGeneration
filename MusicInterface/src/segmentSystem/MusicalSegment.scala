@@ -7,11 +7,11 @@ import utils.PrettyPrinter
 import tonalSystem.Scale
 import tonalSystem.Major
 import tonalSystem.C
+import segmentSystem.ClassPredicate.isNote
 
-sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment]{
+sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment] {
   
   type TStream = Stream[PartialFunction[MusicalSegment, MusicalSegment]]
-  
   
   val melody: List[MusicalSegment]
   
@@ -76,7 +76,7 @@ sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment]{
   def /(frac: Double): MusicalSegment = +>(_ / frac)
   def withScale(scale: Scale): MusicalSegment = +>(_ withScale scale)
   
-  def +>(expandF: Note => MusicalSegment*): MusicalSegment = expand(IsNote, expandF:_*)
+  def +>(expandF: Note => MusicalSegment*): MusicalSegment = expand(isNote, expandF:_*)
   /*
    * expand following given selector, applying periodically functions in given order
    */
