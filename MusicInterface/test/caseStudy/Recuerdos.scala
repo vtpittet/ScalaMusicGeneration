@@ -26,7 +26,7 @@ object Recuerdos extends App with MelodyWriter {
   def bass2(b: MusicalSegment): MusicalSegment = b.+> {_.withDuration(rH-)}
   
   // sets duration to rE and shift each note of rE
-  def bass1(b: MusicalSegment): MusicalSegment = b +> {_.withDuration(rE) >> rE}
+  def bass1(b: MusicalSegment): MusicalSegment = b +> {O(rE) + _.withDuration(rE)}
   
   def sopran2(s: MusicalSegment): MusicalSegment =
     s.+>(_ withDuration rE).+>( _ >> rE, identity).+>(_ << rE)

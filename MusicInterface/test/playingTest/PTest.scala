@@ -24,7 +24,7 @@ object PTest extends App with MelodyWriter {
     
     val song = I(rS).appN(4) { s =>
       s.+>(_ *+ (_+2, _-3, identity))
-    } *| (_ >> (rS-))
+    } *| (O(rS-) + _)
     
     
     MelodyPlayer(song, tempo)
