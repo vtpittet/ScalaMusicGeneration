@@ -23,18 +23,18 @@ object RecuerdosP1 extends App with MelodyWriter {
   case class StdSop(melody: List[MusicalSegment]) extends SequentialSegment {
     override val buildFromMelody = StdSop(_)
   }
-  object IsStd extends ClassPredicate[StdSop](_ match {case n: StdSop => n})
+  object isStd extends ClassPredicate[StdSop](_ match {case n: StdSop => n})
   
   case class SpecSop(melody: List[MusicalSegment]) extends SequentialSegment {
     override val buildFromMelody = SpecSop(_)
   }
-  object IsSpec extends ClassPredicate[SpecSop](_ match {case n: SpecSop => n})
+  object isSpec extends ClassPredicate[SpecSop](_ match {case n: SpecSop => n})
   
-  // sets duration to rH-
-  def bass2(b: MusicalSegment): MusicalSegment = b.mapNotes { _ withDuration (rH-) }
+  // nothing to do, duration set through implicit val
+  def bass2(b: MusicalSegment): MusicalSegment = b // mapNotes { _ withDuration (rH-) }
   
   // sets duration to rE and shift each note of rE
-  def bass1(b: MusicalSegment): MusicalSegment = b mapNotes { O(rE) + _.withDuration(rE) }
+  def bass1(b: MusicalSegment): MusicalSegment = b mapNotes { O(rE) + _ }
   
   def sopran2(s: MusicalSegment): MusicalSegment =
     (s mapNotes { _ withDuration rE }).mapNotes(O(rE) + _, identity) mapNotes { _ + O(rE) }
@@ -52,16 +52,8 @@ object RecuerdosP1 extends App with MelodyWriter {
       O(rT) + _.fillSeq(_ / (1.5), _.+(1) / (1.5), _ / (1.5))),
     _.withDuration(rT) *4 mapNotes { O(rT) + _ *3 })
   
-  // return composition method applying sequentially all args to the
-  // melody of composed segment
-  // !! side-effect sensitive, depth of param must be controlled
-  def alternate(exps: MusicalSegment => MusicalSegment*): SequentialSegment => MusicalSegment = {
-    _ expand (isSeq given (_.height==1), exps:_*)
-  }
-  
   def sopran1(s: MusicalSegment): MusicalSegment = {
-//    alternate(stdSopran1, specSopran1)(s)
-    s mapIf (IsStd thenDo (stdSopran1(_))) mapIf (IsSpec thenDo (specSopran1(_)))
+    s mapIf (isStd thenDo (stdSopran1(_))) mapIf (isSpec thenDo (specSopran1(_)))
 //    s mapIf (isNote thenDo
 //      (n => {
 //        (n *3 >> rT) + (n + (n/1.5 *+ (_ + 1, identity)) >> rT)
@@ -74,8 +66,9 @@ object RecuerdosP1 extends App with MelodyWriter {
   }
   
   
-  def compose(s1: MusicalSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
+  def compose(s1: MS, s2: MS, b1: MS, b2: MS): MS = {
     sopran1(s1) | sopran2(s2) | bass1(b1) | bass2(b2)
+  }
   
   
   def s11Pattern1(base: N, finalStep: Int): SS = {
@@ -141,10 +134,11 @@ object RecuerdosP1 extends App with MelodyWriter {
   }
   
   def b11Pattern1(base: Note, finalStep: Int): SS = {
-    base * 11 + (base+finalStep)
+    base * 11 + (base + finalStep)
   }
   
-  val b11 =
+  val b11 = {
+    implicit val noteDuration = rE
     b11Pattern1(V(-1), 2) +
     b11Pattern1(VII(-1), 0) +
     /*
@@ -154,13 +148,16 @@ object RecuerdosP1 extends App with MelodyWriter {
     III *3 + III *2 + VI + II *3 + IV *3 +
     III.is *3 + I *3 + IV + I *(2 + 3 +
     3) + V(-1).es *3 + V(-1) *3 + V(-1) *3
+  }
     
-  val b12 =
+  val b12 = {
+    implicit val noteDuration = (rH-)
     I(-1) *(3 + 1) +
     III(-1) *(3 + 1) +
     VI(-1) *2 + V(-2) + V(-2) +
     I(-1) + III(-1).is + IV(-1) + IV(-1) +
     IV(-1) + VI(-2) + V(-2) + V(-2)
+  }
   
   val part1 = compose(s11, s12, b11, b12)
   
