@@ -29,17 +29,17 @@ object Recuerdos extends App with MelodyWriter {
   def bass1(b: MusicalSegment): MusicalSegment = b +> {O(rE) + _.withDuration(rE)}
   
   def sopran2(s: MusicalSegment): MusicalSegment =
-    s.+>(_ withDuration rE).+>( _ >> rE, identity).+>(_ << rE)
+    s.+>(_ withDuration rE).+>(O(rE) + _, identity).+>(_ + O(rE))
   
     
   def simpleSopran1(s: MusicalSegment): MusicalSegment = 
-    s.+>(_.withDuration(rT) *3 >> rT)
+    s.+>(O(rT) + _.withDuration(rT) *3)
   
   def stdSopran1(s: MusicalSegment): MusicalSegment =
     simpleSopran1(s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2))
   
   def specSopran1(s: MusicalSegment): MusicalSegment =
-    s.+>(_.withDuration(rT).*(2).+>(_ *3 >> rT, _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5)) >> rT), _.withDuration(rT).*(4).+>(_ *3 >> rT))
+    s.+>(_.withDuration(rT).*(2).+>(O(rT) + _ *3,O(rT) + _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5))), _.withDuration(rT).*(4).+>(O(rT) + _ *3))
   
   // return composition method applying sequentially all args to the
   // melody of composed segment
@@ -109,7 +109,7 @@ object Recuerdos extends App with MelodyWriter {
   
   val part2 = compose(s21, s22, b21, b22)
   
-  def midTrans(m: MusicalSegment): MusicalSegment = m +> {_ withDuration rE} >> rE
+  def midTrans(m: MusicalSegment): MusicalSegment = O(rE) + (m +> {_ withDuration rE})
   
   def composeTrans(s: SequentialSegment, m: MusicalSegment, b: MusicalSegment) =
     simpleSopran1(s) | midTrans(m) | bass2(b)
@@ -166,7 +166,7 @@ object Recuerdos extends App with MelodyWriter {
   val end = I(-1) + V(-1) + I + III + V + I(1) +> {_ withDuration rE} +
     ((I(-1) | III | I(1) | V(1)) + (I(-1) | III(-1) | V(-1) | I) +> {_ withDuration (rH-)})
   
-  val tempo = 80
+  val tempo = 200
   val instrument = 0
   val minScale = Minor(A)
   val majScale = Major(A)
@@ -175,9 +175,9 @@ object Recuerdos extends App with MelodyWriter {
   MelodyPlayer(
     Sequential(Nil)
     + (part1 withScale minScale)
-//    + (part2 withScale majScale)
-//    + (part3 withScale majScale)
-//    + (end withScale majScale)
+    + (part2 withScale majScale)
+    + (part3 withScale majScale)
+    + (end withScale majScale)
     ,
     tempo,
 //    fromQN = 3*15,

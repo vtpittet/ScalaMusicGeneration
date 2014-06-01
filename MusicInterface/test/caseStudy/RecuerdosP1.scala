@@ -34,20 +34,20 @@ object RecuerdosP1 extends App with MelodyWriter {
   def bass2(b: MusicalSegment): MusicalSegment = b.+> {_.withDuration(rH-)}
   
   // sets duration to rE and shift each note of rE
-  def bass1(b: MusicalSegment): MusicalSegment = b +> {_.withDuration(rE) >> rE}
+  def bass1(b: MusicalSegment): MusicalSegment = b +> {O(rE) + _.withDuration(rE)}
   
   def sopran2(s: MusicalSegment): MusicalSegment =
-    s.+>(_ withDuration rE).+>( _ >> rE, identity).+>(_ << rE)
+    s.+>(_ withDuration rE).+>(O(rE) + _, identity).+>(_ + O(rE))
   
     
   def simpleSopran1(s: MusicalSegment): MusicalSegment = 
-    s.+>(_.withDuration(rT) *3 >> rT)
+    s.+>(O(rT) + _.withDuration(rT) *3)
   
   def stdSopran1(s: MusicalSegment): MusicalSegment =
     simpleSopran1(s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2))
   
   def specSopran1(s: MusicalSegment): MusicalSegment =
-    s.+>(_.withDuration(rT).*(2).+>(_ *3 >> rT, _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5)) >> rT), _.withDuration(rT).*(4).+>(_ *3 >> rT))
+    s.+>(_.withDuration(rT).*(2).+>(O(rT) + _ *3, O(rT) + _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5))), _.withDuration(rT).*(4).+>(O(rT) + _ *3))
   
   // return composition method applying sequentially all args to the
   // melody of composed segment

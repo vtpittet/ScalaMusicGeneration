@@ -65,11 +65,6 @@ sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment] {
   def *+(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = 
     multiTransf(sequentialBuilder(_), transf:_*)
   
-  // TODO check can be replaced by new dc operators (see note cases for lhs)
-//  def >>(durations: BPM*): SequentialSegment = sequentialBuilder(durations.map(O(_)).toList ::: (this :: Nil))
-//  
-//  def <<(durations: BPM*): SequentialSegment = sequentialBuilder((this :: durations.map(O(_)).toList))
-  
   
   private def multiTransf[T <: MusicalSegment](builder: (List[MusicalSegment]) => T, transf: ((MusicalSegment) => MusicalSegment)*): T = {
     val iter = (((x: MusicalSegment) => x) +: transf).iterator
