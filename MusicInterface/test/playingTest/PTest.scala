@@ -23,8 +23,8 @@ object PTest extends App with MelodyWriter {
     val tempo = 60
     
     val song = I(rS).appN(4) { s =>
-      s mapNotes (_ *+ (_+2, _-3, identity))
-    } *| (O(rS-) + _)
+      s mapNotes (_ fillSeq (_+2, _-3, identity))
+    } fillPar (O(rS-) + _)
     
     
     MelodyPlayer(song, tempo)
@@ -47,7 +47,7 @@ object PTest extends App with MelodyWriter {
     implicit val scale = Major(C)
     val tempo = 120
   
-    val song = ((I *+ (_+1, _+2, x=>x)) * 2 *+ (_ + 2)) *| (O() * 8 + _)
+    val song = ((I fillSeq (_ + 1, _ + 2, identity)) *2 fillSeq (_ + 2)) fillPar (O() *8 + _)
   
     MelodyPlayer(song, tempo)
   

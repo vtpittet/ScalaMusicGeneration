@@ -38,8 +38,11 @@ object Recuerdos extends App with MelodyWriter {
   def stdSopran1(s: MusicalSegment): MusicalSegment =
     simpleSopran1(s mapNotes (_.withDuration(rT)*4, _.withDuration(rT)*2 ))
   
-  def specSopran1(s: MusicalSegment): MusicalSegment =
-    s.mapNotes(_.withDuration(rT).*(2).mapNotes(O(rT) + _ *3, O(rT) + _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5))), _.withDuration(rT).*(4).mapNotes(O(rT) + _ *3))
+  def specSopran1(s: MusicalSegment): MusicalSegment = s mapNotes (
+    _.withDuration(rT) *2 mapNotes (
+      O(rT) + _ *3,
+      O(rT) + _.fillSeq(_ / (1.5), _.+(1) / (1.5), _ / (1.5))),
+    _.withDuration(rT) *4 mapNotes { O(rT) + _ *3 })
   
   // return composition method applying sequentially all args to the
   // melody of composed segment

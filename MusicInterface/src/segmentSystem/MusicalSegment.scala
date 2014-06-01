@@ -32,13 +32,14 @@ sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment] {
   def |(that: MusicalSegment): ParallelSegment
   def ||(that: MusicalSegment): ParallelSegment = parallelBuilder(List(this, that))
   
-  def *|(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = {
+  def fillPar(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = {
     val applications = Stream.continually(transf).flatten.take(apps)
-    multiTransf(parallelBuilder(_), applications:_*)
+    multiTransf(parallelBuilder(_), applications)
   }
   
-  def *|(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = { 
-    multiTransf(parallelBuilder(_), transf:_*)
+  // assumes identity at beginning of each definition
+  def fillPar(transf: (MusicalSegment) => MusicalSegment*): ParallelSegment = { 
+    multiTransf(parallelBuilder(_), ((x: MusicalSegment) => x) +: transf)
   }
   
   
@@ -55,28 +56,30 @@ sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment] {
    */
   def *(repetitions: Int): SequentialSegment = sequentialBuilder(List.fill(repetitions)(this))
   
-  // assume identity at the beginning of each definition
-  def *+(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = {
+  def fillSeq(apps: Int)(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = {
     val applications = Stream.continually(transf).flatten.take(apps)
-    multiTransf(sequentialBuilder(_), applications:_*)
+    multiTransf(sequentialBuilder(_), applications)
   }
   
   
-  def *+(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = 
-    multiTransf(sequentialBuilder(_), transf:_*)
+  // assumes identity at the beginning of each definition
+  def fillSeq(transf: (MusicalSegment) => MusicalSegment*): SequentialSegment = 
+    multiTransf(sequentialBuilder(_), ((x: MusicalSegment) => x) +: transf)
   
   
-  private def multiTransf[T <: MusicalSegment](builder: (List[MusicalSegment]) => T, transf: ((MusicalSegment) => MusicalSegment)*): T = {
-    val iter = (((x: MusicalSegment) => x) +: transf).iterator
-    builder(List.fill(transf.size + 1)(iter.next()(this)))
+  private def multiTransf[A <: MusicalSegment](
+      builder: (List[MusicalSegment]) => A,
+      transf: Seq[(MusicalSegment) => MusicalSegment]): A = {
+    val iter = transf.iterator
+    builder(List.fill(transf.size)(iter.next()(this)))
   }
   
   
   def +(toneRise: Int): MusicalSegment = mapNotes(_ + toneRise)
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
   
-  def is: MusicalSegment = mapNotes(_ is)
-  def es: MusicalSegment = mapNotes(_ es)
+  def is: MusicalSegment = mapNotes(_.is)
+  def es: MusicalSegment = mapNotes(_.es)
   
   // divides duration of all notes by frac
   def /(frac: Double): MusicalSegment = mapNotes(_ / frac)

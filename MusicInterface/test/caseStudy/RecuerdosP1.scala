@@ -46,8 +46,11 @@ object RecuerdosP1 extends App with MelodyWriter {
   def stdSopran1(s: MusicalSegment): MusicalSegment =
     simpleSopran1(s mapNotes (_.withDuration(rT)*4, _.withDuration(rT)*2))
   
-  def specSopran1(s: MusicalSegment): MusicalSegment =
-    s.mapNotes(_.withDuration(rT).*(2).mapNotes(O(rT) + _ *3, O(rT) + _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5))), _.withDuration(rT).*(4).mapNotes(O(rT) + _ *3))
+  def specSopran1(s: MusicalSegment): MusicalSegment = s mapNotes (
+    _.withDuration(rT) *2 mapNotes (
+      O(rT) + _ *3,
+      O(rT) + _.fillSeq(_ / (1.5), _.+(1) / (1.5), _ / (1.5))),
+    _.withDuration(rT) *4 mapNotes { O(rT) + _ *3 })
   
   // return composition method applying sequentially all args to the
   // melody of composed segment
@@ -76,7 +79,7 @@ object RecuerdosP1 extends App with MelodyWriter {
   
   
   def s11Pattern1(base: N, finalStep: Int): SS = {
-    base *+ (_-1, _-2, _-1, _*3, _+finalStep) swapTo {StdSop(_)}
+    base fillSeq (_-1, _-2, _-1, _*3, _+finalStep) swapTo {StdSop(_)}
   }
   def s11Pattern2(base: N, altStart: Int = 0, altEnd: Int = 0): MS = {
     def alterWith(a: Int): Note => Note = a match {
@@ -98,7 +101,7 @@ object RecuerdosP1 extends App with MelodyWriter {
     m.flatAll.groupBy(2) mapIf (
         isSeq given(_.height == 1)
         thenDo (_ swapTo (SpecSop(_)), 1, 2, 3)
-        or (_ swapTo (StdSop(_))))
+        orDo (_ swapTo (StdSop(_))))
   }
   
   val s11 = {
@@ -123,9 +126,9 @@ object RecuerdosP1 extends App with MelodyWriter {
     implicit val noteDuration = rE
     s11Pattern1(III, 1) +
     s11Pattern1(V, 0) +
-    (I(1) *+ (_-1, _-2, _-11, _ -3, _-3, _-3, _-3)) +
-    (V *+ (_-0, _-0, _+1, _-1, _-1, _-1, _-1)) +
-    (II *+ (_-0, _-1, _-1, _.is-2, _.is-2, _.is-2, _.is-2))
+    (I(1) fillSeq (_-1, _-2, _-11, _ -3, _-3, _-3, _-3)) +
+    (V fillSeq (_-0, _-0, _+1, _-1, _-1, _-1, _-1)) +
+    (II fillSeq (_-0, _-1, _-1, _.is-2, _.is-2, _.is-2, _.is-2))
     /*
     III + II + I + II + III + III + III + IV +
     V + IV + III + IV + V + V + V + V +

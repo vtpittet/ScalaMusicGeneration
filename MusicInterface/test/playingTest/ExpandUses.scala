@@ -21,15 +21,15 @@ object ExpandUses extends App with MelodyWriter {
   
   
   val t0: T = _ *2 /2
-  val t1: T = _ /2 *+ (_ +4)
-  val t2: T = _ /2 *+ (_ / 2 *2 +4)
+  val t1: T = _ /2 fillSeq (_ +4)
+  val t2: T = _ /2 fillSeq (_ / 2 *2 +4)
   
 //  play(base)
   
   
   val step1 = base mapIf (isNote thenDo (t0, 2))
   
-  val step2 = step1 mapIf (isSeq given (_.height == 1) thenDo (t2, 2, 1) or (t1))
+  val step2 = step1 mapIf (isSeq given (_.height == 1) thenDo (t2, 2, 1) orDo (t1))
   
   play(step2)
   

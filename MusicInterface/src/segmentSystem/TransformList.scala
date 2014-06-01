@@ -6,7 +6,7 @@ class TransformList[T <: MusicalSegment](selector: ClassPredicate[T], transfs: L
   
   type TStream = Stream[PartialFunction[MusicalSegment, MusicalSegment]]
   
-  def or(apply: T => MusicalSegment, period: Int = 1, from: Int = 0, to: Int = -1): TransformList[T] = {
+  def orDo(apply: T => MusicalSegment, period: Int = 1, from: Int = 0, to: Int = -1): TransformList[T] = {
     new TransformList(selector, transfs ::: Transform(apply, period, from, to) :: Nil)
   }
   
