@@ -23,23 +23,23 @@ object Recuerdos extends App with MelodyWriter {
   
   
   // sets duration to rH-
-  def bass2(b: MusicalSegment): MusicalSegment = b.+> {_.withDuration(rH-)}
+  def bass2(b: MusicalSegment): MusicalSegment = b mapNotes {_.withDuration(rH-)}
   
   // sets duration to rE and shift each note of rE
-  def bass1(b: MusicalSegment): MusicalSegment = b +> {O(rE) + _.withDuration(rE)}
+  def bass1(b: MusicalSegment): MusicalSegment = b mapNotes {O(rE) + _.withDuration(rE)}
   
   def sopran2(s: MusicalSegment): MusicalSegment =
-    s.+>(_ withDuration rE).+>(O(rE) + _, identity).+>(_ + O(rE))
+    s.mapNotes(_ withDuration rE).mapNotes(O(rE) + _, identity).mapNotes(_ + O(rE))
   
     
   def simpleSopran1(s: MusicalSegment): MusicalSegment = 
-    s.+>(O(rT) + _.withDuration(rT) *3)
+    s mapNotes { O(rT) + _.withDuration(rT) *3 }
   
   def stdSopran1(s: MusicalSegment): MusicalSegment =
-    simpleSopran1(s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2))
+    simpleSopran1(s mapNotes (_.withDuration(rT)*4, _.withDuration(rT)*2 ))
   
   def specSopran1(s: MusicalSegment): MusicalSegment =
-    s.+>(_.withDuration(rT).*(2).+>(O(rT) + _ *3,O(rT) + _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5))), _.withDuration(rT).*(4).+>(O(rT) + _ *3))
+    s.mapNotes(_.withDuration(rT).*(2).mapNotes(O(rT) + _ *3, O(rT) + _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5))), _.withDuration(rT).*(4).mapNotes(O(rT) + _ *3))
   
   // return composition method applying sequentially all args to the
   // melody of composed segment
@@ -109,7 +109,7 @@ object Recuerdos extends App with MelodyWriter {
   
   val part2 = compose(s21, s22, b21, b22)
   
-  def midTrans(m: MusicalSegment): MusicalSegment = O(rE) + (m +> {_ withDuration rE})
+  def midTrans(m: MusicalSegment): MusicalSegment = O(rE) + (m mapNotes { _ withDuration rE })
   
   def composeTrans(s: SequentialSegment, m: MusicalSegment, b: MusicalSegment) =
     simpleSopran1(s) | midTrans(m) | bass2(b)
@@ -126,8 +126,8 @@ object Recuerdos extends App with MelodyWriter {
   
   val trans21 = composeTrans(sTrans21, mTrans21, bTrans21)
   
-  def stdSopran31(s: MusicalSegment): MusicalSegment = simpleSopran1(s +> {_ *6})
-  def specSopran31(s: MusicalSegment): MusicalSegment = simpleSopran1(s +> {_ *2})
+  def stdSopran31(s: MusicalSegment): MusicalSegment = simpleSopran1(s mapNotes { _ *6 })
+  def specSopran31(s: MusicalSegment): MusicalSegment = simpleSopran1(s mapNotes { _ *2 })
   def sopran31(s: SequentialSegment): MusicalSegment = alternate(stdSopran31, specSopran31)(s)
   
   def compose3(s1: SequentialSegment, s2: MusicalSegment, b1: MusicalSegment, b2: MusicalSegment): MusicalSegment =
@@ -142,16 +142,16 @@ object Recuerdos extends App with MelodyWriter {
   
   val s32 =
     (V(-1) + VI(-1).es + I + III +
-    III + VII(-1) +> {_ *2}) + V(-1) + V(-2) + V(-1) + VI(-1) +
+    III + VII(-1) mapNotes { _ *2 }) + V(-1) + V(-2) + V(-1) + VI(-1) +
     (V(-1) + VI(-1).es + I + III +
-    III + V +> {_ *2}) + III + II + I + VI(-1) +
+    III + V mapNotes { _ *2 }) + III + II + I + VI(-1) +
     (I + II(-1).is) *2
   
   val b31 =
     (V(-1) + VI(-1).es *2 + V(-1) +
-    V(-1) + VII(-1) +> {_ *3}) + VI(-1) + V(-1) + IV(-1) + V(-1) + V(-1).is *2 +
+    V(-1) + VII(-1) mapNotes { _ *3 }) + VI(-1) + V(-1) + IV(-1) + V(-1) + V(-1).is *2 +
     (V(-1) + VI(-1).es *2 + V(-1) *(1 +
-    3) +> {_ *3}) + V(-1) *2 + I +
+    3) mapNotes { _ *3 }) + V(-1) *2 + I +
     (V(-1) + V(-2) + III(-1)) *2
   
   val b32 =
@@ -163,8 +163,8 @@ object Recuerdos extends App with MelodyWriter {
   
   val part3 = compose3(s31, s32, b31, b32)
   
-  val end = I(-1) + V(-1) + I + III + V + I(1) +> {_ withDuration rE} +
-    ((I(-1) | III | I(1) | V(1)) + (I(-1) | III(-1) | V(-1) | I) +> {_ withDuration (rH-)})
+  val end = (I(-1) + V(-1) + I + III + V + I(1) mapNotes { _ withDuration rE }) +
+    ((I(-1) | III | I(1) | V(1)) + (I(-1) | III(-1) | V(-1) | I) mapNotes { _ withDuration (rH-) })
   
   val tempo = 200
   val instrument = 0

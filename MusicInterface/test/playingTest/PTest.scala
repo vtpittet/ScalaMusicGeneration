@@ -23,7 +23,7 @@ object PTest extends App with MelodyWriter {
     val tempo = 60
     
     val song = I(rS).appN(4) { s =>
-      s.+>(_ *+ (_+2, _-3, identity))
+      s mapNotes (_ *+ (_+2, _-3, identity))
     } *| (O(rS-) + _)
     
     
@@ -37,7 +37,7 @@ object PTest extends App with MelodyWriter {
     val tempo = 60
     
     val song = (I + II + III).appN(2) { s =>
-      s.+>(_ /2, _ /0.5)
+      s mapNotes (_ /2, _ /0.5)
     }
     MelodyPlayer(song, tempo)
   }

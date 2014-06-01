@@ -72,17 +72,17 @@ sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment] {
   }
   
   
-  def +(toneRise: Int): MusicalSegment = +>(_ + toneRise)
+  def +(toneRise: Int): MusicalSegment = mapNotes(_ + toneRise)
   def -(toneRed: Int): MusicalSegment = this + (-toneRed)
   
-  def is: MusicalSegment = +>(_ is)
-  def es: MusicalSegment = +>(_ es)
+  def is: MusicalSegment = mapNotes(_ is)
+  def es: MusicalSegment = mapNotes(_ es)
   
   // divides duration of all notes by frac
-  def /(frac: Double): MusicalSegment = +>(_ / frac)
-  def withScale(scale: Scale): MusicalSegment = +>(_ withScale scale)
+  def /(frac: Double): MusicalSegment = mapNotes(_ / frac)
+  def withScale(scale: Scale): MusicalSegment = mapNotes(_ withScale scale)
   
-  def +>(expandF: Note => MusicalSegment*): MusicalSegment = expand(isNote, expandF:_*)
+  def mapNotes(expandF: Note => MusicalSegment*): MusicalSegment = expand(isNote, expandF:_*)
   /*
    * expand following given selector, applying periodically functions in given order
    */

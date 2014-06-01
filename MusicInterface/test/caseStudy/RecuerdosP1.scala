@@ -31,23 +31,23 @@ object RecuerdosP1 extends App with MelodyWriter {
   object IsSpec extends ClassPredicate[SpecSop](_ match {case n: SpecSop => n})
   
   // sets duration to rH-
-  def bass2(b: MusicalSegment): MusicalSegment = b.+> {_.withDuration(rH-)}
+  def bass2(b: MusicalSegment): MusicalSegment = b.mapNotes { _ withDuration (rH-) }
   
   // sets duration to rE and shift each note of rE
-  def bass1(b: MusicalSegment): MusicalSegment = b +> {O(rE) + _.withDuration(rE)}
+  def bass1(b: MusicalSegment): MusicalSegment = b mapNotes { O(rE) + _.withDuration(rE) }
   
   def sopran2(s: MusicalSegment): MusicalSegment =
-    s.+>(_ withDuration rE).+>(O(rE) + _, identity).+>(_ + O(rE))
+    (s mapNotes { _ withDuration rE }).mapNotes(O(rE) + _, identity) mapNotes { _ + O(rE) }
   
     
   def simpleSopran1(s: MusicalSegment): MusicalSegment = 
-    s.+>(O(rT) + _.withDuration(rT) *3)
+    s mapNotes { O(rT) + _.withDuration(rT) *3 }
   
   def stdSopran1(s: MusicalSegment): MusicalSegment =
-    simpleSopran1(s.+>(_.withDuration(rT)*4, _.withDuration(rT)*2))
+    simpleSopran1(s mapNotes (_.withDuration(rT)*4, _.withDuration(rT)*2))
   
   def specSopran1(s: MusicalSegment): MusicalSegment =
-    s.+>(_.withDuration(rT).*(2).+>(O(rT) + _ *3, O(rT) + _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5))), _.withDuration(rT).*(4).+>(O(rT) + _ *3))
+    s.mapNotes(_.withDuration(rT).*(2).mapNotes(O(rT) + _ *3, O(rT) + _ *+ (_ / (1.5), _.+(1) / (1.5), _ / (1.5))), _.withDuration(rT).*(4).mapNotes(O(rT) + _ *3))
   
   // return composition method applying sequentially all args to the
   // melody of composed segment
@@ -90,7 +90,10 @@ object RecuerdosP1 extends App with MelodyWriter {
 //    (base-2 + (base-3) swapTo {SpecSop(_)}) +
 //    ((base-3) *2 swapTo {StdSop(_)})
     
-    val m = (base *6) +> (alterWith(altStart)(_), _-1, _-2, _-1, _-2, alterWith(altEnd)(_).-(3)*3)
+    val m = (base *6) mapNotes (
+        alterWith(altStart)(_),
+        _-1, _-2, _-1, _-2,
+        { x => (alterWith(altEnd)(x) - 3) *3})
     
     m.flatAll.groupBy(2) ++> (
         isSeq given(_.height == 1)
@@ -100,7 +103,7 @@ object RecuerdosP1 extends App with MelodyWriter {
   
   val s11 = {
     implicit val noteDuration = rT
-    V + VII + III(1) + II(1) + V +> (
+    V + VII + III(1) + II(1) + V mapNotes (
         s11Pattern1(_, 1),
         s11Pattern1(_, 0),
         s11Pattern2(_, altEnd = 1),

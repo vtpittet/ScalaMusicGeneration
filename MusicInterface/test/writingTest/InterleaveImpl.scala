@@ -12,7 +12,7 @@ object InterleaveImpl extends App with MelodyWriter{
   
   val iterB = segtB.notes.iterator
   
-  val segtAB = segtA +> { _ + iterB.next}
+  val segtAB = segtA mapNotes { _ + iterB.next }
   
   Print(segtA)
   println
