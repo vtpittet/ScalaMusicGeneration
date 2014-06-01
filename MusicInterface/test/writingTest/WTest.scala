@@ -55,6 +55,6 @@ object WTest extends App with MelodyWriter {
   */
   val m = (I + I) || (I + I) | (I | I)
   
-  def f(m: MS): MS = m ++> (isSeq given (_.height == 1) thenDo (_ *2))
+  def f(m: MS): MS = m mapIf (isSeq given (_.height == 1) thenDo (_ *2))
   println(f(m))
 }

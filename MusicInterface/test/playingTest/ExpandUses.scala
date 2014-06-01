@@ -27,9 +27,9 @@ object ExpandUses extends App with MelodyWriter {
 //  play(base)
   
   
-  val step1 = base ++> (isNote thenDo (t0, 2))
+  val step1 = base mapIf (isNote thenDo (t0, 2))
   
-  val step2 = step1 ++> (isSeq given (_.height == 1) thenDo (t2, 2, 1) or (t1))
+  val step2 = step1 mapIf (isSeq given (_.height == 1) thenDo (t2, 2, 1) or (t1))
   
   play(step2)
   

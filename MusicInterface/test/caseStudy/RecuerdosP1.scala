@@ -58,8 +58,8 @@ object RecuerdosP1 extends App with MelodyWriter {
   
   def sopran1(s: MusicalSegment): MusicalSegment = {
 //    alternate(stdSopran1, specSopran1)(s)
-    s ++> (IsStd thenDo (stdSopran1(_))) ++> (IsSpec thenDo (specSopran1(_)))
-//    s ++> (isNote thenDo
+    s mapIf (IsStd thenDo (stdSopran1(_))) mapIf (IsSpec thenDo (specSopran1(_)))
+//    s mapIf (isNote thenDo
 //      (n => {
 //        (n *3 >> rT) + (n + (n/1.5 *+ (_ + 1, identity)) >> rT)
 //      }, 8, 20) or
@@ -95,7 +95,7 @@ object RecuerdosP1 extends App with MelodyWriter {
         _-1, _-2, _-1, _-2,
         { x => (alterWith(altEnd)(x) - 3) *3})
     
-    m.flatAll.groupBy(2) ++> (
+    m.flatAll.groupBy(2) mapIf (
         isSeq given(_.height == 1)
         thenDo (_ swapTo (SpecSop(_)), 1, 2, 3)
         or (_ swapTo (StdSop(_))))

@@ -19,43 +19,43 @@ class ParallelAndSeqBuilderTest extends FunSuite with MelodyWriter {
   //            A     B     Abis
   
   test("ALevel selection") {
-    val after = melody ++> (IsA thenDo (_ + 1))
+    val after = melody mapIf (IsA thenDo (_ + 1))
     val expected = II ++ II ++ I ++ I ++ I
     assert(after == expected)
   }
   
   test("BLevel selection") {
-    val after = melody ++> (IsB thenDo (_ + 2))
+    val after = melody mapIf (IsB thenDo (_ + 2))
     val expected = III ++ III ++ III ++ I ++ I
     assert(after == expected)
   }
   
   test("CLevel selection") {
-    val after = melody ++> (IsC thenDo (_ + 3))
+    val after = melody mapIf (IsC thenDo (_ + 3))
     val expected = IV ++ IV ++ IV ++ IV ++ I
     assert(after == expected)
   }
   
   test("Seq default top level selection") {
-    val after = melody ++> (isSeq thenDo (_ + 4))
+    val after = melody mapIf (isSeq thenDo (_ + 4))
     val expected = V ++ V ++ V ++ V ++ V
     assert(after == expected)
   }
   
   test("A but not Abis selection") {
-    val after = song ++> (IsA thenDo (_ + 1))
+    val after = song mapIf (IsA thenDo (_ + 1))
     val expected = (II ++ II) ++ (I ++ I).swapTo(AbisLevel(_))
     assert(after == expected)
   }
   
   test("Abis but not A selection") {
-    val after = song ++> (IsAbis thenDo (_ + 2))
+    val after = song mapIf (IsAbis thenDo (_ + 2))
     val expected = (I ++ I) ++ (III ++ III).swapTo(AbisLevel(_))
     assert(after == expected)
   }
   
   test("Common holder for A, Abis") {
-    val after = song ++> (IsB thenDo (_ + 3))
+    val after = song mapIf (IsB thenDo (_ + 3))
     val expected = (IV ++ IV) ++ (IV ++ IV).swapTo(AbisLevel(_))
     assert(after == expected)
   }
