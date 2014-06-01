@@ -84,15 +84,15 @@ sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment] {
   
   def mapNotes(expandF: Note => MusicalSegment*): MusicalSegment = expand(isNote, expandF:_*)
   /*
-   * expand following given selector, applying periodically functions in given order
+   * expands following given selector, applying periodically functions in given order
    */
   def expand[T <: MusicalSegment](selector: ClassPredicate[T], expandF: T => MusicalSegment*): MusicalSegment = {
-    ++> (new TransformList(selector, expandF.zipWithIndex.foldRight(List.empty[Transform[T]]) {(t, l) => 
+    mapIf (new TransformList(selector, expandF.zipWithIndex.foldRight(List.empty[Transform[T]]) {(t, l) => 
       Transform(t._1, expandF.size, t._2, -1) :: l
     }))
   }
   
-  def ++>[T <: MusicalSegment](transfs: TransformList[T] = TransformList.identity): MusicalSegment = {
+  def mapIf[T <: MusicalSegment](transfs: TransformList[T] = TransformList.identity): MusicalSegment = {
     expandRec(transfs.toStream)._1
   }
   
@@ -112,7 +112,6 @@ sealed trait MusicalSegment extends MusicalSegmentLike[MusicalSegment] {
     }
   }
   
-  // TODO add type to function arg
   def appN(appCount: Int)(function: MusicalSegment => MusicalSegment): MusicalSegment = {
     if (appCount < 1) this
     else function(this).appN(appCount - 1)(function)
