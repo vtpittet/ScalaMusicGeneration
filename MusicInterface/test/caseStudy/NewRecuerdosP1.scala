@@ -59,40 +59,60 @@ object NewRecuerdosP1 extends App with MelodyWriter {
     m1 + m2
   }
   
-  def makeAppoM(s1: Tone, s2: Tone, b1: Tone, b2: Tone): MS = {
+  def makeAppoM(s1: Tone, s2: Tone, b1: Tone, b2: Tone, ts: Int, tb: Int): MS = {
     val fs1 = {
       implicit val noteDuration = rT
-      (s1 + 1) *2 + (s1 *4) mapIf (isNote
+      (s1 + 1) *2 + (s1 *3) + (s1 + ts) mapIf (isNote
         thenDo ({n => O + (n fillSeq (_ / (1.5), _ / (1.5) + 1, _ / (1.5)))}, 1, 1, 2)
         orDo (O + _ *3))
     }
     val fs2b1 = {
       implicit val noteDuration = rE
-      O + b1 + s2 + b1 + s2 + b1
+      O + b1 + s2 + b1 + (s2 + ts) + (b1 + tb)
     }
     val fb2 = b2(rH-)
     fs1 | fs2b1 | fb2
   }
   
-  def appoM(scale: Scale): MS = {
-    makeAppoM(III, I, V(-1), I(-1)) withScale scale
+  def appoM(scale: Scale, ts: Int, tb: Int): MS = {
+    makeAppoM(III, I, V(-1), I(-1), ts, tb) withScale scale
   }
   
-  def sensiBaseM(scale: Scale): MS = {
-    makeBaseM(III, I, VII(-1), I(-1), 0, 0) withScale scale
+  def leadBaseM(scale: Scale, ts: Int, tb: Int): MS = {
+    makeBaseM(III, I, VII(-1), I(-1), ts, tb) withScale scale
   }
   
-  def appoSensiP(scale: Scale): MS = {
-    appoM(scale) + sensiBaseM(scale)
+  def appoSensiP(scale: Scale, ts: Int, tb: Int): MS = {
+    appoM(scale, 0, 0) + leadBaseM(scale, ts, tb)
   }
   
-  val aaCCFE2 = {
+  def makeLateResM(s1: Tone, s2: Tone, b1: Tone, b2: Tone, res: Int): MS = {
+    makeBaseM(s1 decreaseBy res, s2, b1, b2, res, 0)
+  }
+  
+  def lateResM(scale: Scale): MS = {
+    makeLateResM(I(1), V, III, I(-1), -1) withScale scale
+  }
+  
+  def retLateResM(scale: Scale): MS = {
+    makeLateResM(I(1), V, I, III(-1), 1) withScale scale
+  }
+  
+  def lateResP(scale: Scale): MS = {
+    lateResM(scale) + retLateResM(scale)
+  }
+  
+  val part1 = {
     retBaseP(Minor(A), 1, 0) +
     baseP(Minor(A), 1, 1) +
     retBaseP(Major(C), 1, 0) +
     baseP(Major(C), 0, 0) +
     retBaseP(Major(F), 1, 1) +
-    appoSensiP(Major(E))
+    appoSensiP(Major(E), 0, 0) +
+    lateResP(Major(A)) +
+    appoSensiP(Minor(D), 0, 0) +
+    (lateResP(Minor(D)) - 7) +
+    (appoSensiP(Major(E), 0, 0) - 7)
   }
   
   val tempo = 120
@@ -103,7 +123,7 @@ object NewRecuerdosP1 extends App with MelodyWriter {
   // Short version without repetitions
   MelodyPlayer(
     Sequential(Nil)
-    + (aaCCFE2)
+    + (part1)
     ,
     tempo,
 //    fromQN = 14*3,
