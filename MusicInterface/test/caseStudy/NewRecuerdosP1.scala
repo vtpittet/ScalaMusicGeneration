@@ -3,6 +3,7 @@ package caseStudy
 import tonalSystem.Major
 import segmentSystem.MusicalSegment
 import tonalSystem.Minor
+import tonalSystem.Scale
 import utils.MelodyWriter
 import segmentSystem.SequentialSegment
 import utils.SS
@@ -15,13 +16,19 @@ import tonalSystem.A
 import segmentSystem.ClassPredicate.isSeq
 import segmentSystem.Sequential
 import tonalSystem.Tone._
-import tonalSystem.Tone
+import tonalSystem._
 import segmentSystem.ClassPredicate
 import segmentSystem.Note
 
 object NewRecuerdosP1 extends App with MelodyWriter {
   
+  def newMakeMesureT1(scale: Scale, ts: Int, tb: Int): MS = {
+    makeMesureT1(V, III, V(-1), I(-1), ts, tb) withScale scale
+  }
   
+  def newMakeMesureT1ret(scale: Scale, ts: Int, tb: Int): MS = {
+    makeMesureT1(III, I, V(-1), I(-1), ts, tb) withScale scale
+  }
   
   def makeMesureT1(s1: Tone, s2: Tone, b1: Tone, b2: Tone, ts: Int, tb: Int): MS = {
     
@@ -57,13 +64,47 @@ object NewRecuerdosP1 extends App with MelodyWriter {
     m1 + m2
   }
   
+  def newPhraseT1(scale: Scale, ret: Boolean, ts: Int, tb: Int): MS = {
+    val m1 = newMakeMesureT1(scale, ts, tb)
+    val m2 = if (ret) {
+      newMakeMesureT1ret(scale, ts, tb)
+    } else {
+      newMakeMesureT1(scale, ts, tb)
+    }
+    m1 + m2
+  }
+  
+  def makeMesureT2(s1: Tone, s2: Tone, b1: Tone, b2: Tone): MS = {
+    val fs1 = {
+      implicit val noteDuration = rT
+      (s1 + 1) *2 + (s1 *4) mapIf (isNote
+        thenDo ({n => O + (n fillSeq (_ /(2/3), _ /(2/3) + 1, _/(2/3)))}, 1, 1, 2)
+        orDo (O + _ *3))
+    }
+    val fs2b1 = {
+      implicit val noteDuration = rE
+      O + b1 + s2 + b1 + s2 + b1
+    }
+    val fb2 = b2(rH-)
+    fs1 | fs2b1 | fb2
+  }
+  
+  
   
   val aaCCF = {
     phraseT1(I(-1), true, 1, 0) +
-    phraseT1(I(-1), false, 1, 2) +
+    phraseT1(I(-1), false, 1, 1) +
     phraseT1(III(-1), true, 1, 0) +
     phraseT1(III(-1), false, 0, 0) +
     phraseT1(VI(-1), true, 1, 1)
+  }
+  
+  val aaCCF2 = {
+    newPhraseT1(Minor(A), true, 1, 0) +
+    newPhraseT1(Minor(A), false, 1, 1) +
+    newPhraseT1(Major(C), true, 1, 0) +
+    newPhraseT1(Major(C), false, 0, 0) +
+    newPhraseT1(Major(F), true, 1, 1)
   }
   
   case class StdSop(melody: List[MusicalSegment]) extends SequentialSegment {
@@ -258,7 +299,7 @@ object NewRecuerdosP1 extends App with MelodyWriter {
   // Short version without repetitions
   MelodyPlayer(
     Sequential(Nil)
-    + (aaCCF withScale minScale)
+    + (aaCCF2 withScale minScale)
     ,
     tempo,
 //    fromQN = 14*3,
