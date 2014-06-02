@@ -241,7 +241,9 @@ case class Note(val tone: Tone, val duration: BPM)(
 }
 
 case class Parallel(melody: List[MusicalSegment]) extends ParallelSegment
+object EmptyPar extends Parallel(Nil)
 case class Sequential(melody: List[MusicalSegment]) extends SequentialSegment
+object EmptySeq extends Sequential(Nil)
 
 
 
