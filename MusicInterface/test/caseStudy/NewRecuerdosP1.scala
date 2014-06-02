@@ -34,16 +34,6 @@ object NewRecuerdosP1 extends App with MelodyWriter {
     val endingDegree: Int
     val pMaker: ((Scale, Int) => MS)
     
-    val endPitch = scale.tonic + endingDegree + transition
-    val nextPitches = List(endPitch - 1, endPitch, endPitch + 1)
-    
-    val nextBases = nextPitches map (_ - 4)
-    val nextRets = nextPitches map (_ - 4)
-    val nextApps = nextPitches map (_ - 3)
-    val nextLates = nextPitches map (_ - 1)
-    
-    def rndTrans: Int = 1 - (random * 2).toInt
-    
     def getP: MusicalSegment = pMaker(scale, transition)
     
     private def nextP(
@@ -238,12 +228,12 @@ object NewRecuerdosP1 extends App with MelodyWriter {
     getRndP
   }
   
-  def rndLinkedPart(size: Int) = {
+  def rndLinkedPart(init: Phrase, size: Int) = {
     def phrases(phrase: Phrase): Stream[Phrase] = phrase #:: phrases(phrase.next)
-    phrases(BaseP) take size map { _.getP } reduceLeft { _ + _ }
+    phrases(init) take size map { _.getP } reduceLeft { _ + _ }
   }
   
-  val tempo = 120
+  val tempo = 80
   val instrument = 0
 
   // Short version without repetitions
@@ -251,7 +241,7 @@ object NewRecuerdosP1 extends App with MelodyWriter {
     Sequential(Nil)
 //    + (part1)
 //    + rndPart(7)
-    + rndLinkedPart(7)
+    + rndLinkedPart(RetP(Minor(A), 1), 7)
     ,
     tempo,
 //    fromQN = 14*3,
