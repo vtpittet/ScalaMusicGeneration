@@ -62,8 +62,8 @@ object Recuerdos extends App with MelodyWriter {
   val s11 = {
     (V + IV + III + IV + V + V + V + VI +
     VII + VI + V + VI + VII + VII + VII + VII +
-    III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII/*.is*/) + (VII/*.is*/ + VII/*.is*/ +
-    II(1)/*.es*/ + I(1) + VII + I(1)) + (VII + VI) + (VI + VI +
+    III(1) + II(1) + I(1) + II(1)) ++ (I(1) + VII.is) + (VII.is + VII.is +
+    II(1).es + I(1) + VII + I(1)) + (VII + VI) + (VI + VI +
     V + IV + III + IV) + (III + II) + (II + II)
   }
     
