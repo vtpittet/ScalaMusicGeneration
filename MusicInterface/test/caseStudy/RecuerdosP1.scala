@@ -4,6 +4,7 @@ import tonalSystem.Major
 import segmentSystem.MusicalSegment
 import tonalSystem.Minor
 import utils.MelodyWriter
+import utils.PrintSeq
 import segmentSystem.SequentialSegment
 import utils.SS
 import midiInterface.MelodyPlayer
@@ -209,10 +210,12 @@ object RecuerdosP1 extends App with MelodyWriter {
   val minScale = Minor(A)
   val majScale = Major(A)
 
+  PrintSeq(sopran1(s11))
+  
   // Short version without repetitions
   MelodyPlayer(
     Sequential(Nil)
-    + (part1 withScale minScale)
+//    + (part1 withScale minScale)
     ,
     tempo,
 //    fromQN = 14*3,

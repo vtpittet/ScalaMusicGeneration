@@ -10,12 +10,17 @@ import segmentSystem.Note
 import rythmics.BPM
 import rythmics.T
 import rythmics.{ S => rS}
+import rythmics.{ E => rE}
 import utils.MelodyWriter
+import utils.PrintSeq
+import segmentSystem.ClassPredicate.isNote
 
 object PTest extends App with MelodyWriter {
   
   
-  recMelody
+//  recMelody
+//  multiRecMelody
+  sampleMelody
   
   def recMelody {
     
@@ -47,13 +52,14 @@ object PTest extends App with MelodyWriter {
     implicit val scale = Major(C)
     val tempo = 120
   
-    val song = ((I fillSeq (_ + 1, _ + 2, identity)) *2 fillSeq (_ + 2)) fillPar (O() *8 + _)
+    implicit val noteDuration = rE
+    val song = ((I fillSeq (_ + 1, _ + 2, identity)) *2 fillSeq (_ + 2)) fillPar (O *8 + _)
   
     MelodyPlayer(song, tempo)
   
   
   
-    Print(song, scale)
+    println(song)
   }
   
 }

@@ -12,6 +12,7 @@ import segmentSystem.SequentialSegment
 import segmentSystem.Transform
 import segmentSystem.ClassPredicate.isSeq
 import segmentSystem.ClassPredicate.isNote
+import utils.PrintSeq
 
 object WTest extends App with MelodyWriter {
   

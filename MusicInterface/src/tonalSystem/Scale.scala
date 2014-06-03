@@ -39,7 +39,8 @@ sealed trait Scale {
   
   val alterationCount: Int
   
-  lazy val keySignature: List[Pitch with Tonality] = {
+  // bug using lazy val (?)
+  def keySignature: List[Pitch with Tonality] = {
     val circleOfFifths = if (alterationCount < 0) {
       Stream.continually(List(B, E, A, D, G, C, F)).flatten.iterator
     } else {
