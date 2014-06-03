@@ -163,7 +163,7 @@ object Recuerdos extends App with MelodyWriter {
     4 +
     1) + V(-2) *2 + I(-1) *(1 +
     2)
-  
+    
   val part3 = compose3(s31, s32, b31, b32)
   
   val end = (I(-1) + V(-1) + I + III + V + I(1) mapNotes { _ withDuration rE }) +
