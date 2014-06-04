@@ -24,15 +24,18 @@ import segmentSystem.EmptySeq
 object NewRecuerdosP1 extends App with MelodyWriter {
   
   abstract class Phrase {
-    println(this)
     import scala.math.random
     
     val scale: Scale
     val transition: Int
+    val transRange: List[Int]
+    val stepRange: List[Int] = List(-1, 0, 1)
     
     val startingDegree: Int
     val endingDegree: Int
     val pMaker: ((Scale, Int) => MS)
+    
+    lazy val actualTrans = if (transRange contains transition) transition else 0
     
     def getP: MusicalSegment = pMaker(scale, transition)
     
@@ -42,8 +45,9 @@ object NewRecuerdosP1 extends App with MelodyWriter {
       major: Boolean,
       trans: Int, step: Int) = {
       
+      val actualTrans = if (transRange contains transition) transition else 0
       val toScale = if (major) Major(_) else Minor(_)
-      val nextPitch = scale.tonic + endingDegree + transition + step - pStartingDegree
+      val nextPitch = scale.tonic + endingDegree + actualTrans + step - pStartingDegree
       pBuilder(toScale(nextPitch.asInstanceOf[Pitch with Tonality]), trans)
     }
     
@@ -70,17 +74,48 @@ object NewRecuerdosP1 extends App with MelodyWriter {
         case x if (x == 2) => nextAppoP(_, _, _)
         case x if (x == 3) => nextLateP(_, _, _)
       }
-      val major = (random * 2).toInt == 0
+      val major = true //(random * 2).toInt == 0
       val trans = 1 - (random * 3).toInt
       val step = 1 - (random * 3).toInt
       
       nextBuilder(major, trans, step)
+    }
+    
+    def nextC: Phrase = {
+      val majTones = List(A, C, E, F)
+      val minTones = List(A, D)
+      
+      val nextTrans = transRange((scala.math.random * transRange.size).toInt)
+      
+      val pTypes = List(
+        (BaseP.startingDegree, BaseP(_, _)),
+        (RetP.startingDegree, RetP(_, _)),
+        (AppoP.startingDegree, AppoP(_, _)),
+        (LateP.startingDegree, LateP(_, _)))
+      
+      val possibleTrans = for {
+        s <- stepRange
+        p <- pTypes
+      } yield (p._2, scale.tonic + endingDegree + actualTrans + s - p._1)
+      
+      val majorTrans = possibleTrans filter { majTones contains _._2.newSelf(0, 0) } map { t =>
+        (t._1(Major(t._2.asInstanceOf[Pitch with Tonality]), nextTrans))
+      }
+      val minorTrans = possibleTrans filter { minTones contains _._2.newSelf(0, 0) } map { t =>
+        (t._1(Minor(t._2.asInstanceOf[Pitch with Tonality]), nextTrans))
+      }
+      val nexts = minorTrans ::: majorTrans
+      
+      val next = nexts((scala.math.random * nexts.size).toInt)
+      println(next)
+      next
     }
   }
   
   case class BaseP(scale: Scale, transition: Int) extends Phrase {
     val startingDegree = 4
     val endingDegree = 4
+    val transRange = List(-1, 0, 1)
     val pMaker = { (s: Scale, t: Int) => baseP(s, t, t) }
   }
   object BaseP extends BaseP(Minor(A), 0)
@@ -88,6 +123,7 @@ object NewRecuerdosP1 extends App with MelodyWriter {
   case class RetP(scale: Scale, transition: Int) extends Phrase {
     val startingDegree = 4
     val endingDegree = 3
+    val transRange = List(-1, 0, 1)
     val pMaker = { (s: Scale, t: Int) => retBaseP(s, t, t)}
   }
   object RetP extends RetP(Minor(A), 0)
@@ -95,6 +131,7 @@ object NewRecuerdosP1 extends App with MelodyWriter {
   case class AppoP(scale: Scale, transition: Int) extends Phrase {
     val startingDegree = 3
     val endingDegree = 2
+    val transRange = List(-1, 0, 1)
     val pMaker = { (s: Scale, t: Int) => appoSensiP(s, t, t)}
   }
   object AppoP extends AppoP(Minor(A), 0)
@@ -102,6 +139,7 @@ object NewRecuerdosP1 extends App with MelodyWriter {
   case class LateP(scale: Scale, transition: Int) extends Phrase {
     val startingDegree = 8
     val endingDegree = 7
+    val transRange = List(0)
     val pMaker = { (s: Scale, t: Int) => lateResP(s, t, t)}
   }
   object LateP extends LateP(Minor(A), 0)
@@ -205,7 +243,7 @@ object NewRecuerdosP1 extends App with MelodyWriter {
   def getRndP: MS = {
     def rnd = scala.math.random
     val majTones = List (A, C, E, F)
-    val minTones = List (A, B, D, G)
+    val minTones = List (A, D)
     
     
     val allowedScales = (majTones map { Major(_) }) ::: (minTones map { Minor(_) })
@@ -233,15 +271,21 @@ object NewRecuerdosP1 extends App with MelodyWriter {
     phrases(init) take size map { _.getP } reduceLeft { _ + _ }
   }
   
+  def rndLinkedCPart(init: Phrase, size: Int) = {
+    def phrases(phrase: Phrase): Stream[Phrase] = phrase #:: phrases(phrase.nextC)
+    phrases(init) take size map { _.getP } reduceLeft { _ + _ }
+  }
+  
   val tempo = 80
   val instrument = 0
 
   // Short version without repetitions
   MelodyPlayer(
     Sequential(Nil)
-//    + (part1)
+    + (part1)
 //    + rndPart(7)
-    + rndLinkedPart(RetP(Minor(A), 1), 7)
+//    + rndLinkedPart(RetP(Minor(A), 1), 7)
+//    + rndLinkedCPart(RetP(Minor(A), 1), 7)
     ,
     tempo,
 //    fromQN = 14*3,
