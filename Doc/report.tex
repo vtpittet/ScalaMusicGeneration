@@ -1,0 +1,311 @@
+\documentclass[twocolumn, 11pt]{article}
+
+
+\usepackage{csquotes}
+\usepackage{amsmath}
+\usepackage{listings}
+% "define" Scala
+\lstdefinelanguage{scala}{
+  morekeywords={abstract,case,catch,class,def,
+    do,else,extends,false,final,finally,
+    for,if,implicit,import,match,mixin,
+    new,null,object,override,package,
+    private,protected,requires,return,sealed,
+    super,this,throw,trait,true,try,
+    type,val,var,while,with,yield},
+  otherkeywords={=>,<-,<\%,<:,>:,\#,@},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n]{/*}{*/},
+  morestring=[b]'',
+  morestring=[b]',
+  morestring=[b]"",
+}
+
+
+\lstset{
+  language=scala,
+  basicstyle=\ttfamily
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5\baselineskip plus 0.5\baselineskip minus 0.25\baselineskip}
+
+\begin{document}
+
+\newcommand{\lln}[1]{
+  \lstinline@#1@
+}
+
+\title{Scala music generation}
+\author{Val\'erian Pittet}
+\date{\today}
+
+\onecolumn
+
+\maketitle
+\begin{abstract}
+
+The present report relates to the Scala music generation project. The main goal was to implement a domain specific language adapted to music description and providing useful operators to manipulate melodies.
+
+It presents first how the language was implemented with its different features.
+Then it discuss the case study that was driven using that defined language. Different approaches are considered and showed with their respective trade-offs.
+
+Finally a small section describes the enhancements that could be brought to the project.
+
+
+\end{abstract}
+\tableofcontents
+
+\twocolumn
+\section{Introduction}
+
+Music writing and composition has always been tighten to our society and identity.
+This process directly refers to the more general concept of creativity.
+The human creativity is nowadays an increasing domain of research, especially in computational science, aiming to automate it.
+
+Before speaking about highly abstract concepts on music generation, one needs to have a dedicated support to build the abstractions.
+This is archived implementing a domain specific language for music description and generation.
+
+The goal of this project was to design such a language providing brief representation and expressive manipulation methods
+for abstractions over musical language complexities to conceive more advanced features.
+
+The final DSL is the result of an incremental process, considering at each step which functionnalities to provide and how to represent them for the best expressiveness with concise and readable code.
+The traditional music representation and structures are the guidelines for the DSL specification. This comes to a language representing all the element entangled in traditional music (as tonality, rhythm, ...) independently and combining them by simple operators.
+
+\textquote[Alfred North Whitehead, 1861-1947]{By relieving the brain of all unnecessary work, a good notation sets it free to concentrate on more advanced problems, and, in effect, increases the mental power of the race.}
+
+\section{Data representation}
+
+When referring to music description, the first problem to solve is the inherent multidimensional representation of traditional music. In a single note, it's shape, it's position, it's color and additional marking describe height, duration and even relationship to other notes of the partition.
+Especially, simultaneous notes can be written at the same position.
+
+On the other hand, code is written in a linear way, disallowing easy simultaneous note description.
+Taking the midi file format as an example, this problem has been solved using note events (note on and note off) with occurring time relative to the previous event.
+Parallel notes are easily represented with successive zero-delay notes, but at the cost of big tread-offs. Each note generates two distinct and independent events. The concept of chord is not well represented as the first described note delay has to be different from the other ones.
+Also, the note duration is not explicit and has to be recomputed.
+
+Here, we want more intuitive concepts to describe parallel and sequential patterns. Notes are described as a tuple of height and duration with two composition mode: parallel or sequential.
+It is enough to consider a melody as a set of multiple tracks played together (parallel composition of sequential notes).
+This is also equivalent to having a sequence of chords played one after each other (sequential composition of parallel notes).
+However both representations are not convenient when it comes to a single voice that splits in to two parts for a short time.
+In any case, one has to consider this small second line from the beginning until the end, almost filled with musical rests.
+The solution is to generalize those representations to a single one where parallel and sequential segments can be both composed of notes and any kind of segment.
+Thus the melodies representation is a tree structure where nodes are parallel or sequential composition and leaves are notes.
+
+
+\subsection{Tree representation}
+As we want a common interface for sequential and parallel segments, their implementation is a simple syntax tree.
+This is archived using the following definitions.
+\begin{lstlisting}
+trait MusicalSegment {
+  def melody: List[MusicalSegment]
+}
+abstract class SequentialSegment(
+    melody: List[MusicalSegment])
+    implements MusicalSegment
+abstract class ParallelSegment(
+    melody: List[MusicalSegment])
+    implements MusicalSegment
+\end{lstlisting}
+And last but not least, the note representation to fit in parallel and sequential segments as leaves of the tree :
+
+\begin{lstlisting}
+case class Note(
+    tone: Tone,
+    duration: Duration)
+  implements MusicalSegment {
+  def melody = this :: Nil
+}
+
+
+\end{lstlisting}
+
+\subsection{Tone and pitch}
+
+While note duration is pretty straightforward to represent, heights have different ways of being implemented.
+The most natural is to use the standard notes name : C, D, E, F etc. As the scale uses twelve half tones, this system can be extended to C, C$\sharp$, D, D$\sharp$ , E, F, ... This first solution is however not convincing as many operators as \lln{stepUp} are context dependent. \lln{C.stepUp} will not output the same value in a C-major or F-major scale. Musically, it makes more sense to represent heights independent from the context.
+
+That's why here, tones have been chosen. They represent the seven different steps of the scale and are denoted with roman numbers (I, II, III, IV, V, VI, VII). The octave can be specified and tones may be altered or not ($\flat$, $\sharp$, $\natural$).
+The choice of tones over pitches has many advantages.
+
+For example, the same melody could be played in major mode or minor mode only changing the scale in which it is interpreted. Minor harmonic is not even harder to manage. Additionally, this hides the irregularity of steps separated by only one halftone. Using tone representation makes it trivial to implements functions like \lln{I + 1 // returns II}.
+
+Looking into more details, this also allows to easily distinguish similar pitches as C$\sharp$ and D$\flat$. Regarding only playing melody this does not make any difference, but when computing intervals or even outputting partitions, it will get more weight.
+
+\section{Data description}
+
+The next point in this DSL definition is operators that manage the data expression.
+They are the basic components used to build data instances.
+
+
+\subsection{Base operators}
+
+As discussed before, there are two kinds of composition, sequential \lln{+(that: MS): SS}\footnote{For the sake of conciseness, \lln{MusicalSegment} is shorten \lln{MS}, \lln{SequentialSegment} : \lln{SS} and \lln{ParallelSegment} : \lln{PS}} and parallel \lln{|(that: MS): PS}. Each of them will add the \lln{that} argument in the callee's melody. Note that those operators behave according to callee and argument. Using \lln{|} on sequential segment will not include the argument in the callee's melody. This would break the contract of \lln{|} that provide parallel composition. In this case, a new parallel segment is created with the callee and the argument as melody.
+\begin{lstlisting}
+val mySeq: SS = ...
+// includes newNote in mySeq
+mySeq + newNote
+// creates new parallel segment
+val depth2 = mySeq | newNote
+\end{lstlisting}
+
+Two more operators \lln{++(that: MS): SS)} and \lln{||(that: MS): PS} complete the basic composition functionality. Each creating a new segment consisting of the callee and the argument. They provide full control on the tree structure, forcing new node insertion. This will prove helpful to implement good recursive operators.
+
+These are the basis for the melody description and can basically describe any melody. However they are not efficient for writing many notes. This leads to a first improvement of defining multiplicative concepts over the additive ones.
+
+\subsection{Repetition operators}
+
+First the multiplication by an \lln{Int} is defined as repeating the same melody $n$ times. Usually, each sequential operator should have it's parallel counterpart. But in this case, repeating the same melody in parallel is nearly idempotent (as the same thing gets played at the same time). Thus this operator returns the melody repeated $n$ times sequentially.
+
+The next multiplicative operator is a generalization of the first one. Rather than repeating $n$ times the same melody, it applies each time a specified transformation. Because the melody changes, sequential and parallel operators are distinguished. They are defined as
+\begin{lstlisting}
+def fillSeq(trans: (MS=>MS)*): SS
+def fillPar(trans: (MS=>MS)*): PS
+\end{lstlisting}
+The method implementation infers the identity at the beginning of each transformation sequence as the scope of this operation is to repeat a segment and not to map it to another one.
+
+As application example, \lln{fillPar} can be used to express a canon from a single melody:
+\begin{lstlisting}
+val canon: MS = ...
+canon fillPar (canonShift + _)
+\end{lstlisting}
+where \lln{canonShift + _} prepends an empty note of appropriate duration to shift the second voice.
+
+\section{Data manipulation}
+
+As we are now able to create simple melodies, the goal is to develop them in more complex and interesting structures.
+This concept requires to run through the tree exploiting it's recursive structure and selecting the element to modify.
+
+% a word about introducing recursive methods ?
+
+
+\subsection{Note mapping}
+
+A good first attempt to archive this functionality is a note mapping method. 
+
+\begin{lstlisting}
+def mapNotes(
+  trans: (Note => MS)*): MS
+\end{lstlisting}
+
+\lln{mapNotes} traverses the whole tree and rebuilds it applying to each note the provided transformation.
+
+For more expressiveness, it is possible to provide multiple transformations. The fist function maps the first note, the second function the second note and so on. When all functions are used, the mapping restart to the first function.
+
+This for example allows to simply create two interleaving patterns that apply one after each other to the notes.
+
+However, several limitations of this mapping call to a more general form.
+The first remark is that this kind of function may target not only notes but also complete melody parts, responding to a given predicate. This predicate may consider composition type (parallel, sequential), tree depth or any other boolean expression on a subtree.
+
+Then music is never completely regular. One could wish to specify more complex pattern than simple cycle when applying transformations. Thus each transformation must have additional parameters to specify application conditions. Those concepts are combined as follows.
+
+\subsection{General mapping}
+
+The generalization of \lln{mapNotes} is defined as
+\begin{lstlisting}
+mapIf(tList: TransformList): MS
+\end{lstlisting}
+The class \lln{TransformList} provides a list of transformations and selective informations to choose when to apply which transformation.
+Selection informations are divided in two main cateories.
+
+The first one, called selector, determines which parts of the melody are valid candidates for the transformation application.
+Of course, there may be multiple valid candidates in a single branch of the tree.
+The mapping simply consider valid candidates as nodes of the tree, hence the sub-candidates will not be considered.
+The selector can be seen as a boolean predicate that can make checks on the type of the nodes (like distinguish parallel and sequential) and cast them to apply any other user-defined boolean function.
+
+This selector is the reason why the \lln{SequentialSegment} and \lln{ParallelSegment} classes are abstract. The user can extends them to create it's own custom types and use them in the selector.
+
+The other category allows to break the simple cyclic application of transformations from \lln{mapNotes}. Each transformation is associated with parameters specifying it's range of application and it's period. The selected transformation for the $n^{\text{th}}$ candidate is the first one in the list such that $n$ is in the range and
+$$(n - \text{range\_begin}) \mod \text{period} == 0$$
+If there is a candidate that conforms the selector but there is no transformation that meets the application constraints, identity is applied and this candidate is still considered as a leaf for the mapping.
+
+
+% Built-in function allow transformations set declaration as follows :
+% \begin{lstlisting}
+% TSET := SELECT (orElse SELECT)* thenDo TRANSF (orDo TRANSF)*
+% SELECT := (IsSeq | IsPar | IsNote | IsMus) ('given' PRED)*
+% PRED := // a boolean function applicable to selected items
+% TRANSF := // transformation applicable to selected items, with optionnal period, from and to parameters.
+% \end{lstlisting}
+
+For example, repeating all flat chord of a melody (parallel set of notes) is coded with :
+\begin{lstlisting}
+val melody: MS = ...
+melody mapIf (
+  isPar given (_.height==1)
+  thenDo (_ *2))
+\end{lstlisting}
+And if we need every three chord to be not repeated :
+\begin{lstlisting}
+melody mapIf (
+  isPar given (_.height==1)
+  thenDo (
+    identity,
+    period = 3,
+    from = 2))
+  orDo (_ *2))
+\end{lstlisting}
+where \lln{isPar}, \lln{given}, \lln{thenDo} and \lln{orDo} are built-in features to hide the \lln{TransformList} instantiation.
+
+
+
+\section{Case study}
+To get a good insight of the performance of the DSL, a case study has been driven on the chosen piece : Recuerdos de la Alhambra, \emph{Francisco Tarrega}. This is a guitar piece filled with tremolo\footnote{the same note played many times (three in this case) very quickly}. The rhythm is thus quite stable and the melody holds many repetitions.
+
+In total, three different approaches are used to implement it with different results.
+
+\subsection{Redundancy abstraction}
+
+The aim of this approach is to avoid writing each repeated note using functions that generate those repetitions.
+
+First, the piece is separated into four voices. This makes redundancy and similarities more visible in each voice. This case study is especially adapted to this approach as it presents the property of having lots of repeated notes (tremolo in soprano and repetitive bass).
+The rhythmic patterns are also specified while building the repetitions.
+
+On a single voice, repetitions are done used a \lln{mapNotes} functions and when needed, different \lln{mapNotes} are organized in a \lln{mapIf} call to modify the repetitive pattern being used.
+
+This approach avoids writing repeated notes and requires a single 'core' melody. As it also leaves the rythm specification to an annex function, writing the initial melody is very straightforward.
+This implementation is very flexible and can reproduce the original melody without any concerns.
+
+However the base melody still has to be fully hand-written and this representation does not allow deeper analysis of the melody.
+
+\subsection{Pattern extraction}
+
+The pattern extraction approach is a response to the problem of the redundancy abstraction approach.
+
+Build on top of the first implementation, it extracts the melodic patterns present in the core melodies of the previous approach. With a single reference note, the pattern generates a whole phrase. Hence each phrase is represented by a reference note and the voices are simple sequences of those referent.
+
+
+Even the final written melody is much smaller than in the previous case, this solution as many limits.
+Sticking to original melody produce over-fitted and very specific patterns. Some of them are used only once and do not produce any benefit. Others have parameters specifying a small variation that are used in only one specific case and produce bad results if used somewhere else or with different values.
+
+Furthermore, the harmonic dependencies between different lines becomes hidden by all the abstractions. The final melody occurs to sound good because it is writtend so and modifying a parameter has uncontrolled effects.
+
+\subsection{Harmonic analysis}
+
+A deep analysis of the piece reveals that each phrase turns out to be written in a given tonality, not necessarliy the main one of the piece.
+Occurrences of altered notes outside the original scale generate those transpositions.
+
+Using this information, many behaviors seen in other approaches as exceptions are ruled and generated by context.
+The piece is thus splitted in phrases and not in voices anymore. The scale of the phrase is extracted and provided as parameter for new phrase patterns.
+
+To avoid the over-fitting problem from the pattern extraction approach, some exception to the rues are ignored, especially transitions between phrases. As the tonality inside a phrase is fixed and respected, the result of a standalone phrase is good. Unfortunately, the transition between the sequential phrases is not controlled anymore.
+
+
+This makes the final approximation of the original melody pretty bad. But in exchange, the differents patterns can be easily randomly composed with simple constraints on pattern tonalities and chaining.
+
+
+\section{Conclusion}
+
+After this case study, the implemented features prove to be useful and fill their intended purpose.
+But it appears that support is missing for better representation capabilities.
+
+Pattern abstraction can be realized using many different methods. It needs exploration and specification of standard procedure and eventually provide a coding context as support to guide the abstraction in the right way.
+This would require to drive more and simpler case studies, analyse the abstraction process and translate it as a language feature.
+
+The pattern abstraction domain especially needs a clearly specification for rhythm description. For now, melody and rhythm as always been represented together. Separating them will enhance modularity and give better understanding of the melodies.
+In order to archvie this, the rhythm domain needs more investigations. Rhythm dedicated good primitives still lack and would be a great add to the language.
+
+Finally, tree structure is still hard to configure with custom types for the best use of \lln{mapIf} function. It is necessary to archive a good understanding of the tree structure behavior under recursive methods. Then it will be possible to add interfaces for those custom types to be taken into account by existing methods.
+
+\end{document}

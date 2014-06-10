@@ -85,7 +85,7 @@ object NewRecuerdosP1 extends App with MelodyWriter {
       val majTones = List(A, C, E, F)
       val minTones = List(A, D)
       
-      val nextTrans = transRange((scala.math.random * transRange.size).toInt)
+      val nextTrans = 1//transRange((scala.math.random * transRange.size).toInt)
       
       val pTypes = List(
         (BaseP.startingDegree, BaseP(_, _)),
@@ -98,12 +98,14 @@ object NewRecuerdosP1 extends App with MelodyWriter {
         p <- pTypes
       } yield (p._2, scale.tonic + endingDegree + actualTrans + s - p._1)
       
-      val majorTrans = possibleTrans filter { majTones contains _._2.newSelf(0, 0) } map { t =>
-        (t._1(Major(t._2.asInstanceOf[Pitch with Tonality]), nextTrans))
-      }
-      val minorTrans = possibleTrans filter { minTones contains _._2.newSelf(0, 0) } map { t =>
-        (t._1(Minor(t._2.asInstanceOf[Pitch with Tonality]), nextTrans))
-      }
+      val majorTrans = for {
+        t <- possibleTrans
+        if (majTones contains t._2.newSelf(0, 0))
+      } yield (t._1(Major(t._2.asInstanceOf[Pitch with Tonality]), nextTrans))
+      val minorTrans = for {
+        t <- possibleTrans
+        if (minTones contains t._2.newSelf(0, 0))
+      } yield (t._1(Minor(t._2.asInstanceOf[Pitch with Tonality]), nextTrans))
       val nexts = minorTrans ::: majorTrans
       
       val next = nexts((scala.math.random * nexts.size).toInt)
@@ -282,10 +284,10 @@ object NewRecuerdosP1 extends App with MelodyWriter {
   // Short version without repetitions
   MelodyPlayer(
     Sequential(Nil)
-    + (part1)
+//    + (part1)
 //    + rndPart(7)
 //    + rndLinkedPart(RetP(Minor(A), 1), 7)
-//    + rndLinkedCPart(RetP(Minor(A), 1), 7)
+    + rndLinkedCPart(RetP(Minor(A), 1), 21)
     ,
     tempo,
 //    fromQN = 14*3,

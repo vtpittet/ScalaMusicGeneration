@@ -215,7 +215,8 @@ object RecuerdosP1 extends App with MelodyWriter {
   // Short version without repetitions
   MelodyPlayer(
     Sequential(Nil)
-//    + (part1 withScale minScale)
+    + (s11Pattern1(V, 1) withScale minScale)
+    + (s11Pattern1(VII, 1) withScale minScale)
     ,
     tempo,
 //    fromQN = 14*3,

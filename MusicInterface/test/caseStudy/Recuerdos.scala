@@ -169,7 +169,7 @@ object Recuerdos extends App with MelodyWriter {
   val end = (I(-1) + V(-1) + I + III + V + I(1) mapNotes { _ withDuration rE }) +
     ((I(-1) | III | I(1) | V(1)) + (I(-1) | III(-1) | V(-1) | I) mapNotes { _ withDuration (rH-) })
   
-  val tempo = 200
+  val tempo = 80
   val instrument = 0
   val minScale = Minor(A)
   val majScale = Major(A)
@@ -178,9 +178,9 @@ object Recuerdos extends App with MelodyWriter {
   MelodyPlayer(
     Sequential(Nil)
     + (part1 withScale minScale)
-    + (part2 withScale majScale)
-    + (part3 withScale majScale)
-    + (end withScale majScale)
+//    + (part2 withScale majScale)
+//    + (part3 withScale majScale)
+//    + (end withScale majScale)
     ,
     tempo,
 //    fromQN = 3*15,
