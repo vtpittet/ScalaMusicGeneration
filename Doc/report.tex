@@ -60,10 +60,6 @@ Finally a small section describes the enhancements that could be brought to the 
 \twocolumn
 \section{Introduction}
 
-Music writing and composition has always been tighten to our society and identity.
-This process directly refers to the more general concept of creativity.
-The human creativity is nowadays an increasing domain of research, especially in computational science, aiming to automate it.
-
 Before speaking about highly abstract concepts on music generation, one needs to have a dedicated support to build the abstractions.
 This is archived implementing a domain specific language for music description and generation.
 
@@ -86,8 +82,22 @@ Parallel notes are easily represented with successive zero-delay notes, but at t
 Also, the note duration is not explicit and has to be recomputed.
 
 Here, we want more intuitive concepts to describe parallel and sequential patterns. Notes are described as a tuple of height and duration with two composition mode: parallel or sequential.
-It is enough to consider a melody as a set of multiple tracks played together (parallel composition of sequential notes).
-This is also equivalent to having a sequence of chords played one after each other (sequential composition of parallel notes).
+It is enough to consider a melody as a set of multiple tracks played together (parallel composition of sequential notes) with the structure~:
+\begin{lstlisting}
+class Parallel(
+  tracks: List[Sequential])
+class Sequential(
+  notes: List[Note])
+\end{lstlisting}
+
+This is also equivalent to having a sequence of chords played one after each other (sequential composition of parallel notes) with the structure~:
+\begin{lstlisting}
+class Sequential(
+  melody: List[Parallel])
+class Parallel(
+  notes: List[Note])
+\end{lstlisting}
+
 However both representations are not convenient when it comes to a single voice that splits in to two parts for a short time.
 In any case, one has to consider this small second line from the beginning until the end, almost filled with musical rests.
 The solution is to generalize those representations to a single one where parallel and sequential segments can be both composed of notes and any kind of segment.
