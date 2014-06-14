@@ -108,26 +108,22 @@ The traditional music representation and structures are the guidelines for the D
 When referring to music description, the first problem to solve is the inherent multidimensional representation of traditional music. In a single note, its shape, its position, its color and additional marking describe height, duration and even relationship to other notes of the partition.
 Especially, simultaneous notes can be written at the same position.
 
-On the other hand, code is written in a linear way, disallowing easy simultaneous note description.
-Taking the midi file format as an example, this problem has been solved using note events (note on and note off) with occurring time relative to the previous event.
+On the other hand, code is written in a linear fashion, disallowing easy simultaneous note description.
+Taking the midi file format as an example, it solves this problem using note events (note on and note off) with occurring time relative to the previous event.
 Parallel notes are easily represented with successive zero-delay notes, but at the cost of big trade-offs. Each note generates two distinct and independent events. The concept of chord is not well represented as the first described note delay has to be different from the other ones.
 Also, the note duration is not explicit and has to be recomputed.
 
 Here, we want more intuitive concepts to describe parallel and sequential patterns. Notes are described as a tuple of height and duration with two composition modes: parallel or sequential.
 It is enough to consider a melody as a set of multiple tracks played together (parallel composition of sequential notes) with the structure~:
 \begin{lstlisting}
-class Parallel(
-  tracks: List[Sequential])
-class Sequential(
-  notes: List[Note])
+class Parallel(tracks: List[Sequential])
+class Sequential(notes: List[Note])
 \end{lstlisting}
 
 This is also equivalent to having a sequence of chords played one after each other (sequential composition of parallel notes) with the structure~:
 \begin{lstlisting}
-class Sequential(
-  melody: List[Parallel])
-class Parallel(
-  notes: List[Note])
+class Sequential(melody: List[Parallel])
+class Parallel(notes: List[Note])
 \end{lstlisting}
 
 However both representations are not convenient when it comes to a single voice that splits into two parts for a short time.
@@ -145,17 +141,15 @@ trait MusicalSegment {
 }
 abstract class SequentialSegment(
     melody: List[MusicalSegment])
-    implements MusicalSegment
+  implements MusicalSegment
 abstract class ParallelSegment(
     melody: List[MusicalSegment])
-    implements MusicalSegment
+  implements MusicalSegment
 \end{lstlisting}
 And last but not least, the note representation fits in parallel and sequential segments as leaves of the tree :
 
 \begin{lstlisting}
-case class Note(
-    tone: Tone,
-    duration: Duration)
+case class Note(tone: Tone, duration: Duration)
   implements MusicalSegment {
   def melody = this :: Nil
 }
@@ -183,7 +177,7 @@ They are the basic components used to build data instances.
 
 \subsection{Base operators}
 
-As discussed before, there are two kinds of composition, sequential \lln{+(that: MS): SS}\footnote{For the sake of conciseness, \lln{MusicalSegment} is shorten \lln{MS}, \lln{SequentialSegment} : \lln{SS} and \lln{ParallelSegment} : \lln{PS}} and parallel \lln{|(that: MS): PS}. Each of them will add the \lln{that} argument in the callee's melody. Note that those operators behave according to callee and argument. Using \lln{|} on sequential segment will not include the argument in the callee's melody. This would break the contract of \lln{|} that provide parallel composition. In this case, a new parallel segment is created with the callee and the argument as melody.
+As discussed before, there are two kinds of composition, sequential \lln{+(that: MS): SS}\footnote{For the sake of conciseness, \lln{MusicalSegment} is shorten \lln{MS}, \lln{SequentialSegment} : \lln{SS} and \lln{ParallelSegment} : \lln{PS}} and parallel \lln{|(that: MS): PS}. Each of them will add the \lln{that} argument in the callee's melody. Note that those operators behave according to callee and argument. Using \lln{|} on sequential segment will not include the argument in the callee's melody. This would break the contract of \lln{|} that provides parallel composition. In this case, a new parallel segment is created with the callee and the argument as melody.
 \begin{lstlisting}
 val mySeq: SS = ...
 // includes newNote in mySeq
@@ -203,6 +197,7 @@ First the multiplication by an \lln{Int} is defined as repeating the same melody
 The next multiplicative operator is a generalization of the first one. Rather than repeating $n$ times the same melody, it applies each time a specified transformation. Because the melody changes, sequential and parallel operators are distinguished. They are defined as
 \begin{lstlisting}
 def fillSeq(trans: (MS=>MS)*): SS
+
 def fillPar(trans: (MS=>MS)*): PS
 \end{lstlisting}
 The method implementation infers the identity at the beginning of each transformation sequence as the scope of this operation is to repeat a segment and not to map it to another one.
@@ -227,8 +222,7 @@ This concept requires to run through the tree exploiting its recursive structure
 A good first attempt to achieve this functionality is a note mapping method.
 
 \begin{lstlisting}
-def mapNotes(
-  trans: (Note => MS)*): MS
+def mapNotes(trans: (Note => MS)*): MS
 \end{lstlisting}
 
 \lln{mapNotes} traverses the whole tree and rebuilds it applying to each note the provided transformation.
@@ -293,16 +287,16 @@ where \lln{isPar}, \lln{given}, \lln{thenDo} and \lln{orDo} are built-in feature
 
 
 \section{Case study}
-To get a good insight of the expressivity of the DSL, a case study has been performed on the chosen piece : Recuerdos de la Alhambra, \emph{Francisco Tarrega}. This is a guitar piece filled with tremolo\footnote{the same note played many times (three in this case) very quickly}. The rhythm is thus quite stable and the melody holds many repetitions.
+To get a good insight of the expressivity of the DSL, I took the piece : Recuerdos de la Alhambra, \emph{Francisco Tarrega} as a case study. In this guitar piece, tremolo\footnote{the same note played many times (three in this case) very quickly} composes the entire soprano melody. The rhythm is thus quite stable and the melody holds many repetitions.
 
-In total, three different approaches have been used to implement it with different results.
+In total, I used three different approaches to implement it with different results.
 
 \subsection{Redundancy abstraction}
 
 The aim of this approach is to avoid writing each repeated note using functions that generate those repetitions.
 
-First, the piece is separated into four voices. This makes redundancy and similarities more visible in each voice. This case study is especially adapted to this approach as it presents the property of having lots of repeated notes (tremolo in soprano and repetitive bass).
-The rhythmic patterns are also specified while building the repetitions.
+First, I separated the piece into four voices. This makes redundancy and similarities more visible in each voice. This case study is especially adapted to this approach as it presents the property of having lots of repeated notes (tremolo in soprano and repetitive bass).
+Repetitions building also specifies the rythmic pattern.
 
 On a single voice, repetitions are encoded as \lln{mapNotes} functions and when needed, different \lln{mapNotes} are organized in a \lln{mapIf} call to modify the repetitive pattern being used.
 
@@ -319,7 +313,7 @@ Build on top of the first implementation, it extracts the melodic patterns prese
 
 
 Even though the final written melody is much smaller than in the previous case, this solution as many limits.
-Sticking to original melody produce over-fitted and very specific patterns. Some of them are used only once and do not produce any benefit. Others have parameters specifying a small variation that are used in only one specific case and produce bad results if used somewhere else or with different values.
+Sticking to original melody produce over-fitted and very specific patterns. The final implementation uses some of them only once and do not produce any benefit. Others patterns have parameters specifying a small variation useful for specific cases and produce bad results in other context or with different values.
 
 Furthermore, the harmonic dependencies between different lines becomes hidden by all the abstractions. The final melody appears to sound good because it is written so and modifying a parameter has uncontrolled effects.
 
@@ -328,13 +322,13 @@ Furthermore, the harmonic dependencies between different lines becomes hidden by
 A deep analysis of the piece reveals that each phrase turns out to be written in a given tonality, not necessarily the main one of the piece.
 Occurrences of altered notes outside the original scale generate those transpositions.
 
-Using this information, many behaviors seen in other approaches as exceptions are ruled and generated by context.
-The piece is thus split in phrases and not in voices anymore. The scale of the phrase is extracted and provided as parameter for new phrase patterns.
+Using this information, context is enough to generate many behaviors seen in other approaches as exceptions.
+This approach thus spits the piece into phrases and not into voices anymore. It extract the scale of the phrase and provides it as parameter for new phrase patterns.
 
-To avoid the over-fitting problem from the pattern extraction approach, some exception to the rues are ignored, especially transitions between phrases. As the tonality inside a phrase is fixed and respected, the result of a standalone phrase is good. Unfortunately, the transition between the sequential phrases is not controlled anymore.
+To avoid the over-fitting problem from the pattern extraction approach, I ignored some exceptions to the rules, especially transitions between phrases. As the tonality inside a phrase is fixed and respected, the result of a standalone phrase is good. Unfortunately, the transition between the sequential phrases is not controlled anymore.
 
 
-This makes the final approximation of the original melody pretty bad. But in exchange, the different patterns can be easily randomly composed with simple constraints on pattern tonalities and chaining.
+This makes the final approximation of the original melody pretty bad. But in exchange, randomly composing the different patterns with simple constraints on tonalities and chaining is easy and produces acceptable results.
 
 
 \section{Conclusion}
