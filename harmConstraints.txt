@@ -58,7 +58,83 @@ p46
 p until end :  seven's chords, 60 Napolitan sixth, ... so less important
 
 -----------------------------------------------------------------------
+Constraints (feuille 3)
 
+//notes.0 is the bass
+//4Chord has 4 notes (0 to 3)
+//4Chord.Triad has 3 notes (0 to 2)
+
+for all 4Chord : 
+	//bounds
+	Interval(sopr, alto) <= octave
+	Interval(alto, tenor) <= octave
+	//ok more than octave between bass and tenor
+	//sopr <= upperBound //no need if given soprano
+	bass <= lowerBound
+	sopr >= alto
+	alto >= tenor
+	tenor >= bass
+	
+	//no doubled leading tone
+	no more than once VII
+	
+	/%/ below  : c.t = 4Chord.triad
+	
+	//if chord in fundamental position
+	if c.notes.0 == c.t.notes.0 :
+		if c.t.notes.0 != VII, then c.t.notes.0 goes in possDoublingSet
+		if c.t.notes.2 != VII, then c.t.notes.2 goes in possDoublingSet
+		only notes in possDoublingSet can be more than once in c.notes
+		
+	//if chord in first inversion p39-40
+	if c.notes.0 == c.t.notes.1 :
+		if c.t.degree = I: c.t.notes.0 and c.t.notes.2 in possDoublingSet
+		if c.t.degree = II: 
+			if next exists and is V : 
+				c.t.notes.1 in possDoublingSet
+				%%see p39 for voices
+			else c.t.notes.0 and c.t.notes.2 in possDoublingSet
+		if c.t.degree = III: 
+			if major tonality : do not use
+			else : possdoublingSet = c.t.notes
+		if c.t.degree = IV: 
+			if major tonality : possdoublingSet = c.t.notes
+			else : c.t.notes.0 and c.t.notes.2 in possDoublingSet
+		if c.t.degree = V: 
+			only if next exists and is I 
+			c.t.notes.0 and c.t.notes.2 in possDoublingSet
+		if c.t.degree = VI: not use
+		if c.t.degree = VII: c.t.notes.1 and c.t.notes.2 in possDoublingSet
+		only notes in possDoublingSet can be more than once in c.notes
+		
+	//if chord in second inversion
+	if c.notes.0 == c.t.notes.2 :
+		if c.t.degree = I: 
+			c.t.notes.2 more than once in c.notes
+		else : //see p 45 : difficult to express (passing, pedal or arpeggiated)
+	
+	
+for all i from 0 to length-2 : c1 = c[i], c2 = c[i + 1] :
+	// rule of parallel Octave, Fifth, Unisson
+	for all (k, l) combinations in N = {0, 1, 2, 3} :
+		n = Interval(c1.k, c1.l)
+		if n == Octave or Fifth or Unisson
+		then n != Interval(c2.k, c2.l)
+		
+	//neither diminished, neither augmented intervals in voice melodies
+	for all k in {0, 1, 2, 3} :
+		Interval(c1.k, c2.k) is not diminished, not augmented
+		
+	//leading tone resolves in tonic
+	for all k in {0, 1, 2, 3} :
+		if c1.k is VII, then c2.k is I
+		
+------------------------------------------------
+		
+
+	
+	
+	
 
 
 
