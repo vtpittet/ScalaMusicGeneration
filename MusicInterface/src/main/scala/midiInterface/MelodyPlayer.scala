@@ -104,7 +104,7 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN:
     sequencer.open
     sequencer.setSequence(midiSequence)
     sequencer.start
-    println("Running ..")
+    println("Running ...")
     var prevTs = System.currentTimeMillis
     while(sequencer.isRunning()) {
       var ct = System.currentTimeMillis
