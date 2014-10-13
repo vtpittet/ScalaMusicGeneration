@@ -7,10 +7,13 @@ sealed trait Chord {
 
   def apply(n: Int): Tone = {
     def posMod(i: Int, mod: Int): Int = (i % mod + mod) % mod
-    tones(posMod(n, tones.size))(fun) increaseBy(n/tones.size *7) 
+    tones(posMod(n, tones.size))(fun) increaseBy (n / tones.size * 7)
+  }
+
+  def contains(t: Tone): Boolean = {
+    (tones map (_(fun)) filter (_.stepsTo(t) % 7 == 0)) nonEmpty
   }
 }
-
 
 case class Triad(val fun: Tone) extends Chord {
   val tones: List[Tone => Tone] = List(_ increaseBy 0, _ increaseBy 2, _ increaseBy 4)
