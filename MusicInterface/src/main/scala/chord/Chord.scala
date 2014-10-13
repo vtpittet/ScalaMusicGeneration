@@ -11,7 +11,7 @@ sealed trait Chord {
   }
 
   def contains(t: Tone): Boolean = {
-    (tones map (_(fun)) filter (_.stepsTo(t) % 7 == 0)) nonEmpty
+    (tones map (_(fun)) filter (x => x.stepsTo(t) % 7 == 0 && x.alter == t.alter)) nonEmpty
   }
 }
 
