@@ -150,8 +150,15 @@ beforeV : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI) %perhaps p
 beforeVI : (V beforeV)
 beforeVII : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI)
 
-Minor scale
-	
+Minor scale (same for now)
+ScoreEnd : (I beforeI) | (V beforeV)| (IV beforeIV)
+beforeI : (V beforeV) | (VII beforeVII)
+beforeII : (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
+beforeIII : %not used
+beforeIV : (I beforeI) | (VI beforeVI)
+beforeV : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
+beforeVI : (V beforeV)
+beforeVII : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI)
 
 
 
