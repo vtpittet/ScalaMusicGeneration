@@ -131,9 +131,26 @@ for all i from 0 to length-2 : c1 = c[i], c2 = c[i + 1] :
 		
 ------------------------------------------------
 		
+Grammar : from the end
 
-	
-	
+- () predom in the end only after V-I
+Score : (Ton | Predom)? (Dom Ton Predom?)* Dom TonS (Predom TonS)?
+TonS : I
+Ton : I | VI % pref I
+Dom : V | VII | V7+ % pref V
+Predom : II | IV % pref IV
+
+Major scale
+ScoreEnd : (I beforeI) | (V beforeV)| (IV beforeIV)
+beforeI : (V beforeV) | (VII beforeVII)
+beforeII : (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
+beforeIII : %not used
+beforeIV : (I beforeI) | (VI beforeVI)
+beforeV : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
+beforeVI : (V beforeV)
+beforeVII : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI)
+
+Minor scale
 	
 
 
