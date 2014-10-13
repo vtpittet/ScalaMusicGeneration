@@ -1,4 +1,8 @@
-/bin
+target/
+bin/
 readmes/
 .cache
-target/
+.classpath
+.project
+.settings/
+*~
