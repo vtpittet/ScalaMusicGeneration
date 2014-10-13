@@ -19,11 +19,11 @@ p35
 
 p36-37
 - () predom in the end only after V-I
-Score : (Ton + Predom)? (Dom Ton Predom?)* Dom TonS (Predom TonS)?
+Score : (Ton | Predom)? (Dom Ton Predom?)* Dom TonS (Predom TonS)?
 TonS : I
-Ton : I + VI % pref I
-Dom : V + VII + V7+ % pref V
-Predom : II + IV % pref IV
+Ton : I | VI % pref I
+Dom : V | VII | V7+ % pref V
+Predom : II | IV % pref IV
 
 p38
 
