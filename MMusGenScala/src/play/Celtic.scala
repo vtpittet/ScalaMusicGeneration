@@ -17,89 +17,97 @@ import utils.PrettyPrinter
 import utils.MelodyWriter
 import segmentSystem.Sequential
 import segmentSystem.ClassPredicate
+import gen._
 
 object Celtic extends App with MelodyWriter {
   implicit val noteDuration = E
 
   val part1 = {
-    ( O + I + II 
-	+ III(/(2/3)) + II(/2) + I 
-	+ I + (VI + V 
-	+ V(/2) + VI(/(2/3)))(-7) + I 
-	+ II(Q) + I(S) + I(S) 
-	+ III(/(2/3)) + IV(/2) + V 
-	+ III + I + (VII 
-	+ VI(/(1/4)))(-7)) -2
+    ( O + III + IV
+	+ V/(2/3.0) + IV/(2.0) + III
+	+ III + I + (VII -7) 
+	+ (VII-7)/2.0 + I/(2/3.0) + III
+	+ IV(Q) + III(S) + IV(S) 
+	+ V/(2/3.0) + VI/(2.0) + VII 
+	+ V + III + II 
+	+ I/(1/4.0))
   }
   
   val part1harm = {
 	( O 
-	+ III(/(2/3)) 
-	+ I 
-	+ VI(/(2/3))(-7) 
-	+ II(Q) 
-	+ III(/(2/3))
-	+ III
-	+ VI(/(1/4))(-7)) (/(2/3)) -2
+	+ V 
+	+ III 
+	+ I
+	+ IV 
+	+ V
+	+ V
+	+ I/(1/2.0)) /(1/3.0)
   }
   
   val part2 = {
-    ( III + IV
-	+ V(/(2/3)) + IV(/2) + III
-	+ III + II + I 
-	+ VI(/2)(-7) + II(/(2/3)) + III 
-	+ II(Q) + III(S) + IV(S) 
-	+ V(/(2/3)) + III(/2) + I
-	+ I + III + V 
-	+ VI(/(1/4))) -2
+    ( V + VI
+	+ VII/(2/3.0) + VI/2.0 + V
+	+ V + IV + III 
+	+ I/2.0 + IV/(2/3.0) + V 
+	+ IV(Q) + V(S) + VI(S) 
+	+ VII/(2/3.0) + V/2.0 + III
+	+ III + V + VII 
+	+ ((I + 7)/(1/4.0)))
   }
   
   val part2harm = {
-	( VI
-	+ V(/(2/3))
-	+ III 
-	+ II(/(2/3)) 
-	+ II(Q) 
-	+ V(/(2/3))
-	+ I
-	+ VI(/(1/4))) (/(2/3)) -2
+	( VII
+	+ V 
+	+ IV 
+	+ IV
+	+ VII
+	+ III
+	+ I/(1/2.0) +7) /(1/3.0)
   }
   
   val part3 = {
-    ( I(+7) + VI
-	+ V(/(2/3)) + III(/2) + II
-	+ I + II + III 
-	+ VI(/2)(-7) + II(/(2/3)) + III 
-	+ II(Q) + I(S) + II(S) 
-	+ III(/(2/3)) + II(/2) + I
-	+ I + (VI + V 
-	+ VI(/(1/4)))(-7)) -2
+    ( (III +7) + (I+7) //TODO : pq qd III(+7) et I(+7) pb en VII(-7) aussi ?
+	+ VII/(2/3.0) + V/2.0 + IV
+	+ III + IV + V 
+	+ I/2.0 + IV/(2/3.0) + V 
+	+ IV(Q) + III(S) + IV(S) 
+	+ V/(2/3.0) + IV/2.0 + III
+	+ III + I + (VII -7)
+	+ I/(1/4.0))
   }
   
   val part3harm = {
-	( VI
-	+ V(/(2/3))
-	+ I  
-	+ II(/(2/3)) 
-	+ II(Q) 
-	+ III(/(2/3))
-	+ I 
-	+ VI(/(1/4))(-7)) (/(2/3)) -2
+	( VII
+	+ III  
+	+ IV 
+	+ IV 
+	+ V
+	+ III 
+	+ I/(1/2.0)) /(1/3.0)
   }
 
 
-  def compose(p1 : MusicalSegment, p2 : MusicalSegment, p3: MusicalSegment ): MusicalSegment =
-    (p1 + p2 + p3)
+  def compose(p1 : MusicalSegment, p2 : MusicalSegment, p3: MusicalSegment, i: Int ): MusicalSegment =
+    (p1 + p2 + p3) + i
 
-  val part = compose(part1, part2, part3) - 7 //voir pour le -7
+  val part = (compose(part1, part2, part3, 14) ) | compose(part1harm, part2harm, part3harm, 7)
 
   val tempo = 60
   val instrument = 0
-  val minScale = Minor(A)
+  val minScale = Minor(G) //TODO : pq A marche pas ?
 
   MelodyPlayer(
     Sequential(Nil)
       + (part withScale minScale),
+    tempo,
+    instrument = instrument)
+    
+  val d = HarmonyGen(compose(part1harm, part2harm, part3harm, 14))
+  val e = compose(part1, part2, part3, 14) | d.harmonize._2
+  
+  MelodyPlayer(
+    Sequential(Nil)
+      + (e withScale minScale),
     tempo,
     instrument = instrument)
 

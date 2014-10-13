@@ -4,12 +4,12 @@ import segmentSystem._
 import tonalSystem.Tone
 import tonalSystem.Tone._
 import scala.util.Random
-import chord.Chord
+//import chord.Chord
 import segmentSystem.ClassPredicate._
 
-case class HarmonyGen(melody: SequentialSegment, allChords: List[Chord]) {
+case class HarmonyGen(melody: MusicalSegment/*, allChords: List[Chord]*/) {
 
-  def harmonize: MusicalSegment = {
+  def harmonize: (SequentialSegment, ParallelSegment) = {
 
     val flatMel = melody.flatAll
     var melv: MusicalSegment = flatMel
@@ -22,16 +22,16 @@ case class HarmonyGen(melody: SequentialSegment, allChords: List[Chord]) {
     //TODO if melody too low : put it higher
     val lowerBound = mel.notes.min(NoteOrdering) - 14
 
-    val possibleChords: List[List[Chord]] = mel.notes.map(getPossChords(_.tone))
+    /*val possibleChords: List[List[Chord]] = mel.notes.map(getPossChords(_.tone))
 
     //TODO for now : take randomly one chord for each note
     val chosenChords = possibleChords.map(x => chooseOneIn(x))
-
+	*/
     ???
   }
-  def getPossChords(t: Tone): List[Chord] = {
+  /*def getPossChords(t: Tone): List[Chord] = {
     allChords.filter(_.contains())
-  }
+  }*/
 
   def getOneVoice(mel: MusicalSegment): MusicalSegment = {
     if (mel.parDepth != 0) {
