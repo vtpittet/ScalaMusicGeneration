@@ -1,3 +1,5 @@
+package chord
+
 import tonalSystem.Tone
 import tonalSystem.Tone.II
 
