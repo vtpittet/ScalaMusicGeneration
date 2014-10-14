@@ -28,7 +28,7 @@ case class HarmonyGen(melody: MusicalSegment, allChords: List[Chord]) {
     val chosenTonesL = findAllTones(chosenChords, melT)
     val chosenNotes = tonesToNotes(chosenTonesL, mel.notes)
 
-    (mel, transpose(chosenNotes).tail)
+    (mel, createPar(transpose(chosenNotes).tail))
 
   }
   def getPossChords(t: Tone): List[Chord] = {
@@ -46,15 +46,15 @@ case class HarmonyGen(melody: MusicalSegment, allChords: List[Chord]) {
     }
     buf.toList
   }
-  def tonesToNotes(tones : List[List[Tone]], notes : List[Note]) : List[List[Note]] = {
-    (tones zip notes) map (x => x._1 map(y => Note(y,  x._2.duration)))
+  def tonesToNotes(tones: List[List[Tone]], notes: List[Note]): List[List[Note]] = {
+    (tones zip notes) map (x => x._1 map (y => Note(y, x._2.duration)))
   }
-  
+
   def createPar(voices: List[List[Note]]): ParallelSegment = {
     def toSequ(voice: List[Note]): SequentialSegment = {
-      voice foldLeft (EmptySeq)((s, n) => s + n)
+      voice.foldLeft[SequentialSegment](EmptySeq)((s, n) => s + n)
     }
-    voices.tail foldLeft (toSequ(voices.head)) { (x, y) => x | toSequ(y) }
+    voices.tail.foldLeft(EmptyPar | toSequ(voices.head))((x, y) => x | toSequ(y))
   }
 
   def findChords(poss: List[List[Chord]]): List[Chord] = {
