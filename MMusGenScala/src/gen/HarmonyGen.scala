@@ -82,7 +82,8 @@ case class HarmonyGen(melody: MusicalSegment, allChords: List[Chord]) {
 
 }
 
-//TODO : test and then put in Tone after asking Valerian
+//TODO : test and then put in Note after asking Valerian (or no need ?)
+//separate ToneOrdering out of it
 object NoteOrdering extends Ordering[Note] {
   def compare(a: Note, b: Note) = {
     val at = a.tone
@@ -97,6 +98,21 @@ object NoteOrdering extends Ordering[Note] {
     }
   }
 }
+/*
+
+//TODO : be able to test the inversion (later, when I64) : or put I64 in Chords ?
+// new class, which has a chord and an inversion ?
+//perhaps : several searches are done (when one fails, another begins, with random choices ok p-ê)
+def prevPoss(c : Chord) /* extends PartialFunction[??]*/ : List[List[Chord]] = {
+	c match {
+		case Triad(I(_, None)) => ???
+		case _ => List(Nil)
+	}
+}
+def followPoss(c : Chord) /* extends PartialFunction[??]*/ : List[List[Chord]] = {
+	???
+}
 
 
 
+*/
