@@ -160,5 +160,15 @@ beforeV : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI) %perhaps p
 beforeVI : (V beforeV)
 beforeVII : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI)
 
+----
+Possible triads :
+I : I, IV, VI
+II : II, V, VII
+III : I, III, VI
+IV : II, IV, VII
+V : I, III, V
+VI : II, IV, VI
+VII : III, V, VII
+
 
 

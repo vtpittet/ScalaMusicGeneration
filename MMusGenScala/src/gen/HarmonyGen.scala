@@ -4,12 +4,13 @@ import segmentSystem._
 import tonalSystem.Tone
 import tonalSystem.Tone._
 import scala.util.Random
-//import chord.Chord
+import chord.Chord
 import segmentSystem.ClassPredicate._
+import scala.collection.mutable.ListBuffer
 
-case class HarmonyGen(melody: MusicalSegment/*, allChords: List[Chord]*/) {
+case class HarmonyGen(melody: MusicalSegment, allChords: List[Chord]) {
 
-  def harmonize: (SequentialSegment, ParallelSegment) = {
+  def harmonize: (MusicalSegment, ParallelSegment) = {
 
     val flatMel = melody.flatAll
     var melv: MusicalSegment = flatMel
@@ -21,17 +22,53 @@ case class HarmonyGen(melody: MusicalSegment/*, allChords: List[Chord]*/) {
     //TODO for now, 2 octaves below the lowest note of the melody 
     //TODO if melody too low : put it higher
     val lowerBound = mel.notes.min(NoteOrdering) - 14
+    val melT = mel.notes map (_.tone)
+    val possibleChords: List[List[Chord]] = melT map (getPossChords(_))
+    val chosenChords = findChords(possibleChords)
+    val chosenTonesL = findAllTones(chosenChords, melT)
+    val chosenNotes = tonesToNotes(chosenTonesL, mel.notes)
 
-    /*val possibleChords: List[List[Chord]] = mel.notes.map(getPossChords(_.tone))
+    (mel, transpose(chosenNotes).tail)
 
+  }
+  def getPossChords(t: Tone): List[Chord] = {
+    allChords.filter(_.contains(t))
+  }
+
+  // from http://stackoverflow.com/questions
+  // /1683312/is-there-a-safe-way-in-scala-to-transpose-a-list-of-unequal-length-lists
+  def transpose[A](xss: List[List[A]]): List[List[A]] = {
+    val buf = new ListBuffer[List[A]]
+    var yss = xss
+    while (!yss.head.isEmpty) {
+      buf += (yss map (_.head))
+      yss = (yss map (_.tail))
+    }
+    buf.toList
+  }
+  def tonesToNotes(tones : List[List[Tone]], notes : List[Note]) : List[List[Note]] = {
+    (tones zip notes) map (x => x._1 map(y => Note(y,  x._2.duration)))
+  }
+  
+  def createPar(voices: List[List[Note]]): ParallelSegment = {
+    def toSequ(voice: List[Note]): SequentialSegment = {
+      voice foldLeft (EmptySeq)((s, n) => s + n)
+    }
+    voices.tail foldLeft (toSequ(voices.head)) { (x, y) => x | toSequ(y) }
+  }
+
+  def findChords(poss: List[List[Chord]]): List[Chord] = {
     //TODO for now : take randomly one chord for each note
-    val chosenChords = possibleChords.map(x => chooseOneIn(x))
-	*/
+    poss.map(x => chooseOneIn(x))
+  }
+
+  def findAllTones(chords: List[Chord], mel: List[Tone] /*, lowerBound: Tone*/ ): List[List[Tone]] = {
+
+    def findTones(pred: List[Tone], curr: Chord, currm: Tone): List[Tone] = {
+      ???
+    }
     ???
   }
-  /*def getPossChords(t: Tone): List[Chord] = {
-    allChords.filter(_.contains())
-  }*/
 
   def getOneVoice(mel: MusicalSegment): MusicalSegment = {
     if (mel.parDepth != 0) {
