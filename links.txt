@@ -22,3 +22,6 @@ http://www.moz.ac.at/sem/lehre/lib/bib/software/cm/Notes_from_the_Metalevel/
 https://github.com/namin/metasolfeggio/tree/master/commonmusic
 
 https://github.com/namin/metasolfeggio
+
+--------
+http://stackoverflow.com/questions/12521065/running-sbt-results-in-com-typesafe-sbteclipsesbteclipse1-4-0-not-found
