@@ -13,7 +13,7 @@ case class HarmonyGen(melody: MusicalSegment) {
   val allChords: List[Chord] = List(Triad(I), Triad(II), Triad(III),
     Triad(IV), Triad(V), Triad(VI), Triad(VII), Seventh(V))
   //TODO add all what is in the grammar
-  //TODO : should be ChInv ?
+  //TODO : should be ChInv perhaps ?
 
   def harmonize(): (MusicalSegment, ParallelSegment) = {
     val flatMel = melody.flatAll
@@ -94,32 +94,39 @@ case class HarmonyGen(melody: MusicalSegment) {
   //TODO : perhaps a problem : changes the octave to 0
   def prevPoss(ci: ChI) /* extends PartialFunction[??]*/ : List[ChInv] = {
     ci match {
-      case ChInv(Triad(I(_, None)), Inv12) => HarmFct(V)
-      case ChInv(Triad(II(_, None)), Inv12) => HarmFct(I)
-      //case ChInv(Triad(III(_, None)), Inv12 ) => ???
-      case ChInv(Triad(IV(_, None)), Inv12) => HarmFct(I)
-      case ChInv(Triad(V(_, None)), Inv12) => HarmFct(I) ::: HarmFct(IV)
-      case ChInv(Triad(VI(_, None)), Inv12) => getCiL(V, Inv12)
-      case ChInv(Triad(VII(_, None)), Inv12) => prevPoss(ChInv(Triad(V), Inv12))
-      //case ChInv(Triad(I(_, None)), Inv3 ) => ???
-      //case ChInv(Seventh(V(_, None)), Inv12 ) => ??? //TODO : find inversions for V7+
+      case ChInv(Triad(I(_, None)), i) if testInv(i) => HarmFct(V)
+      case ChInv(Triad(II(_, None)), i) if testInv(i) => HarmFct(I)
+      //case ChInv(Triad(III(_, None)), i) if testInv(i) => ???
+      case ChInv(Triad(IV(_, None)), i) if testInv(i) => HarmFct(I)
+      case ChInv(Triad(V(_, None)), i) if testInv(i) => HarmFct(I) ::: HarmFct(IV)
+      case ChInv(Triad(VI(_, None)), i) if testInv(i) => getCiL(V, i)
+      case ChInv(Triad(VII(_, None)), i) if testInv(i) => HarmFct(I) ::: HarmFct(IV)
+      case ChInv(Triad(I(_, None)), i) if testInv(i, List(Inv3)) => ???
+      //case ChInv(Seventh(V(_, None)), i) if testInv(i) => ??? //TODO : find legal inversions for V7+
       //TODO : add others
-      case End => getCiL(IV, Inv12) ::: HarmFct(I)
-      case EndHalf => getCiL(V, Inv12)
+      case End => getCiL(I, List(Inv1)) ::: getCiL(IV, List(Inv1)) ::: getCiL(V, List(Inv1))
+      case EndHalf => getCiL(V, List(Inv1))
       case _ => Nil
     }
+  }
+
+  //TODO perhaps better way to do patter matching with list
+  def testInv(i: List[Inversion], li: List[Inversion] = List(Inv1, Inv2)): Boolean = {
+    i.filter(x => li.contains(x)).nonEmpty
   }
 
   def HarmFct(t: Tone): List[ChInv] = {
     t match {
-      case I(_, None) => List(I, VI).map(x => ChInv(Triad(x), Inv12))
-      case V(_, None) => List(V, VII).map(x => ChInv(Triad(x), Inv12))
-      case IV(_, None) => List(IV, II).map(x => ChInv(Triad(x), Inv12))
+      case I(_, None) => List(I, VI).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
+      case V(_, None) => ChInv(Triad(I), List(Inv3)) :: //I64
+        ChInv(Seventh(V), List(Inv1, Inv2, Inv3, Inv4)) :: //V7+ //TODO find leagal inversion
+        List(V, VII).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
+      case IV(_, None) => List(IV, II).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
       case _ => Nil
     }
   }
 
-  def getCiL(t: Tone, i: Inversion): List[ChInv] = List(t).map(x => ChInv(Triad(x), i))
+  def getCiL(t: Tone, i: List[Inversion]): List[ChInv] = List(t).map(x => ChInv(Triad(x), i))
 
   /*
   def followPoss(c: Chord) /* extends PartialFunction[??]*/ : List[List[Chord]] = {
@@ -148,13 +155,13 @@ object ToneOrdering extends Ordering[Tone] {
 }
 
 class ChI
-case class ChInv(c: Chord, i: Inversion) extends ChI
+case class ChInv(c: Chord, i: List[Inversion]) extends ChI
 case object End extends ChI
 case object EndHalf extends ChI
 
-//TODO : perhaps represent differently
+//TODO : perhaps represent differently ?
 trait Inversion
-//case object Inv1 extends Inversion
-case object Inv12 extends Inversion
+case object Inv1 extends Inversion
+case object Inv2 extends Inversion
 case object Inv3 extends Inversion
 case object Inv4 extends Inversion
