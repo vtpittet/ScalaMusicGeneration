@@ -140,10 +140,12 @@ Ton : I | VI % pref I
 Dom : V | VII | V7+ % pref V
 Predom : II | IV % pref IV
 
-//TODO : put I64 and V7+
+//TODO : put I64 and V7+, also nap. sixth, V of V, ... other ?
+//refine grammar : add the differences between major and minor -> one prevPoss for each
+
 Major scale
 ScoreEnd : (I beforeI) | (V beforeV)| (IV beforeIV)
-beforeI : (V beforeV) | (VII beforeVII)
+beforeI : (V beforeV) | (VII beforeVII) | (V7 beforeV)
 beforeII : (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
 beforeIII : %not used
 beforeIV : (I beforeI) | (VI beforeVI)
@@ -172,5 +174,27 @@ VI : II, IV, VI
 VII : III, V, VII
 
 --------------------------------------------
+Secondary dominants: see p51-52, and p15
+¬ for bécarre
+
+in A minor harmonic (and natural : no need of sol¬):
+exists in minor : V of III, IV, V, VI
+III : do -> sol¬, si, ré, fa
+IV : ré -> la, do#, mi, sol¬
+VI : fa -> do, mi, sol¬, sib
+V : mi -> si, ré#, fa#, la
+-
+for natural only : //test, not sure it is ok, should
+VII : sol -> ré, fa#, la, do
+
+in C major :
+exists in major : V of II, III, IV, V, VI
+II : ré -> la, do#, mi, sol
+V : sol -> ré, fa#, la, do
+VI : la -> mi, sol#, si, ré
+III : mi -> si, ré#, fa#, la
+IV : fa -> do, mi, sol, sib
+
+--------------------------------
 set TERM=msys
 http://stackoverflow.com/questions/11219266/how-to-fix-warning-terminal-is-not-fully-functional-error-in-command-console
