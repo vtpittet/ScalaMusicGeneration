@@ -39,7 +39,7 @@ case class SecDomMinH(fun: Tone) extends Chord {
     case IV(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _ increaseBy 1, _.increaseBy(3).es)
     case  V(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _.increaseBy(1).es, _.increaseBy(3).es)
     case VI(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _.increaseBy(1).is, _ increaseBy 3)
-    case _ => Triad(fun decreaseBy 3).tones
+    case _ => Seventh(fun decreaseBy 3).tones
   }
 }
 
@@ -52,7 +52,7 @@ case class SecDomMinN(fun: Tone) extends Chord {
       List(_ decreaseBy 3, _.decreaseBy(1).is, _ increaseBy 1, _ increaseBy 3)
     case  V(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _ increaseBy 1, _.increaseBy(3).es)
     case VI(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _.increaseBy(1).is, _ increaseBy 3)
-    case _ => Triad(fun decreaseBy 3).tones
+    case _ => Seventh(fun decreaseBy 3).tones
   }
 }
 
@@ -63,6 +63,6 @@ case class SecDomMaj(fun: Tone) extends Chord {
     case II(_, None) | V(_, None) | VI(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _ increaseBy 1, _ increaseBy 3)
     case III(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _.increaseBy(1).is, _ increaseBy 3)
     case IV(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _ increaseBy 1, _.increaseBy(3).es)
-    case _ => Triad(fun decreaseBy 3).tones
+    case _ => Seventh(fun decreaseBy 3).tones
   }
 }
