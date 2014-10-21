@@ -2,12 +2,9 @@ package play
 
 import midiInterface.MelodyPlayer
 import rythmics._
-import rythmics.{ E => rE }
-import rythmics.{ H => rH }
-import rythmics.{ T => rT }
 import segmentSystem.MusicalSegment
 import segmentSystem.SequentialSegment
-import tonalSystem.G
+import tonalSystem.A
 import tonalSystem.Tone._
 import tonalSystem.Major
 import tonalSystem.Minor
@@ -86,25 +83,24 @@ object Celtic extends App with MelodyWriter {
 	+ I/(1/2.0)) /(1/3.0)
   }
 
-
-  def compose(p1 : MusicalSegment, p2 : MusicalSegment, p3: MusicalSegment, i: Int ): MusicalSegment =
+  def compose(p1: MusicalSegment, p2: MusicalSegment, p3: MusicalSegment, i: Int): MusicalSegment =
     (p1 + p2 + p3) + i
 
-  val part = (compose(part1, part2, part3, 14) ) | compose(part1harm, part2harm, part3harm, 7)
+  val part = (compose(part1, part2, part3, 14)) | compose(part1harm, part2harm, part3harm, 7)
 
   val tempo = 60
   val instrument = 0
-  val minScale = Minor(G) //TODO : pq A marche pas ?
+  val minScale = Minor(A)
 
   MelodyPlayer(
     Sequential(Nil)
       + (part withScale minScale),
     tempo,
     instrument = instrument)
-    
+
   val d = HarmonyGen(compose(part1harm, part2harm, part3harm, 14))
-  val e = compose(part1, part2, part3, 14) | d.harmonize._2
-  
+  val e = compose(part1, part2, part3, 14) | d.harmonize()._2
+
   MelodyPlayer(
     Sequential(Nil)
       + (e withScale minScale),
