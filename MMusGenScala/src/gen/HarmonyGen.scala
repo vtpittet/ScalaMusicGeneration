@@ -15,7 +15,7 @@ case class HarmonyGen(melody: MusicalSegment) {
   //TODO add all what is in the grammar
   //TODO : should be ChInv perhaps ?
 
-  def harmonize(): (MusicalSegment, ParallelSegment) = {
+  def harmonize(endF: ChiEnd): (MusicalSegment, ParallelSegment) = {
     val flatMel = melody.flatAll
     var melv: MusicalSegment = flatMel
     if (flatMel.parDepth != 0) {
@@ -24,13 +24,13 @@ case class HarmonyGen(melody: MusicalSegment) {
     val mel = melv
 
     //TODO for now, 2 octaves below the lowest note of the melody 
-    //TODO if melody too low : put it higher (of octaves)
+    //TODO if melody too low : put it higher (of octaves) -> then : tell back to caller !!
     //TODO or : put always same bound : I(0)
-    // and put higher the melody if there is a note lower than some threshold ?
+    // and put higher the melody if there is a note lower than some threshold ? -> then : tell back to caller !!
     val lowerBound = mel.notes.min(NoteOrdering) - 14
     val melT = mel.notes map (_.tone)
     val possibleChords: List[List[Chord]] = melT map (getPossChords(_))
-    val chosenChords = findChords(possibleChords)
+    val chosenChords = findChords(possibleChords, endF)
     val chosenTonesL = findAllTones(chosenChords, melT)
     val chosenNotes = tonesToNotes(chosenTonesL, mel.notes)
 
@@ -63,15 +63,49 @@ case class HarmonyGen(melody: MusicalSegment) {
     voices.tail.foldLeft(EmptyPar | toSequ(voices.head))((x, y) => x | toSequ(y))
   }
 
-  def findChords(poss: List[List[Chord]]): List[Chord] = {
-    //TODO for now : take randomly one chord for each note
-    //	after : use prevPoss
-    //poss.map(x => chooseOneIn(x))
+  def findChords(poss: List[List[Chord]], endF: ChI): List[ChInv] = {
 
-    ???
+    def findChord(i: ChI, possC: List[List[Chord]], buf: List[ChInv]): List[ChInv] = {
+      if (possC.isEmpty) return buf
+      val possChI = possC.head.map(x => ChInv(x, possInv(x)))
+      val inter: List[ChInv] = intersectChInv(possChI, prevPoss(i))
+      if (inter.isEmpty) {
+        if (possChI.isEmpty) {
+          if (buf.isEmpty) {
+            ??? //TODO : if silence or too bizarre note (alterated) at the end of the melody ?
+            // if bizarre note : put some triad of it ?
+            // if silence : put nothing ?,
+            //   and take into account afterwards (length != the one asked for ?)
+          } else {
+            //keep the previous chord
+            val nextC = buf.head
+            findChord(nextC, possC.tail, nextC :: buf)
+          }
+        } else {
+          //take a possible chord, even if harmonically not ok
+          val nextC = Random.shuffle(possChI).head
+          findChord(nextC, possC.tail, nextC :: buf)
+        }
+      } else {
+        //normal case : random between ok chords
+        val nextC = Random.shuffle(inter).head
+        findChord(nextC, possC.tail, nextC :: buf)
+      }
+
+    }
+    def possInv(c: Chord): List[Inversion] = {
+      ???
+    }
+    def intersectChInv(a: List[ChInv], b: List[ChInv]): List[ChInv] = {
+      ???
+    }
+
+    findChord(endF, poss.reverse, Nil)
   }
 
-  def findAllTones(chords: List[Chord], mel: List[Tone] /*, lowerBound: Tone*/ ): List[List[Tone]] = {
+  def findAllTones(chords: List[ChInv], mel: List[Tone] /*, lowerBound: Tone*/ ): List[List[Tone]] = {
+    //TODO : fct that put away some inversions from a list of chord
+    // (ex : if V7+ -> I, I has to be Inv1, can't be I6)
 
     def findTones(pred: List[Tone], curr: Chord, currm: Tone): List[Tone] = {
       ???
@@ -101,8 +135,8 @@ case class HarmonyGen(melody: MusicalSegment) {
       case ChInv(Triad(V(_, None)), i) if testInv(i) => HarmFct(I) ::: HarmFct(IV)
       case ChInv(Triad(VI(_, None)), i) if testInv(i) => getCiL(V, i)
       case ChInv(Triad(VII(_, None)), i) if testInv(i) => HarmFct(I) ::: HarmFct(IV)
-      case ChInv(Triad(I(_, None)), i) if testInv(i, List(Inv3)) => ???
-      //case ChInv(Seventh(V(_, None)), i) if testInv(i) => ??? //TODO : find legal inversions for V7+
+      //case ChInv(Triad(I(_, None)), i) if testInv(i, List(Inv3)) => ???
+      case ChInv(Seventh(V(o, None)), i) if testInv(i) => prevPoss(ChInv(Triad(V(o, None)), List(Inv1, Inv2)))
       //TODO : add others
       case End => getCiL(I, List(Inv1)) ::: getCiL(IV, List(Inv1)) ::: getCiL(V, List(Inv1))
       case EndHalf => getCiL(V, List(Inv1))
@@ -119,7 +153,7 @@ case class HarmonyGen(melody: MusicalSegment) {
     t match {
       case I(_, None) => List(I, VI).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
       case V(_, None) => ChInv(Triad(I), List(Inv3)) :: //I64
-        ChInv(Seventh(V), List(Inv1, Inv2, Inv3, Inv4)) :: //V7+ //TODO find leagal inversion
+        //ChInv(Seventh(V), List(Inv1, Inv2, Inv3, Inv4)) :: //V7+ //TODO : before I only -> pb
         List(V, VII).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
       case IV(_, None) => List(IV, II).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
       case _ => Nil
@@ -156,8 +190,9 @@ object ToneOrdering extends Ordering[Tone] {
 
 class ChI
 case class ChInv(c: Chord, i: List[Inversion]) extends ChI
-case object End extends ChI
-case object EndHalf extends ChI
+class ChiEnd extends ChI
+case object End extends ChiEnd
+case object EndHalf extends ChiEnd
 
 //TODO : perhaps represent differently ?
 trait Inversion
