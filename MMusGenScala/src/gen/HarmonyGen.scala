@@ -38,7 +38,12 @@ case class HarmonyGen(melody: MusicalSegment) {
 
   }
   def getPossChords(t: Tone): List[Chord] = {
-    allChords.filter(_.contains(t))
+    //TODO : change : give here ChInv with poss Invs !!
+    // see possInv
+    t match {
+      case O => List(EmptyChord)
+      case _ => allChords.filter(_.contains(t))
+    }
   }
 
   // from http://stackoverflow.com/questions
@@ -67,25 +72,39 @@ case class HarmonyGen(melody: MusicalSegment) {
 
     def findChord(i: ChI, possC: List[List[Chord]], buf: List[ChInv]): List[ChInv] = {
       if (possC.isEmpty) return buf
+      else if (possC.head.isEmpty) {
+        //bizarre note
+        //TODO if bizarre note : put some triad of it,
+        // or put a harmonically correct chord ? (-> dissonance) ?
+        if (buf.isEmpty) {
+          // at the end
+          val nextC = ChInv(EmptyChord, Nil)
+          findChord(nextC, possC.tail, nextC :: buf)
+        } else {
+          //keep the previous chord
+          val nextC = buf.head
+          findChord(nextC, possC.tail, nextC :: buf)
+        }
+      } else if (possC.head.head == EmptyChord) {
+        //silent : give silent chord, but comtinues harmony for next
+        findChord(i, possC.tail, ChInv(EmptyChord, Nil) :: buf)
+      }
+
       val possChI = possC.head.map(x => ChInv(x, possInv(x)))
       val inter: List[ChInv] = intersectChInv(possChI, prevPoss(i))
       if (inter.isEmpty) {
-        if (possChI.isEmpty) {
-          if (buf.isEmpty) {
-            ??? //TODO : if silence or too bizarre note (alterated) at the end of the melody ?
-            // if bizarre note : put some triad of it ?
-            // if silence : put nothing ?,
-            //   and take into account afterwards (length != the one asked for ?)
-          } else {
-            //keep the previous chord
-            val nextC = buf.head
-            findChord(nextC, possC.tail, nextC :: buf)
-          }
+        //no possible chord is harmonically ok,
+        // but there are possible chords (possC.head isn't empty)
+        if (buf.nonEmpty && intersectChInv(possChI, List(buf.head)).nonEmpty) {
+          //give the previous if it is possible
+          val nextC = intersectChInv(possChI, List(buf.head)).head
+          findChord(nextC, possC.tail, nextC :: buf)
         } else {
           //take a possible chord, even if harmonically not ok
           val nextC = Random.shuffle(possChI).head
           findChord(nextC, possC.tail, nextC :: buf)
         }
+
       } else {
         //normal case : random between ok chords
         val nextC = Random.shuffle(inter).head
@@ -94,10 +113,26 @@ case class HarmonyGen(melody: MusicalSegment) {
 
     }
     def possInv(c: Chord): List[Inversion] = {
-      ???
+      c match {
+        case EmptyChord => Nil
+        case Triad(I(_, _)) => List(Inv1, Inv2, Inv3)
+
+        case Triad(_) => List(Inv1, Inv2)
+        case Seventh(_) => List(Inv1, Inv2, Inv3, Inv4)
+
+        //TODO : add other special cases
+
+        case _ if (c.tones.size == 3) => List(Inv1, Inv2, Inv3)
+        case _ if (c.tones.size == 4) => List(Inv1, Inv2, Inv3, Inv4)
+        case _ => Nil // TODO : perhaps not the best to do
+      }
     }
     def intersectChInv(a: List[ChInv], b: List[ChInv]): List[ChInv] = {
+      val ca = a.map(_.c)
+      val cb = b.map(_.c)
+
       ???
+
     }
 
     findChord(endF, poss.reverse, Nil)
@@ -125,7 +160,7 @@ case class HarmonyGen(melody: MusicalSegment) {
 
   //TODO : way to give a list of possible chords from a grammar (for allPoss of HarmonyGen ?)
   //-- then : define a trait of harmonyGenerizers !!
-  //TODO : perhaps a problem : changes the octave to 0
+  //TODO : perhaps a problem : fct changes the octave to 0
   def prevPoss(ci: ChI) /* extends PartialFunction[??]*/ : List[ChInv] = {
     ci match {
       case ChInv(Triad(I(_, None)), i) if testInv(i) => HarmFct(V)
@@ -144,7 +179,7 @@ case class HarmonyGen(melody: MusicalSegment) {
     }
   }
 
-  //TODO perhaps better way to do patter matching with list
+  //TODO perhaps better way to do pattern matching with list
   def testInv(i: List[Inversion], li: List[Inversion] = List(Inv1, Inv2)): Boolean = {
     i.filter(x => li.contains(x)).nonEmpty
   }
