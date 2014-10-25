@@ -99,7 +99,7 @@ object Celtic extends App with MelodyWriter {
     instrument = instrument)
 
   val d = HarmonyGen(compose(part1harm, part2harm, part3harm, 14))
-  val e = compose(part1, part2, part3, 14) | d.harmonize(End)._2
+  val e = compose(part1, part2, part3, 14) | d.harmonize(EndReal)._2
 
   MelodyPlayer(
     Sequential(Nil)

@@ -144,24 +144,33 @@ Predom : II | IV % pref IV
 //refine grammar : add the differences between major and minor -> one prevPoss for each
 
 Major scale
-ScoreEnd : (I beforeI) | (V beforeV)| (IV beforeIV)
-beforeI : (V beforeV) | (VII beforeVII) | (V7 beforeV)
-beforeII : (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
-beforeIII : %not used
-beforeIV : (I beforeI) | (VI beforeVI)
-beforeV : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
-beforeVI : (V beforeV)
-beforeVII : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI)
+beforeEnd : tI
+beforeHalfEnd : tV
+beforeI : h5 | tV7
+beforeII : h1 %perhaps put special cases when IV and II consecutives
+beforeIII : ??
+beforeIV : h1
+beforeV : h1 | h4 %perhaps put special cases when IV and II consecutives
+beforeVI : tV
+beforeVII : h1 | h4
+beforeI64 : ??
+beforeV7 : beforeV
+h1 : tI | tVI
+h4 : tIV | tII
+h5 : tI64 | tV | tVII
+
+tI : I beforeI
+tII : II beforeII
+tIII : III beforeIII
+tIV : IV beforeIV
+tV : V beforeV
+tVI : VI beforeVI
+tVII : VII beforeII
+tI64 : I64 before I64
+tV7 : V7 beforeV7
+...
 
 Minor scale (same for now)
-ScoreEnd : (I beforeI) | (V beforeV)| (IV beforeIV)
-beforeI : (V beforeV) | (VII beforeVII)
-beforeII : (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
-beforeIII : %not used
-beforeIV : (I beforeI) | (VI beforeVI)
-beforeV : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI) %perhaps put special cases when IV and II consecutives
-beforeVI : (V beforeV)
-beforeVII : (IV beforeIV) | (II beforeII) | (I beforeI) | (VI beforeVI)
 
 ----
 Possible triads :

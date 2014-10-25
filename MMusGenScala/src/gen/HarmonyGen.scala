@@ -77,7 +77,7 @@ case class HarmonyGen(melody: MusicalSegment) {
       else if (possC.head.isEmpty) {
         //bizarre note
         //TODO if bizarre note : put some triad of it,
-        // or put a harmonically correct chord ? (-> dissonance) ?
+        // or put a harmonically correct chord ? (-> dissonance) ? : if cadence, yes ?
         if (buf.isEmpty) {
           // at the end
           val nextC = ChInv(EmptyChord, Nil)
@@ -182,7 +182,8 @@ case class HarmonyGen(melody: MusicalSegment) {
       //case ChInv(Triad(I(_, None)), i) if testInv(i, List(Inv3)) => ???
       case ChInv(Seventh(V(o, None)), i) if testInv(i) => prevPoss(ChInv(Triad(V(o, None)), List(Inv1, Inv2)))
       //TODO : add others
-      case End => getCiL(I, List(Inv1)) ::: getCiL(IV, List(Inv1)) ::: getCiL(V, List(Inv1))
+      case EndReal => getCiL(I, List(Inv1)) ::: getCiL(IV, List(Inv1)) ::: getCiL(V, List(Inv1))
+      case EndMiddle => getCiL(I, List(Inv1)) ::: getCiL(VI, List(Inv1)) //perhaps Inv2 ok for VI ?
       case EndHalf => getCiL(V, List(Inv1))
       case _ => Nil
     }
@@ -235,7 +236,8 @@ object ToneOrdering extends Ordering[Tone] {
 class ChI
 case class ChInv(c: Chord, i: List[Inversion]) extends ChI
 class ChiEnd extends ChI
-case object End extends ChiEnd
+case object EndReal extends ChiEnd //want real complete cadencs
+case object EndMiddle extends ChiEnd // deceptive cadence can be ok
 case object EndHalf extends ChiEnd
 
 //TODO : perhaps represent differently ?
