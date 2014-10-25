@@ -37,7 +37,7 @@ case class SecDomMinH(fun: Tone) extends Chord {
   val tones: List[Tone => Tone] = fun match {
     case III(_, None) => List(_.decreaseBy(3).is, _ decreaseBy 1, _ increaseBy 1, _ increaseBy 3)
     case IV(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _ increaseBy 1, _.increaseBy(3).es)
-    case  V(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _.increaseBy(1).es, _.increaseBy(3).es)
+    case V(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _.increaseBy(1).es, _.increaseBy(3).es)
     case VI(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _.increaseBy(1).is, _ increaseBy 3)
     case _ => Seventh(fun decreaseBy 3).tones
   }
@@ -50,7 +50,7 @@ case class SecDomMinN(fun: Tone) extends Chord {
     case III(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _ increaseBy 1, _ increaseBy 3)
     case IV(_, None) | VII(_, None) =>
       List(_ decreaseBy 3, _.decreaseBy(1).is, _ increaseBy 1, _ increaseBy 3)
-    case  V(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _ increaseBy 1, _.increaseBy(3).es)
+    case V(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _ increaseBy 1, _.increaseBy(3).es)
     case VI(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _.increaseBy(1).is, _ increaseBy 3)
     case _ => Seventh(fun decreaseBy 3).tones
   }
@@ -65,4 +65,9 @@ case class SecDomMaj(fun: Tone) extends Chord {
     case IV(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _ increaseBy 1, _.increaseBy(3).es)
     case _ => Seventh(fun decreaseBy 3).tones
   }
+}
+
+case object EmptyChord extends Chord {
+  val fun = O
+  val tones = Nil
 }
