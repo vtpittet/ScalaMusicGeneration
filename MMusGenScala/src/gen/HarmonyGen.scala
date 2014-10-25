@@ -119,7 +119,11 @@ case class HarmonyGen(melody: MusicalSegment) {
       val ca = a.map(_.c)
       val cb = b.map(_.c)
 
-      ???
+      //!!!! TODO : need equality of chords modulo octave of associated tone
+      //	have put hashcode and equals methods in chord, hope this will work -> need to test
+      val cint = ca.intersect(cb)
+
+      cint map { x => ChInv(x, (a.find(c => c.c == x).get.i).intersect(b.find(c => c.c == x).get.i)) }
 
     }
 
@@ -166,7 +170,6 @@ case class HarmonyGen(melody: MusicalSegment) {
 
   //TODO : way to give a list of possible chords from a grammar (for allPoss of HarmonyGen ?)
   //-- then : define a trait of harmonyGenerizers !!
-  //TODO : perhaps a problem : fct changes the octave to 0
   def prevPoss(ci: ChI) /* extends PartialFunction[??]*/ : List[ChInv] = {
     ci match {
       case ChInv(Triad(I(_, None)), i) if testInv(i) => HarmFct(V)
