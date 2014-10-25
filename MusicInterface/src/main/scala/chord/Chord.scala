@@ -15,14 +15,32 @@ sealed trait Chord {
   def contains(t: Tone): Boolean = {
     (tones map (_(fun)) filter (x => x.stepsTo(t) % 7 == 0 && x.alter == t.alter)) nonEmpty
   }
+
+  def equalModOctaveTones(t1: Tone, t2: Tone): Boolean =
+    t1.stepsTo(t2) % 7 == 0 && t1.alter == t2.alter
+
 }
 
 case class Triad(val fun: Tone) extends Chord {
   val tones: List[Tone => Tone] = List(_ increaseBy 0, _ increaseBy 2, _ increaseBy 4)
+  override def equals(o: Any) = {
+    o match {
+      case Triad(t) => equalModOctaveTones(fun, t)
+      case _ => false
+    }
+  }
+  override def hashCode = 0
 }
 
 case class Seventh(val fun: Tone) extends Chord {
   val tones: List[Tone => Tone] = List(_ increaseBy 0, _ increaseBy 2, _ increaseBy 4, _ increaseBy 6)
+  override def equals(o: Any) = {
+    o match {
+      case Seventh(t) => equalModOctaveTones(fun, t)
+      case _ => false
+    }
+  }
+  override def hashCode = 0
 }
 
 case object NapSixth extends Chord {
@@ -30,7 +48,6 @@ case object NapSixth extends Chord {
   val tones: List[Tone => Tone] = List(_ es, _ increaseBy 2, _ increaseBy 4)
 }
 
-//MC : not sure yet
 //for minor harmonic
 case class SecDomMinH(fun: Tone) extends Chord {
   //exists in minor : V of III, IV, V, VI
@@ -41,6 +58,14 @@ case class SecDomMinH(fun: Tone) extends Chord {
     case VI(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _.increaseBy(1).is, _ increaseBy 3)
     case _ => Seventh(fun decreaseBy 3).tones
   }
+
+  override def equals(o: Any) = {
+    o match {
+      case SecDomMinH(t) => equalModOctaveTones(fun, t)
+      case _ => false
+    }
+  }
+  override def hashCode = 0
 }
 
 //for minor natural
@@ -54,6 +79,14 @@ case class SecDomMinN(fun: Tone) extends Chord {
     case VI(_, None) => List(_ decreaseBy 3, _.decreaseBy(1).is, _.increaseBy(1).is, _ increaseBy 3)
     case _ => Seventh(fun decreaseBy 3).tones
   }
+
+  override def equals(o: Any) = {
+    o match {
+      case SecDomMinN(t) => equalModOctaveTones(fun, t)
+      case _ => false
+    }
+  }
+  override def hashCode = 0
 }
 
 //for major
@@ -65,6 +98,14 @@ case class SecDomMaj(fun: Tone) extends Chord {
     case IV(_, None) => List(_ decreaseBy 3, _ decreaseBy 1, _ increaseBy 1, _.increaseBy(3).es)
     case _ => Seventh(fun decreaseBy 3).tones
   }
+
+  override def equals(o: Any) = {
+    o match {
+      case SecDomMaj(t) => equalModOctaveTones(fun, t)
+      case _ => false
+    }
+  }
+  override def hashCode = 0
 }
 
 case object EmptyChord extends Chord {
