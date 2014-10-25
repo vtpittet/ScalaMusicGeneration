@@ -27,9 +27,10 @@ case class HarmonyGen(melody: MusicalSegment) {
     //TODO if melody too low : put it higher (of octaves) -> then : tell back to caller !!
     //TODO or : put always same bound : I(0)
     // and put higher the melody if there is a note lower than some threshold ? -> then : tell back to caller !!
-    val lowerBound = mel.notes.min(NoteOrdering) - 14
+    val lowerBound = mel.notes.min(NoteOrdering) - 14 //risky if min is too low
+
     val melT = mel.notes map (_.tone)
-    val possibleChords: List[List[Chord]] = melT map (getPossChords(_))
+    val possibleChords: List[List[ChInv]] = melT map (getPossChords(_))
     val chosenChords = findChords(possibleChords, endF)
     val chosenTonesL = findAllTones(chosenChords, melT)
     val chosenNotes = tonesToNotes(chosenTonesL, mel.notes)
@@ -37,13 +38,102 @@ case class HarmonyGen(melody: MusicalSegment) {
     (mel, createPar(transpose(chosenNotes).tail))
 
   }
-  def getPossChords(t: Tone): List[Chord] = {
-    //TODO : change : give here ChInv with poss Invs !!
-    // see possInv
-    t match {
-      case O => List(EmptyChord)
-      case _ => allChords.filter(_.contains(t))
+
+  def getOneVoice(mel: MusicalSegment): MusicalSegment = {
+    if (mel.parDepth != 0) {
+      getOneVoice(mel mapIf (isPar thenDo (_.melody.head)))
+    } else mel
+  }
+
+  def getPossChords(t: Tone): List[ChInv] = {
+    def possInv(c: Chord): List[Inversion] = {
+      c match {
+        case EmptyChord => Nil
+        case Triad(I(_, _)) => List(Inv1, Inv2, Inv3)
+
+        //TODO : knowing t tone of the melody, 
+        // put away some inversions (ex : if 3rd, no Inv2)
+        case Triad(_) => List(Inv1, Inv2)
+        case Seventh(_) => List(Inv1, Inv2, Inv3, Inv4)
+
+        //TODO : add other special cases (in terms of chord)
+
+        case _ if (c.tones.size == 3) => List(Inv1, Inv2, Inv3)
+        case _ if (c.tones.size == 4) => List(Inv1, Inv2, Inv3, Inv4)
+        case _ => Nil // TODO : perhaps not the best to do ? normally, nothing will go there
+      }
     }
+
+    t match {
+      case O => List(ChInv(EmptyChord, Nil))
+      case _ => (allChords.filter(_.contains(t))).map(x => ChInv(x, possInv(x)))
+    }
+  }
+
+  def findChords(poss: List[List[ChInv]], endF: ChI): List[ChInv] = {
+
+    def findChord(i: ChI, possC: List[List[ChInv]], buf: List[ChInv]): List[ChInv] = {
+      if (possC.isEmpty) return buf
+      else if (possC.head.isEmpty) {
+        //bizarre note
+        //TODO if bizarre note : put some triad of it,
+        // or put a harmonically correct chord ? (-> dissonance) ?
+        if (buf.isEmpty) {
+          // at the end
+          val nextC = ChInv(EmptyChord, Nil)
+          findChord(nextC, possC.tail, nextC :: buf)
+        } else {
+          //keep the previous chord
+          val nextC = buf.head
+          findChord(nextC, possC.tail, nextC :: buf)
+        }
+      } else if (possC.head.head.c == EmptyChord) {
+        //silent : give silent chord, but comtinues harmony for next
+        findChord(i, possC.tail, ChInv(EmptyChord, Nil) :: buf)
+      }
+
+      val possChI = possC.head
+      val inter: List[ChInv] = intersectChInv(possChI, prevPoss(i))
+      if (inter.isEmpty) {
+        //no possible chord is harmonically ok,
+        // but there are possible chords (possC.head isn't empty)
+        if (buf.nonEmpty && intersectChInv(possChI, List(buf.head)).nonEmpty) {
+          //give the previous if it is possible
+          val nextC = intersectChInv(possChI, List(buf.head)).head
+          findChord(nextC, possC.tail, nextC :: buf)
+        } else {
+          //take a possible chord, even if harmonically not ok
+          val nextC = Random.shuffle(possChI).head
+          findChord(nextC, possC.tail, nextC :: buf)
+        }
+
+      } else {
+        //normal case : random between ok chords
+        val nextC = Random.shuffle(inter).head
+        findChord(nextC, possC.tail, nextC :: buf)
+      }
+
+    }
+
+    def intersectChInv(a: List[ChInv], b: List[ChInv]): List[ChInv] = {
+      val ca = a.map(_.c)
+      val cb = b.map(_.c)
+
+      ???
+
+    }
+
+    findChord(endF, poss.reverse, Nil)
+  }
+
+  def findAllTones(chords: List[ChInv], mel: List[Tone] /*, lowerBound: Tone*/ ): List[List[Tone]] = {
+    //TODO : fct that put away some inversions from a list of chord
+    // (ex : if V7+ -> I, I has to be Inv1, can't be I6)
+
+    def findTones(pred: List[Tone], curr: Chord, currm: Tone): List[Tone] = {
+      ???
+    }
+    ???
   }
 
   // from http://stackoverflow.com/questions
@@ -68,95 +158,11 @@ case class HarmonyGen(melody: MusicalSegment) {
     voices.tail.foldLeft(EmptyPar | toSequ(voices.head))((x, y) => x | toSequ(y))
   }
 
-  def findChords(poss: List[List[Chord]], endF: ChI): List[ChInv] = {
-
-    def findChord(i: ChI, possC: List[List[Chord]], buf: List[ChInv]): List[ChInv] = {
-      if (possC.isEmpty) return buf
-      else if (possC.head.isEmpty) {
-        //bizarre note
-        //TODO if bizarre note : put some triad of it,
-        // or put a harmonically correct chord ? (-> dissonance) ?
-        if (buf.isEmpty) {
-          // at the end
-          val nextC = ChInv(EmptyChord, Nil)
-          findChord(nextC, possC.tail, nextC :: buf)
-        } else {
-          //keep the previous chord
-          val nextC = buf.head
-          findChord(nextC, possC.tail, nextC :: buf)
-        }
-      } else if (possC.head.head == EmptyChord) {
-        //silent : give silent chord, but comtinues harmony for next
-        findChord(i, possC.tail, ChInv(EmptyChord, Nil) :: buf)
-      }
-
-      val possChI = possC.head.map(x => ChInv(x, possInv(x)))
-      val inter: List[ChInv] = intersectChInv(possChI, prevPoss(i))
-      if (inter.isEmpty) {
-        //no possible chord is harmonically ok,
-        // but there are possible chords (possC.head isn't empty)
-        if (buf.nonEmpty && intersectChInv(possChI, List(buf.head)).nonEmpty) {
-          //give the previous if it is possible
-          val nextC = intersectChInv(possChI, List(buf.head)).head
-          findChord(nextC, possC.tail, nextC :: buf)
-        } else {
-          //take a possible chord, even if harmonically not ok
-          val nextC = Random.shuffle(possChI).head
-          findChord(nextC, possC.tail, nextC :: buf)
-        }
-
-      } else {
-        //normal case : random between ok chords
-        val nextC = Random.shuffle(inter).head
-        findChord(nextC, possC.tail, nextC :: buf)
-      }
-
-    }
-    def possInv(c: Chord): List[Inversion] = {
-      c match {
-        case EmptyChord => Nil
-        case Triad(I(_, _)) => List(Inv1, Inv2, Inv3)
-
-        case Triad(_) => List(Inv1, Inv2)
-        case Seventh(_) => List(Inv1, Inv2, Inv3, Inv4)
-
-        //TODO : add other special cases
-
-        case _ if (c.tones.size == 3) => List(Inv1, Inv2, Inv3)
-        case _ if (c.tones.size == 4) => List(Inv1, Inv2, Inv3, Inv4)
-        case _ => Nil // TODO : perhaps not the best to do
-      }
-    }
-    def intersectChInv(a: List[ChInv], b: List[ChInv]): List[ChInv] = {
-      val ca = a.map(_.c)
-      val cb = b.map(_.c)
-
-      ???
-
-    }
-
-    findChord(endF, poss.reverse, Nil)
-  }
-
-  def findAllTones(chords: List[ChInv], mel: List[Tone] /*, lowerBound: Tone*/ ): List[List[Tone]] = {
-    //TODO : fct that put away some inversions from a list of chord
-    // (ex : if V7+ -> I, I has to be Inv1, can't be I6)
-
-    def findTones(pred: List[Tone], curr: Chord, currm: Tone): List[Tone] = {
-      ???
-    }
-    ???
-  }
-
-  def getOneVoice(mel: MusicalSegment): MusicalSegment = {
-    if (mel.parDepth != 0) {
-      getOneVoice(mel mapIf (isPar thenDo (_.melody.head)))
-    } else mel
-  }
-
+  /*
   def chooseOneIn[A](l: List[A]): A = {
     Random.shuffle(l).head
   }
+  */
 
   //TODO : way to give a list of possible chords from a grammar (for allPoss of HarmonyGen ?)
   //-- then : define a trait of harmonyGenerizers !!
