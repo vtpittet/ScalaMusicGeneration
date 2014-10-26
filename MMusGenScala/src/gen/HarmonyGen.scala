@@ -35,7 +35,8 @@ case class HarmonyGen(melody: MusicalSegment) {
     val chosenTonesL = findAllTones(chosenChords, melT)
     val chosenNotes = tonesToNotes(chosenTonesL, mel.notes)
 
-    (mel, createPar(transpose(chosenNotes).tail))
+    (mel, createPar(transpose(chosenNotes).tail)) //TODO : really need '.tail' ? 
+    //(see what tonesToNotes really gives : melody also ?)
 
   }
 
