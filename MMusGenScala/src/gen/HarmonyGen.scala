@@ -49,17 +49,17 @@ case class HarmonyGen(melody: MusicalSegment) {
     def possInv(c: Chord): List[Inversion] = {
       c match {
         case EmptyChord => Nil
-        case Triad(I(_, _)) => List(Inv1, Inv2, Inv3)
+        case Triad(I(_, _)) => List(Fond, Inv1, Inv2)
 
         //TODO : knowing t tone of the melody, 
         // put away some inversions (ex : if 3rd, no Inv2)
-        case Triad(_) => List(Inv1, Inv2)
-        case Seventh(_) => List(Inv1, Inv2, Inv3, Inv4)
+        case Triad(_) => List(Fond, Inv1)
+        case Seventh(_) => List(Fond, Inv1, Inv2, Inv3)
 
         //TODO : add other special cases (in terms of chord)
 
-        case _ if (c.tones.size == 3) => List(Inv1, Inv2, Inv3)
-        case _ if (c.tones.size == 4) => List(Inv1, Inv2, Inv3, Inv4)
+        case _ if (c.tones.size == 3) => List(Fond, Inv1, Inv2)
+        case _ if (c.tones.size == 4) => List(Fond, Inv1, Inv2, Inv3)
         case _ => Nil // TODO : perhaps not the best to do ? normally, nothing will go there
       }
     }
@@ -132,7 +132,7 @@ case class HarmonyGen(melody: MusicalSegment) {
 
   def findAllTones(chords: List[ChInv], mel: List[Tone] /*, lowerBound: Tone*/ ): List[List[Tone]] = {
     //TODO : fct that put away some inversions from a list of chord
-    // (ex : if V7+ -> I, I has to be Inv1, can't be I6)
+    // (ex : if V7+ -> I, I has to be Fond, can't be I6)
 
     def findTones(pred: List[Tone], curr: Chord, currm: Tone): List[Tone] = {
       ???
@@ -179,28 +179,28 @@ case class HarmonyGen(melody: MusicalSegment) {
       case ChInv(Triad(V(_, None)), i) if testInv(i) => HarmFct(I) ::: HarmFct(IV)
       case ChInv(Triad(VI(_, None)), i) if testInv(i) => getCiL(V, i)
       case ChInv(Triad(VII(_, None)), i) if testInv(i) => HarmFct(I) ::: HarmFct(IV)
-      //case ChInv(Triad(I(_, None)), i) if testInv(i, List(Inv3)) => ???
-      case ChInv(Seventh(V(o, None)), i) if testInv(i) => prevPoss(ChInv(Triad(V(o, None)), List(Inv1, Inv2)))
+      //case ChInv(Triad(I(_, None)), i) if testInv(i, List(Inv2)) => ???
+      case ChInv(Seventh(V(o, None)), i) if testInv(i) => prevPoss(ChInv(Triad(V(o, None)), List(Fond, Inv1)))
       //TODO : add others
-      case EndReal => getCiL(I, List(Inv1)) ::: getCiL(IV, List(Inv1)) ::: getCiL(V, List(Inv1))
-      case EndMiddle => getCiL(I, List(Inv1)) ::: getCiL(VI, List(Inv1)) //perhaps Inv2 ok for VI ?
-      case EndHalf => getCiL(V, List(Inv1))
+      case EndReal => getCiL(I, List(Fond)) ::: getCiL(IV, List(Fond)) ::: getCiL(V, List(Fond))
+      case EndMiddle => getCiL(I, List(Fond)) ::: getCiL(VI, List(Fond)) //perhaps Inv1 ok for VI ?
+      case EndHalf => getCiL(V, List(Fond))
       case _ => Nil
     }
   }
 
   //TODO perhaps better way to do pattern matching with list
-  def testInv(i: List[Inversion], li: List[Inversion] = List(Inv1, Inv2)): Boolean = {
+  def testInv(i: List[Inversion], li: List[Inversion] = List(Fond, Inv1)): Boolean = {
     i.filter(x => li.contains(x)).nonEmpty
   }
 
   def HarmFct(t: Tone): List[ChInv] = {
     t match {
-      case I(_, None) => List(I, VI).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
-      case V(_, None) => ChInv(Triad(I), List(Inv3)) :: //I64
-        //ChInv(Seventh(V), List(Inv1, Inv2, Inv3, Inv4)) :: //V7+ //TODO : before I only -> pb
-        List(V, VII).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
-      case IV(_, None) => List(IV, II).map(x => ChInv(Triad(x), List(Inv1, Inv2)))
+      case I(_, None) => List(I, VI).map(x => ChInv(Triad(x), List(Fond, Inv1)))
+      case V(_, None) => ChInv(Triad(I), List(Inv2)) :: //I64
+        //ChInv(Seventh(V), List(Fond, Inv1, Inv2, Inv3)) :: //V7+ //TODO : before I only -> pb
+        List(V, VII).map(x => ChInv(Triad(x), List(Fond, Inv1)))
+      case IV(_, None) => List(IV, II).map(x => ChInv(Triad(x), List(Fond, Inv1)))
       case _ => Nil
     }
   }
@@ -242,7 +242,7 @@ case object EndHalf extends ChiEnd
 
 //TODO : perhaps represent differently ?
 trait Inversion
+case object Fond extends Inversion
 case object Inv1 extends Inversion
 case object Inv2 extends Inversion
 case object Inv3 extends Inversion
-case object Inv4 extends Inversion
