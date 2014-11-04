@@ -26,3 +26,9 @@ Finally you can run, for example the Recuerdos case study, executing
 ```bash
 scala -cp bin/ caseStudy.Recuerdos
 ```
+
+## Workflow using SBT
+
+* `sbt run`
+* `sbt publish-local` to use from other projects
+* in order project, add `libraryDependencies += "epfl" % "irgen_2.11" % "1.0-SNAPSHOT"` to `build.sbt`

@@ -1,6 +1,8 @@
 name := "IRGen"
 
-version := "1.0"
+organization := "epfl"
+
+version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.11.2"
 
