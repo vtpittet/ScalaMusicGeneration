@@ -1,0 +1,27 @@
+http://strasheela.sourceforge.net/strasheela/doc/index.html
+https://github.com/tanders/strasheela
+
+http://mozart.github.io/documentation/
+http://mozart.github.io/mozart-v1/doc-1.4.0/tutorial/index.html
+
+https://github.com/vtpittet/ScalaMusicGeneration
+https://github.com/MaelleC/MMusicScala
+
+deIntro p8 a http://www.comp.nus.edu.sg/~henz/projects/COMPOzE/
+
+//divers pas forcément utiles mais intéressants
+http://www.operasquad.com/the-elements-of-music/
+en.wikipedia.org/wiki/Structure_(mathematical_logic)
+
+//
+lec3 : sli 23 : classes of strasheela
+pub 07 : use of strasheela
+
+//
+http://www.moz.ac.at/sem/lehre/lib/bib/software/cm/Notes_from_the_Metalevel/
+https://github.com/namin/metasolfeggio/tree/master/commonmusic
+
+https://github.com/namin/metasolfeggio
+
+--------
+http://stackoverflow.com/questions/12521065/running-sbt-results-in-com-typesafe-sbteclipsesbteclipse1-4-0-not-found
