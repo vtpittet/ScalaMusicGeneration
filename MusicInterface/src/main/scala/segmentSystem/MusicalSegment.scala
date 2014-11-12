@@ -144,7 +144,7 @@ abstract class ParallelSegment
   extends MusicalSegment
   with MusicalSegmentLike[ParallelSegment] {
   
-  val length = melody.maxBy(_.length).length
+  val length = if(!melody.isEmpty) melody.maxBy(_.length).length else 0
   val parDepth = if(!melody.isEmpty) melody.maxBy(_.parDepth).height + 1 else 0
   val seqDepth = if(!melody.isEmpty) melody.maxBy(_.seqDepth).height else 0
   
