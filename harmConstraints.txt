@@ -1,0 +1,209 @@
+From Chapter 3 of "The Music Theory Handbook" - Marjorie Merryman
+
+p33
+-() melody, esp. outer voices (but more skips in bass p34)
+- std : root doubled (root != bass)
+- no more than one octave between soprano and alto, and between alto and tenor
+-() better less space between the three upper voices, more between tenor and bass
+
+p34s
+- no paralell octaves, fifths and unissons
+- () no direct octave and fifth, except if from skip in lowest, from step in upper
+- avoid in melody augmented and diminished intervals (except in bass)
+- () common tone voice leading
+
+p35
+
+- () V-VI : double third of VI
+- VI-V minor : double third of VI
+
+p36-37
+- () predom in the end only after V-I
+Score : (Ton | Predom)? (Dom Ton Predom?)* Dom TonS (Predom TonS)?
+TonS : I
+Ton : I | VI % pref I
+Dom : V | VII | V7+ % pref V
+Predom : II | IV % pref IV
+
+p38
+
+%see more here about doubling
+- Lead (la sensible) : never doubled in V or VII
+
+p39-40
+
+- Ton += I6
+- I6 : no doubling of third
+- Predom += II6
+- () II6 - V : II6 doubles third
+- II6 otherwise : doubles third or root
+- III6 minor : any doubling ok, major : perhaps not use
+- IV6 : ok between V and V6
+- V6 : only goes to I, doubles root or fifth
+- VI6 : perhaps not uses
+- VII6 : between I and I6, not double root (Leading tone)
+
+p41 : non harmonic tones : see later perhaps
+
+p43-44-45
+
+Dom += I64 but only before V
+- I64 : double the fifth
+- other 64 uses : perhaps see later
+
+p46 
+
+- V7+ - Ton: Lead -> Tonic
+
+p until end :  seven's chords, 60 Napolitan sixth, ... so less important
+
+-----------------------------------------------------------------------
+Constraints (feuille 3)
+
+//notes.0 is the bass
+//4Chord has 4 notes (0 to 3)
+//4Chord.Triad has 3 notes (0 to 2)
+
+for all 4Chord : 
+	//bounds
+	Interval(sopr, alto) <= octave
+	Interval(alto, tenor) <= octave
+	//ok more than octave between bass and tenor
+	//sopr <= upperBound //no need if given soprano
+	bass <= lowerBound
+	sopr >= alto
+	alto >= tenor
+	tenor >= bass
+	
+	//no doubled leading tone
+	no more than once VII
+	
+	/%/ below  : c.t = 4Chord.triad
+	
+	//if chord in fundamental position
+	if c.notes.0 == c.t.notes.0 :
+		if c.t.notes.0 != VII, then c.t.notes.0 goes in possDoublingSet
+		if c.t.notes.2 != VII, then c.t.notes.2 goes in possDoublingSet
+		only notes in possDoublingSet can be more than once in c.notes
+		
+	//if chord in first inversion p39-40
+	if c.notes.0 == c.t.notes.1 :
+		if c.t.degree = I: c.t.notes.0 and c.t.notes.2 in possDoublingSet
+		if c.t.degree = II: 
+			if next exists and is V : 
+				c.t.notes.1 in possDoublingSet
+				%%see p39 for voices
+			else c.t.notes.0 and c.t.notes.2 in possDoublingSet
+		if c.t.degree = III: 
+			if major tonality : do not use
+			else : possdoublingSet = c.t.notes
+		if c.t.degree = IV: 
+			if major tonality : possdoublingSet = c.t.notes
+			else : c.t.notes.0 and c.t.notes.2 in possDoublingSet
+		if c.t.degree = V: 
+			only if next exists and is I 
+			c.t.notes.0 and c.t.notes.2 in possDoublingSet
+		if c.t.degree = VI: not use
+		if c.t.degree = VII: c.t.notes.1 and c.t.notes.2 in possDoublingSet
+		only notes in possDoublingSet can be more than once in c.notes
+		
+	//if chord in second inversion
+	if c.notes.0 == c.t.notes.2 :
+		if c.t.degree = I: 
+			c.t.notes.2 more than once in c.notes
+		else : //see p 45 : difficult to express (passing, pedal or arpeggiated)
+	
+	
+for all i from 0 to length-2 : c1 = c[i], c2 = c[i + 1] :
+	// rule of parallel Octave, Fifth, Unisson
+	for all (k, l) combinations in N = {0, 1, 2, 3} :
+		n = Interval(c1.k, c1.l)
+		if n == Octave or Fifth or Unisson
+		then n != Interval(c2.k, c2.l)
+		
+	//neither diminished, neither augmented intervals in voice melodies
+	for all k in {0, 1, 2, 3} :
+		Interval(c1.k, c2.k) is not diminished, not augmented
+		
+	//leading tone resolves in tonic
+	for all k in {0, 1, 2, 3} :
+		if c1.k is VII, then c2.k is I
+		
+------------------------------------------------
+		
+Grammar : from the end
+
+- () predom in the end only after V-I
+Score : (Ton | Predom)? (Dom Ton Predom?)* Dom TonS (Predom TonS)?
+TonS : I
+Ton : I | VI % pref I
+Dom : V | VII | V7+ % pref V
+Predom : II | IV % pref IV
+
+//TODO : put I64 and V7+, also nap. sixth, V of V, ... other ?
+//refine grammar : add the differences between major and minor -> one prevPoss for each
+
+Major scale
+beforeEnd : tI
+beforeHalfEnd : tV
+beforeI : h5 | tV7
+beforeII : h1 %perhaps put special cases when IV and II consecutives
+beforeIII : ??
+beforeIV : h1
+beforeV : h1 | h4 %perhaps put special cases when IV and II consecutives
+beforeVI : tV
+beforeVII : h1 | h4
+beforeI64 : ??
+beforeV7 : beforeV
+h1 : tI | tVI
+h4 : tIV | tII
+h5 : tI64 | tV | tVII
+
+tI : I beforeI
+tII : II beforeII
+tIII : III beforeIII
+tIV : IV beforeIV
+tV : V beforeV
+tVI : VI beforeVI
+tVII : VII beforeII
+tI64 : I64 before I64
+tV7 : V7 beforeV7
+...
+
+Minor scale (same for now)
+
+----
+Possible triads :
+I : I, IV, VI
+II : II, V, VII
+III : I, III, VI
+IV : II, IV, VII
+V : I, III, V
+VI : II, IV, VI
+VII : III, V, VII
+
+--------------------------------------------
+Secondary dominants: see p51-52, and p15
+¬ for bécarre
+
+in A minor harmonic (and natural : no need of sol¬):
+exists in minor : V of III, IV, V, VI
+III : do -> sol¬, si, ré, fa
+IV : ré -> la, do#, mi, sol¬
+VI : fa -> do, mi, sol¬, sib
+V : mi -> si, ré#, fa#, la
+-
+for natural only : //test, not sure it is ok, should
+VII : sol -> ré, fa#, la, do
+
+in C major :
+exists in major : V of II, III, IV, V, VI
+II : ré -> la, do#, mi, sol
+V : sol -> ré, fa#, la, do
+VI : la -> mi, sol#, si, ré
+III : mi -> si, ré#, fa#, la
+IV : fa -> do, mi, sol, sib
+
+--------------------------------
+set TERM=msys
+http://stackoverflow.com/questions/11219266/how-to-fix-warning-terminal-is-not-fully-functional-error-in-command-console

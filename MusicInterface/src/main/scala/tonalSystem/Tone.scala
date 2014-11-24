@@ -18,7 +18,7 @@ sealed trait Tone {
     case _ => newTone(octave, Some(isSharp))
   }
   
-  private def newTone(octave: Int, alt: Option[Boolean]): Tone = this match {
+  def newTone(octave: Int, alt: Option[Boolean]): Tone = this match {
     case O => O
     case I(_, _) => I(octave, alt)
     case II(_, _) => II(octave, alt)
