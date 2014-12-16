@@ -5,17 +5,17 @@ import chord.Chord
 import rythmics.BPM
 import tonalSystem.Tone
 
-trait Todo[A]
+sealed trait Todo[A]
 
 case class Generate[A](ge: GrammarElement[A]) extends Todo[A]
 
 case class Refine[A](ge: GrammarElement[A]) extends Todo[A]
 
-trait Message extends Todo[Nothing] {
+sealed trait Message extends Todo[Nothing] {
   val message: Todo[_]
 }
 
-trait RefineMessage[A] extends Message {
+sealed trait RefineMessage[A] extends Message {
   val refinement: GrammarElement[A]
   val message = Refine(refinement)
 }
@@ -33,7 +33,7 @@ case class MelodyRefine(refinement: GrammarElement[Tone])
     extends RefineMessage[Tone]
 
 
-trait InsertMessage[A] extends Message {
+sealed trait InsertMessage[A] extends Message {
   val insertion: GrammarElement[A]
   val message = Generate(insertion)
 }
