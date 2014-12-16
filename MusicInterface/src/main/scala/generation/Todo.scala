@@ -11,11 +11,11 @@ case class Generate[A](ge: GrammarElement[A]) extends Todo[A]
 
 case class Refine[A](ge: GrammarElement[A]) extends Todo[A]
 
-trait Message[A] extends Todo[Nothing] {
-  val message: Todo[A]
+trait Message extends Todo[Nothing] {
+  val message: Todo[_]
 }
 
-trait RefineMessage[A] extends Message[A] {
+trait RefineMessage[A] extends Message {
   val refinement: GrammarElement[A]
   val message = Refine(refinement)
 }
@@ -33,7 +33,7 @@ case class MelodyRefine(refinement: GrammarElement[Tone])
     extends RefineMessage[Tone]
 
 
-trait InsertMessage[A] extends Message[A] {
+trait InsertMessage[A] extends Message {
   val insertion: GrammarElement[A]
   val message = Generate(insertion)
 }
