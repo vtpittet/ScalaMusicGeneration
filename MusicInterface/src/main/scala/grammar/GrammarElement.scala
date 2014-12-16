@@ -1,4 +1,6 @@
 package grammar
+import generation.PrefixOperator
+
 
 // TODO specify composition rules
 // How to allow regex notation inside bodies ? (not compulsory)
@@ -11,7 +13,9 @@ sealed trait GrammarElement[A]
 /** trait used to regroup word and epilon as a common
   * case when generating sentences
   */
-sealed trait Terminal[A] extends GrammarElement[A]
+sealed trait Terminal[A] extends GrammarElement[A] with PrefixOperator {
+  val arity = 0
+}
 
 /** Word represents the non-epsilon terminal values of the grammar
   * Usually called Character of an alphabet, it would be confusing
@@ -25,7 +29,9 @@ case object Epsilon extends Terminal[Nothing]
 
 /** A Rule is a sequential list of grammar elements
   */
-case class Rule[A](body: List[GrammarElement[A]]) extends GrammarElement[A]
+case class Rule[A](body: List[GrammarElement[A]]) extends GrammarElement[A] with PrefixOperator {
+  lazy val arity = body.size
+}
 
 /** A production is a list of possible weighted rules. one has to be chosen
   * in order to generate with the grammar
