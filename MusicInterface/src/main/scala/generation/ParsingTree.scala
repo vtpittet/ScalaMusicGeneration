@@ -80,7 +80,17 @@ case class OpenTree[A](
   }
 
   private def nextsMain: List[ParsingTree[A]] = {
-    Nil
+    // limit with prob and not normalize here v
+    val list = self.oneStackStep
+    val pending: List[OpenTree[A]] = list collect {
+      case that: OpenTree[A] if that.wordSize + 1 == self.wordSize => that
+    }
+    val generated: List[ParsingTree[A]] = list filterNot { pending contains _ }
+
+
+    // and add loop detection : compare next gen rule and probabilities
+    generated ::: (pending flatMap { _.nextsMain })
+
   }
 
   /** Returns all ParsingTrees with head of refinements evaluated,
