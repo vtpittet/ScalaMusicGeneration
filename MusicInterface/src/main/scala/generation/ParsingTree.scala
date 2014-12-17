@@ -8,13 +8,17 @@ case class ParsingTree[A](
   prob: Double,
   refs: List[ParsingTree[A]],
   msgs: List[Message]) { self =>
+  import ParsingTree._
 
   def oneStackStep: List[ParsingTree[A]] = stack match {
-    case Nil => self :: Nil
+    case Nil => List(self)
     case Generate(g) :: stack => generate(g, stack)
-    case Refine(g) :: stack => ??? // TODO implement parallel refinement
+    case Refine(g) :: stack =>
+      // Indicates failure of applying this refinement
+      if (refs.size >= maxRefinements) Nil
+      else List(ParsingTree(rTree, stack, prob, ParsingTree(g)::refs, msgs))
     case (m: Message) :: stack  =>
-      ParsingTree(rTree, stack, prob, refs, m :: msgs) :: Nil
+      List(ParsingTree(rTree, stack, prob, refs, m :: msgs))
   }
 
   private def generate(
@@ -36,4 +40,13 @@ case class ParsingTree[A](
     rules map { r => (r._1, r._2/total) }
   }
 
+}
+
+
+object ParsingTree {
+  val tresholdProb = 0.1
+  val maxRefinements = 2
+  def apply[A](ge: GrammarElement[A]): ParsingTree[A] = {
+    ParsingTree(Nil, Generate(ge)::Nil, 1, Nil, Nil)
+  }
 }

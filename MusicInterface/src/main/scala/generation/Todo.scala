@@ -5,6 +5,8 @@ import chord.Chord
 import rythmics.BPM
 import tonalSystem.Tone
 
+// TODO replace rythm type by rythm cell concept
+
 sealed trait Todo[A]
 
 case class Generate[A](ge: GrammarElement[A]) extends Todo[A]
@@ -37,7 +39,6 @@ sealed trait InsertMessage[A] extends Message {
   val insertion: GrammarElement[A]
   val message = Generate(insertion)
 }
-
 
 
 case class HarmInsert(insertion: GrammarElement[Chord])
