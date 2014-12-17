@@ -2,9 +2,26 @@ package generation
 
 import grammar._
 
-sealed trait ParsingTree[A] {
+sealed trait ParsingTree[A] { self =>
   val rTree: List[PrefixOperator]
   val prob: Double
+
+  lazy val wordSize: Int = rTree count {
+    case Word(_) => true
+    case _ => false
+  }
+
+  def accept(that: ParsingTree[A]): Option[ParsingTree[A]] = self match {
+    // closed (main) Tree will not carry anymore about refinements
+    // approach here: main grammar may finish even if secondary not
+    case ClosedTree(rT, p) => Some(that)
+    case OpenTree(Nil, s, p, r, m) =>
+      ???
+    case OpenTree(h::rTree, s, p, r, m) => {
+      ???
+    }
+  }
+
 }
 
 
@@ -34,10 +51,21 @@ case class OpenTree[A](
       List(OpenTree(rTree, stack, prob, refs, m :: msgs))
   }
 
+  /*
+   * contract: next will either return open trees t' with :
+   *   t.wordSize + 1 = t'.wordSize
+   * or closed trees t'' with:
+   *   t.wordSize = t'.wordSize + 1
+   * 
+   * Additionnaly, the size of returned list is limited to avoid complexity
+   */
   def nexts: List[ParsingTree[A]] = {
     // find nexts for this tree
     // find nexts for each refinement trees
-    // result is a join of lists on generated trees
+    // result is a ~join of lists on generated trees
+    // join operation : closed tree match to any open tree
+    // (special behavior closed left or right hand side)
+    // join operation will limit breadth using probabilities
     self :: Nil
   }
 
@@ -64,6 +92,7 @@ case class OpenTree[A](
   }
 
   def close: ClosedTree[A] = ClosedTree(rTree, prob)
+
 }
 
 object OpenTree {
@@ -75,7 +104,8 @@ object OpenTree {
 object ParsingTree {
   val tresholdProb = 0.1
   val maxRefinements = 2
-  def normalize[T](target: List[T])(extract: T => Double)(update: (T, Double) => T): List[T] = {
+
+  def normalize[A](target: List[A])(extract: A => Double)(update: (A, Double) => A): List[A] = {
     val total = target.foldLeft(0.0) { _ + extract(_) }
     target map { t => update(t, extract(t)/total) }
   }
