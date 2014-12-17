@@ -3,39 +3,49 @@ package generation
 import grammar._
 
 sealed trait ParsingTree[A] { self =>
-  val rTree: List[PrefixOperator]
+  val rTree: List[PrefixOperator with GrammarElement[A]]
   val prob: Double
+  val msgs: List[Message]
 
   lazy val wordSize: Int = rTree count {
     case Word(_) => true
     case _ => false
   }
 
+  lazy val lastWord: Option[A] = rTree collectFirst { case Word(w) => w }
+
+  /*
+   * Close trees accept everything, closed trees are accepted everywhere
+   * Open trees accpet only open trees with same lastWord optional
+   * Open trees with no lastword accept open trees with no lastword.
+   */
   def accept(that: ParsingTree[A]): Option[ParsingTree[A]] = self match {
-    // closed (main) Tree will not carry anymore about refinements
+    // closed (main) Tree will not care anymore about refinements
     // approach here: main grammar may finish even if secondary not
-    case ClosedTree(rT, p) => Some(that)
-    case OpenTree(Nil, s, p, r, m) =>
-      ???
-    case OpenTree(h::rTree, s, p, r, m) => {
-      ???
+    case ClosedTree(rT, p, m) => Some(that)
+    case OpenTree(rT, s, p, r, m) => that match {
+      case ClosedTree(rT, p, m) => Some(that)
+      case _ => if (self.lastWord == that.lastWord) Some(that) else None
     }
   }
 
+  def accept(thats: List[ParsingTree[A]]): List[ParsingTree[A]] =
+    thats flatMap { self accept _ }
 }
 
 
 case class ClosedTree[A](
-  rTree: List[PrefixOperator],
-  prob: Double)
+  rTree: List[PrefixOperator with GrammarElement[A]],
+  prob: Double,
+  msgs: List[Message])
     extends ParsingTree[A]
 
 
 case class OpenTree[A](
-  rTree: List[PrefixOperator],
+  rTree: List[PrefixOperator with GrammarElement[A]],
   stack: List[Todo[A]],
   prob: Double,
-  refs: List[ParsingTree[A]],
+  refs: List[OpenTree[A]],
   msgs: List[Message])
     extends ParsingTree[A] { self =>
   import ParsingTree._
@@ -69,6 +79,36 @@ case class OpenTree[A](
     self :: Nil
   }
 
+  private def nextsMain: List[ParsingTree[A]] = {
+    Nil
+  }
+
+  /** Returns all ParsingTrees with head of refinements evaluated,
+    * accepted (else generated terminal equals last word of this or
+    * refinements finishes) and put at the end of the refs list.
+    * generated messages are lifted up to refined tree
+    */
+  private def refineHead: List[ParsingTree[A]] = refs match {
+    case Nil => List(self)
+    case h::t => normalize(self accept h.nexts) map {
+      case ClosedTree(rT, p, m) =>
+        self.updated(prob = prob * p, refs = t, msgs = m ::: msgs)
+      case oT @ OpenTree(rT, s, p, r, m) =>
+        self.updated(
+          prob = prob * p,
+          refs = t :+ oT.updated(msgs = Nil),
+          msgs = oT.msgs ::: msgs)
+    }
+  }
+
+  // builds a new open tree with updated specified values
+  private def updated(
+    rTree: List[PrefixOperator with GrammarElement[A]] = rTree,
+    stack: List[Todo[A]] = stack,
+    prob: Double = prob,
+    refs: List[OpenTree[A]] = refs,
+    msgs: List[Message] = msgs
+  ): OpenTree[A] = OpenTree(rTree, stack, prob, refs, msgs)
 /*
   def normalize(rules: List[(Rule[A], Double)]): List[(Rule[A], Double)] = {
     val total = rules.foldLeft(0.0)(_ + _._2)
@@ -81,9 +121,10 @@ case class OpenTree[A](
     stack: List[Todo[A]],
     p: Double = 1): List[ParsingTree[A]] = g match {
 
-    case t: Terminal[A] => OpenTree(t::rTree, stack, prob*p, refs, msgs) :: Nil
+    case t: Terminal[A] =>
+      List(self.updated(rTree = t::rTree, stack = stack, prob = prob*p))
     case r @ Rule(body) =>
-      OpenTree(r :: rTree, body ::: stack, prob*p, refs, msgs) :: Nil
+      List(self.updated(rTree = r :: rTree, stack = body ::: stack, prob = prob*p))
     case Production(rules) =>
       normalize(rules) { _._2 } { (x, y) => (x._1, y) } flatMap { r =>
         val (rule, pp) = r
@@ -91,12 +132,12 @@ case class OpenTree[A](
       }
   }
 
-  def close: ClosedTree[A] = ClosedTree(rTree, prob)
+  def close: ClosedTree[A] = ClosedTree(rTree, prob, msgs)
 
 }
 
 object OpenTree {
-  def apply[A](ge: GrammarElement[A]): ParsingTree[A] = {
+  def apply[A](ge: GrammarElement[A]): OpenTree[A] = {
     OpenTree(Nil, Generate(ge)::Nil, 1, Nil, Nil)
   }
 }
@@ -110,4 +151,16 @@ object ParsingTree {
     target map { t => update(t, extract(t)/total) }
   }
 
+  def normalize[A](target: List[ParsingTree[A]]): List[ParsingTree[A]] =
+    normalize[ParsingTree[A]](target) { _.prob } {
+      case (ClosedTree(rT, p1, m), p2) => ClosedTree(rT, p2, m)
+      case (OpenTree(rT, s, p1, r, m), p2) => OpenTree(rT, s, p2, r, m)
+    }
+/*
+  def join[A](
+    lhs: List[ParsingTree[A]],
+    rhs: List[ParsingTree[A]]): List[ParsingTree[A]] = {
+
+  }
+ */
 }
