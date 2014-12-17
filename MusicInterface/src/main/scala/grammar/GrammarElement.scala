@@ -1,6 +1,5 @@
 package grammar
-import generation.PrefixOperator
-
+import generation.{PrefixOperator, Todo, Generate}
 
 // TODO specify composition rules
 // How to allow regex notation inside bodies ? (not compulsory)
@@ -29,8 +28,8 @@ case object Epsilon extends Terminal[Nothing]
 
 /** A Rule is a sequential list of grammar elements
   */
-case class Rule[A](body: List[GrammarElement[A]]) extends GrammarElement[A] with PrefixOperator {
-  lazy val arity = body.size
+case class Rule[A](body: List[Todo[A]]) extends GrammarElement[A] with PrefixOperator {
+  lazy val arity = body collect { case Generate(_) => 1 } reduce (_ + _)
 }
 
 /** A production is a list of possible weighted rules. one has to be chosen

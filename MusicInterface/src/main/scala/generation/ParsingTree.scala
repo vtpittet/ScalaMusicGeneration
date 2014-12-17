@@ -28,7 +28,7 @@ case class ParsingTree[A](
 
     case t: Terminal[A] => ParsingTree(t::rTree, stack, prob*p, refs, msgs) :: Nil
     case r @ Rule(body) =>
-      ParsingTree(r :: rTree, (body map Generate[A]) ::: stack, prob*p, refs, msgs) :: Nil
+      ParsingTree(r :: rTree, body ::: stack, prob*p, refs, msgs) :: Nil
     case Production(rules) => normalize(rules) flatMap { r =>
       val (rule, pp) = r
       generate(rule, stack, p*pp)
