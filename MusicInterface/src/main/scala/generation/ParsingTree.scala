@@ -50,16 +50,30 @@ case class OpenTree[A](
     extends ParsingTree[A] { self =>
   import ParsingTree._
 
-  def oneStackStep: List[ParsingTree[A]] = stack match {
+  private def oneGrammStep: List[ParsingTree[A]] = stack match {
     case Nil => List(self.close)
-    case Generate(g) :: stack => generate(g, stack)
-    case Refine(g) :: stack =>
+
+    case Refine(g) :: stk =>
       // Indicates failure of applying this refinement
       if (refs.size >= maxRefinements) Nil
-      else List(OpenTree(rTree, stack, prob, OpenTree(g)::refs, msgs))
-    case (m: Message) :: stack  =>
-      List(OpenTree(rTree, stack, prob, refs, m :: msgs))
+      else self.updated(stack = stk, refs = OpenTree(g)::refs).oneGrammStep
+
+    case (m: Message) :: stk  =>
+      self.updated(stack = stk, msgs = m::msgs).oneGrammStep
+
+    case Generate(t: Terminal[A]) :: stk =>
+      List(self.updated(rTree = t::rTree, stack = stk))
+
+    case Generate(r @ Rule(body)) :: stk =>
+      List(self.updated(rTree = r :: rTree, stack = body ::: stk))
+
+    case Generate(Production(rules)) :: stk =>
+      normalize(rules) { _._2 } { (x, y) => (x._1, y) } map { r =>
+        val (rule @ Rule(body), p) = r
+        self.updated(rTree = rule :: rTree, stack = body ::: stk, prob = prob*p)
+      }
   }
+
 
   /*
    * contract: next will either return open trees t' with :
@@ -81,7 +95,7 @@ case class OpenTree[A](
 
   private def nextsMain: List[ParsingTree[A]] = {
     // limit with prob and not normalize here v
-    val list = self.oneStackStep
+    val list = self.oneGrammStep
     val pending: List[OpenTree[A]] = list collect {
       case that: OpenTree[A] if that.wordSize + 1 == self.wordSize => that
     }
@@ -119,6 +133,7 @@ case class OpenTree[A](
     refs: List[OpenTree[A]] = refs,
     msgs: List[Message] = msgs
   ): OpenTree[A] = OpenTree(rTree, stack, prob, refs, msgs)
+
 /*
   def normalize(rules: List[(Rule[A], Double)]): List[(Rule[A], Double)] = {
     val total = rules.foldLeft(0.0)(_ + _._2)
@@ -126,21 +141,6 @@ case class OpenTree[A](
   }
  */
 
-  private def generate(
-    g: GrammarElement[A],
-    stack: List[Todo[A]],
-    p: Double = 1): List[ParsingTree[A]] = g match {
-
-    case t: Terminal[A] =>
-      List(self.updated(rTree = t::rTree, stack = stack, prob = prob*p))
-    case r @ Rule(body) =>
-      List(self.updated(rTree = r :: rTree, stack = body ::: stack, prob = prob*p))
-    case Production(rules) =>
-      normalize(rules) { _._2 } { (x, y) => (x._1, y) } flatMap { r =>
-        val (rule, pp) = r
-        generate(rule, stack, p*pp)
-      }
-  }
 
   def close: ClosedTree[A] = ClosedTree(rTree, prob, msgs)
 
