@@ -1,6 +1,6 @@
 package generation
 
-trait Result[A]
+sealed trait Result[+A]
 
 case class Closed[A](tree: ClosedTree[A]) extends Result[A]
 case class Success[A](tree: OpenTree[A]) extends Result[A]

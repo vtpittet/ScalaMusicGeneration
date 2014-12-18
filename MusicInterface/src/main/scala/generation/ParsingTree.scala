@@ -50,28 +50,35 @@ case class OpenTree[A](
     extends ParsingTree[A] { self =>
   import ParsingTree._
 
-  private def oneGrammStep: List[ParsingTree[A]] = stack match {
-    case Nil => List(self.close)
+
+  /* closed indicates : no terminal generated, tree closed
+   * Success indicates : one terminal generated
+   * Pending indicates : The choices of list need more steps to decide
+   * Failure indicates : the constraints cannot be satisfied
+   */
+  private def oneGrammStep: Result[A] = stack match {
+    case Nil => Closed(self.close)
 
     case Refine(g) :: stk =>
       // Indicates failure of applying this refinement
-      if (refs.size >= maxRefinements) Nil
+      if (refs.size >= maxRefinements) Failure
       else self.updated(stack = stk, refs = OpenTree(g)::refs).oneGrammStep
 
     case (m: Message) :: stk  =>
       self.updated(stack = stk, msgs = m::msgs).oneGrammStep
 
     case Generate(t: Terminal[A]) :: stk =>
-      List(self.updated(rTree = t::rTree, stack = stk))
+      Success(self.updated(rTree = t::rTree, stack = stk))
 
     case Generate(r @ Rule(body)) :: stk =>
-      List(self.updated(rTree = r :: rTree, stack = body ::: stk))
+      Pending(List(self.updated(rTree = r :: rTree, stack = body ::: stk)))
 
-    case Generate(Production(rules)) :: stk =>
-      normalize(rules) { _._2 } { (x, y) => (x._1, y) } map { r =>
+    case Generate(Production(rules)) :: stk => Pending(
+      normalize(rules, 1) { _._2 } { (x, y) => (x._1, y) } map { r =>
         val (rule @ Rule(body), p) = r
         self.updated(rTree = rule :: rTree, stack = body ::: stk, prob = prob*p)
       }
+    )
   }
 
 
@@ -93,7 +100,15 @@ case class OpenTree[A](
     self :: Nil
   }
 
-  private def nextsMain: List[ParsingTree[A]] = {
+  private def nextsMain: List[ParsingTree[A]] = self.oneGrammStep match {
+    case Failure => Nil
+    case Closed(tree) => List(tree)
+    case Success(tree) => List(tree)
+    case Pending(trees) => ??? /*limit(trees) flatMap _.oneGrammStep*/
+  }
+
+/*
+  private def nextsMain_old: List[ParsingTree[A]] = {
     // limit with prob and not normalize here v
     val list = self.oneGrammStep
     val pending: List[OpenTree[A]] = list collect {
@@ -101,11 +116,11 @@ case class OpenTree[A](
     }
     val generated: List[ParsingTree[A]] = list filterNot { pending contains _ }
 
-
     // and add loop detection : compare next gen rule and probabilities
     generated ::: (pending flatMap { _.nextsMain })
 
   }
+ */
 
   /** Returns all ParsingTrees with head of refinements evaluated,
     * accepted (else generated terminal equals last word of this or
@@ -114,7 +129,7 @@ case class OpenTree[A](
     */
   private def refineHead: List[ParsingTree[A]] = refs match {
     case Nil => List(self)
-    case h::t => normalize(self accept h.nexts) map {
+    case h::t => normalize(self accept h.nexts, 1) map {
       case ClosedTree(rT, p, m) =>
         self.updated(prob = prob * p, refs = t, msgs = m ::: msgs)
       case oT @ OpenTree(rT, s, p, r, m) =>
@@ -156,13 +171,13 @@ object ParsingTree {
   val tresholdProb = 0.1
   val maxRefinements = 2
 
-  def normalize[A](target: List[A])(extract: A => Double)(update: (A, Double) => A): List[A] = {
-    val total = target.foldLeft(0.0) { _ + extract(_) }
-    target map { t => update(t, extract(t)/total) }
+  def normalize[A](target: List[A], total: Double)(extract: A => Double)(update: (A, Double) => A): List[A] = {
+    val factor = total / target.foldLeft(0.0) { _ + extract(_) }
+    target map { t => update(t, extract(t)*factor) }
   }
 
-  def normalize[A](target: List[ParsingTree[A]]): List[ParsingTree[A]] =
-    normalize[ParsingTree[A]](target) { _.prob } {
+  def normalize[A](target: List[ParsingTree[A]], total: Double = 1.0): List[ParsingTree[A]] =
+    normalize[ParsingTree[A]](target, total) { _.prob } {
       case (ClosedTree(rT, p1, m), p2) => ClosedTree(rT, p2, m)
       case (OpenTree(rT, s, p1, r, m), p2) => OpenTree(rT, s, p2, r, m)
     }
