@@ -1,6 +1,7 @@
 package generation
 
 import grammar._
+import scala.util.Random
 
 sealed trait ParsingTree[A] { self =>
   val rTree: List[PrefixOperator with GrammarElement[A]]
@@ -31,6 +32,60 @@ sealed trait ParsingTree[A] { self =>
 
   def accept(thats: List[ParsingTree[A]]): List[ParsingTree[A]] =
     thats flatMap { self accept _ }
+
+}
+
+object ParsingTree {
+  val tresholdProb = 0.1
+  val maxRefinements = 2
+
+  def normalize[A](target: List[A], total: Double)(extract: A => Double)(update: (A, Double) => A): List[A] = {
+    val factor = total / target.foldLeft(0.0) { _ + extract(_) }
+    target map { t => update(t, extract(t)*factor) }
+  }
+
+  def normalize[A](target: List[ParsingTree[A]], total: Double = 1.0): List[ParsingTree[A]] =
+    normalize[ParsingTree[A]](target, total) { _.prob } {
+      case (ClosedTree(rT, p1, m), p2) => ClosedTree(rT, p2, m)
+      case (OpenTree(rT, s, p1, r, m), p2) => OpenTree(rT, s, p2, r, m)
+    }
+
+  def limit[A](target: List[A], parentProb: Double)(extract: A => Double)(update: (A, Double) => A): List[A] = {
+    val normalizedTarget = normalize(target, parentProb)(extract)(update)
+    val electedSize = normalizedTarget count { extract(_) > tresholdProb }
+    val election = elect(electedSize, normalizedTarget)(extract)
+    normalize(election, parentProb)(extract)(update)
+  }
+
+
+  def elect[A](count: Int, target: List[A])(extract: A => Double): List[A] = {
+    Iterator.iterate[(List[A], List[A])]((Nil, target)) { case (result, target) =>
+      val (elected, left) = electOne(target)(extract)
+      (elected.toList ::: result, left)
+    }.drop(count).next._1
+  }
+
+  def electOne[A](target: List[A])(extract: A => Double): (Option[A], List[A]) = {
+    val total = target.foldLeft(0.0) { _ + extract(_) }
+    val random = Random.nextDouble * total
+
+    def r_elect(r: Double, l: List[A]): (Option[A], List[A]) = l match {
+      case Nil => (None, Nil)
+      case x :: xs => {
+        val px = extract(x)
+        // elects this one
+        if (r < px) (Some(x), xs)
+        // elects a following
+        else {
+          val (result, left) = r_elect(r - px, xs)
+          (result, x :: left)
+        }
+      }
+    }
+
+    r_elect(random, target)
+  }
+
 }
 
 
@@ -165,27 +220,4 @@ object OpenTree {
   def apply[A](ge: GrammarElement[A]): OpenTree[A] = {
     OpenTree(Nil, Generate(ge)::Nil, 1, Nil, Nil)
   }
-}
-
-object ParsingTree {
-  val tresholdProb = 0.1
-  val maxRefinements = 2
-
-  def normalize[A](target: List[A], total: Double)(extract: A => Double)(update: (A, Double) => A): List[A] = {
-    val factor = total / target.foldLeft(0.0) { _ + extract(_) }
-    target map { t => update(t, extract(t)*factor) }
-  }
-
-  def normalize[A](target: List[ParsingTree[A]], total: Double = 1.0): List[ParsingTree[A]] =
-    normalize[ParsingTree[A]](target, total) { _.prob } {
-      case (ClosedTree(rT, p1, m), p2) => ClosedTree(rT, p2, m)
-      case (OpenTree(rT, s, p1, r, m), p2) => OpenTree(rT, s, p2, r, m)
-    }
-/*
-  def join[A](
-    lhs: List[ParsingTree[A]],
-    rhs: List[ParsingTree[A]]): List[ParsingTree[A]] = {
-
-  }
- */
 }
