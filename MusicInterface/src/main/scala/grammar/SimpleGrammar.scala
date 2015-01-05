@@ -20,6 +20,10 @@ sealed trait SimpleElement[A] {
 
   lazy val nullable: Boolean = rNullable(Nil)
   def rNullable(callers: List[SimpleElement[A]]): Boolean
+
+
+  lazy val firsts: Set[A] = rFirsts(Nil)
+  def rFirsts(callers: List[SimpleElement[A]]): Set[A]
 }
 
 object SimpleElement {
@@ -58,12 +62,14 @@ case class SimpleWord[A](value: A) extends SimpleTerminal[A] {
   override val toString: String = value.toString
 
   def rNullable(callers: List[SimpleElement[A]]): Boolean = false
+  def rFirsts(callers: List[SimpleElement[A]]): Set[A] = Set(value)
 }
 
 case class SimpleEpsilon[A]() extends SimpleTerminal[A] {
   override val toString: String = "'e'"
 
   def rNullable(callers: List[SimpleElement[A]]): Boolean = true
+  def rFirsts(callers: List[SimpleElement[A]]): Set[A] = Set()
 }
 
 
@@ -102,6 +108,17 @@ class SimpleRule[A](m_body: =>List[SimpleElement[A]]) extends SimpleElement[A] {
     def inCallers(se: SimpleElement[A]): Boolean = this :: callers contains se
     body forall { e => !inCallers(e) && e.rNullable(this :: callers) }
   }
+
+  def rFirsts(callers: List[SimpleElement[A]]): Set[A] = {
+    def inCallers(se: SimpleElement[A]): Boolean = this :: callers contains se
+    def prefix = body span (_.nullable) match {
+      case (prefix, head :: tail) => prefix :+ head
+      case (prefix, Nil) => prefix
+    }
+    prefix.toSet filterNot { inCallers(_) } flatMap {
+      _ rFirsts (this :: callers)
+    }
+  }
 }
 
 object SimpleRule {
@@ -139,8 +156,15 @@ class SimpleProduction[A](m_body: =>List[(SimpleElement[A], Double)]) extends Si
   }
 
   def rNullable(callers: List[SimpleElement[A]]): Boolean = {
-    def inCallers(se: SimpleElement[A]): Boolean = (this :: callers).contains(se)
+    def inCallers(se: SimpleElement[A]): Boolean = this :: callers contains se
     body exists { case (e, w) => !inCallers(e) && e.rNullable(this :: callers) }
+  }
+
+  def rFirsts(callers: List[SimpleElement[A]]): Set[A] = {
+    def inCallers(se: SimpleElement[A]): Boolean = this :: callers contains se
+    body.unzip._1.toSet filterNot { inCallers(_) } flatMap {
+      _ rFirsts (this :: callers)
+    }
   }
 }
 
