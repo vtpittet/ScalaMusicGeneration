@@ -7,20 +7,27 @@ sealed trait SimpleElement[A] {
   val toName: String
   def toString(callers: List[SimpleElement[A]]): String
 
-  def |(that: =>SimpleElement[A], weight: Double): SimpleProduction[A] =
+  def ||(that: =>SimpleElement[A], weight: Double): SimpleProduction[A] =
     orComposition(that, weight)
-  def |(word: A, weight: Double): SimpleProduction[A] =
+  def ||(word: A, weight: Double): SimpleProduction[A] =
     orComposition(SimpleWord(word), weight)
-  def *(that: =>SimpleElement[A]): SimpleRule[A] =
+  def **(that: =>SimpleElement[A]): SimpleRule[A] =
     andComposition(that)
-  def *(word: A): SimpleRule[A] =
+  def **(word: A): SimpleRule[A] =
     andComposition(SimpleWord(word))
+
+  def compareBody(that: SimpleElement[A]): Boolean
 }
 
 object SimpleElement {
-  def eps[A]: SimpleEpsilon[A] = SimpleEpsilon[A]()
-  implicit def tuple2SimpleProd[A](tpl: (SimpleElement[A], Double)): SimpleProduction[A] =
+  def epsilon[A]: SimpleEpsilon[A] = SimpleEpsilon[A]()
+  implicit def tupleSimple2SimpleProd[A](tpl: (SimpleElement[A], Double)): SimpleProduction[A] = 
     SimpleProduction(tpl::Nil)
+  implicit def tupleWord2SimpleProd[A](tpl: (A, Double)): SimpleProduction[A] = {
+    val (word, weight) = tpl
+    SimpleProduction((SimpleWord(word), weight) :: Nil)
+  }
+  implicit def word2SimpleWord[A](word: A): SimpleWord[A] = SimpleWord(word)
 }
 
 sealed trait SimpleTerminal[A] extends SimpleElement[A] {
@@ -35,6 +42,8 @@ sealed trait SimpleTerminal[A] extends SimpleElement[A] {
 
   val toName: String = toString
   def toString(callers: List[SimpleElement[A]]): String = toString
+
+  def compareBody(that: SimpleElement[A]): Boolean = this equals that
 }
 
 case class SimpleWord[A](value: A) extends SimpleTerminal[A] {
@@ -52,13 +61,13 @@ case class SimpleEpsilon[A]() extends SimpleTerminal[A] {
   */
 class SimpleRule[A](m_body: =>List[SimpleElement[A]]) extends SimpleElement[A] {
   lazy val body: List[SimpleElement[A]] = m_body
-  val id: String = "R_" + SGIdGen()
+  lazy val id: String = "R_" + SGIdGen()
 
-  val toName: String = id
+  lazy val toName: String = id
   def toString(callers: List[SimpleElement[A]]): String = body map { se =>
     if (callers contains se) se.toName
     else se.toString(this::callers)
-  } mkString (id + ":(", " * ", ")")
+  } mkString (id + ":(", " ** ", ")")
   override lazy val toString: String = toString(this::Nil)
 
   /* Simple rule does not carry its weight
@@ -68,37 +77,61 @@ class SimpleRule[A](m_body: =>List[SimpleElement[A]]) extends SimpleElement[A] {
     SimpleProduction(List((this, 1.0), (that, weight)))
   def andComposition(that: =>SimpleElement[A]): SimpleRule[A] =
     SimpleRule(body :+ that)
+
+
+  def compareBody(that: SimpleElement[A]): Boolean = that match {
+    case SimpleRule(thatBody) =>
+      if (thatBody.size == body.size) (body zip thatBody) forall { case (a, b) =>
+        a compareBody b
+      } else false
+    case _ => false
+  }
 }
 
 object SimpleRule {
   def apply[A](body: =>List[SimpleElement[A]]): SimpleRule[A] = new SimpleRule(body)
+  def apply[A](body: A*): SimpleRule[A] =
+    new SimpleRule((body map SimpleWord[A]).toList)
   def unapply[A](rule: SimpleRule[A]): Option[List[SimpleElement[A]]] = Some(rule.body)
 }
 
 class SimpleProduction[A](m_body: =>List[(SimpleElement[A], Double)]) extends SimpleElement[A] {
   lazy val body = m_body
-  val id: String = "P_" + SGIdGen()
+  lazy val id: String = "P_" + SGIdGen()
 
-  val toName: String = id
+  lazy val toName: String = id
   def toString(callers: List[SimpleElement[A]]): String = body map { case (se, w) =>
     if (callers contains se) "(" + se.toName + ", " + w + ")"
     else "(" + se.toString(this::callers) + ", " + w + ")"
-  } mkString (id + ":(", " | ", ")") 
+  } mkString (id + ":(", " || ", ")") 
   override lazy val toString: String = toString(this::Nil)
 
   def orComposition(that: =>SimpleElement[A], weight: Double): SimpleProduction[A] =
     SimpleProduction(body :+ ((that, weight)))
   def andComposition(that: =>SimpleElement[A]): SimpleRule[A] =
     SimpleRule(List(this, that))
+
+  def compareBody(that: SimpleElement[A]): Boolean = that match {
+    case SimpleProduction(thatBody) =>
+      if (body.size == thatBody.size) (body zip thatBody) forall {
+        case ((ae, aw), (be, bw)) => (aw == bw) && (ae compareBody be)
+      } else false
+    case _ => false
+  }
 }
 
 object SimpleProduction {
-  def apply[A](body: =>List[(SimpleElement[A], Double)]): SimpleProduction[A] = new SimpleProduction(body)
+  def apply[A](body: =>List[(SimpleElement[A], Double)]): SimpleProduction[A] =
+    new SimpleProduction(body)
+  def apply[A](words: (A, Double)*): SimpleProduction[A] = new SimpleProduction(
+    words.toList map { case (wo, we) => (SimpleWord(wo), we) }
+  )
   def unapply[A](production: SimpleProduction[A]): Option[List[(SimpleElement[A], Double)]] =
     Some(production.body)
 }
 
 object SGIdGen {
+  def reset: Unit = counter = 0
   private var counter: Int = 0
   def apply(): Int = {
     counter += 1
