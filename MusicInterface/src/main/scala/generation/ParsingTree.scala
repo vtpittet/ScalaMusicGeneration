@@ -16,7 +16,7 @@ sealed trait ParsingTree[A] { self =>
   lazy val lastWord: Option[A] = rTree collectFirst { case Word(w) => w }
 
   /*
-   * Close trees accept everything, closed trees are accepted everywhere
+   * Closed trees accept everything, closed trees are accepted everywhere
    * Open trees accpet only open trees with same lastWord optional
    * Open trees with no lastword accept open trees with no lastword.
    */

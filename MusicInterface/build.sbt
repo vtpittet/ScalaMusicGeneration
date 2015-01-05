@@ -6,6 +6,8 @@ version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.11.2"
 
+//scalacOptions ++= Seq("-feature")
+
 fork := true
 
 libraryDependencies += "com.googlecode.soundlibs" % "tritonus-share" % "0.3.7-1"
