@@ -65,4 +65,41 @@ class SimpleGrammarTest extends FunSuite with Matchers with BeforeAndAfter {
     p.toString shouldBe pString
   }
 
+  test("recursion first in production") {
+    /* following declaration does not work, as p refers to itself
+     *  it is not wrapped inside a SimpleProduction element :
+
+     *  lazy val p: SimpleProduction[Int] = (p, 1.0) || (1, 1.0)
+     */
+
+    lazy val p: SimpleProduction[Int] =
+      SimpleProduction(List((p, 1.0))) || (1, 1.0)
+    val pString = "P_1:((P_1, 1.0) || (1, 1.0))"
+
+    p.toName shouldBe p.body(0)._1.toName
+    p.toString shouldBe pString
+  }
+
+  test("Mutually recursive rules") {
+    lazy val r1: SimpleRule[Int] = 1 ** r2
+    lazy val r2: SimpleRule[Int] = 2 ** r1
+
+    val r1String = "R_1:(1 ** R_2:(2 ** R_1))"
+    r1.toName//side effect
+    r1.toName shouldBe "R_1"
+    r2.toName shouldBe r1.body(1).toName
+    r1.toString shouldBe r1String
+  }
+
+  test("To string bug regression") {
+    lazy val r1: SimpleRule[Int] = 1 ** r2
+    lazy val r2: SimpleRule[Int] = 2 ** r2
+
+    val r1String = "R_1:(1 ** R_2:(2 ** R_2))"
+    r1.toName//side effect
+    r1.toName shouldBe "R_1"
+    
+    r1.toString shouldBe r1String
+  }
+
 }

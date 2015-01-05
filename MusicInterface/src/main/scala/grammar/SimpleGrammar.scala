@@ -17,6 +17,9 @@ sealed trait SimpleElement[A] {
     andComposition(SimpleWord(word))
 
   def compareBody(that: SimpleElement[A]): Boolean
+
+  lazy val nullable: Boolean = rNullable(Nil)
+  def rNullable(callers: List[SimpleElement[A]]): Boolean
 }
 
 object SimpleElement {
@@ -29,6 +32,10 @@ object SimpleElement {
   }
   implicit def word2SimpleWord[A](word: A): SimpleWord[A] = SimpleWord(word)
 }
+
+
+
+
 
 sealed trait SimpleTerminal[A] extends SimpleElement[A] {
   /* Simple terminal does not carry its weight
@@ -46,12 +53,17 @@ sealed trait SimpleTerminal[A] extends SimpleElement[A] {
   def compareBody(that: SimpleElement[A]): Boolean = this equals that
 }
 
+
 case class SimpleWord[A](value: A) extends SimpleTerminal[A] {
   override val toString: String = value.toString
+
+  def rNullable(callers: List[SimpleElement[A]]): Boolean = false
 }
 
 case class SimpleEpsilon[A]() extends SimpleTerminal[A] {
   override val toString: String = "'e'"
+
+  def rNullable(callers: List[SimpleElement[A]]): Boolean = true
 }
 
 
@@ -66,7 +78,7 @@ class SimpleRule[A](m_body: =>List[SimpleElement[A]]) extends SimpleElement[A] {
   lazy val toName: String = id
   def toString(callers: List[SimpleElement[A]]): String = body map { se =>
     if (callers contains se) se.toName
-    else se.toString(this::callers)
+    else se.toString(se::callers)
   } mkString (id + ":(", " ** ", ")")
   override lazy val toString: String = toString(this::Nil)
 
@@ -78,13 +90,17 @@ class SimpleRule[A](m_body: =>List[SimpleElement[A]]) extends SimpleElement[A] {
   def andComposition(that: =>SimpleElement[A]): SimpleRule[A] =
     SimpleRule(body :+ that)
 
-
   def compareBody(that: SimpleElement[A]): Boolean = that match {
     case SimpleRule(thatBody) =>
       if (thatBody.size == body.size) (body zip thatBody) forall { case (a, b) =>
         a compareBody b
       } else false
     case _ => false
+  }
+
+  def rNullable(callers: List[SimpleElement[A]]): Boolean = {
+    def inCallers(se: SimpleElement[A]): Boolean = this :: callers contains se
+    body forall { e => !inCallers(e) && e.rNullable(this :: callers) }
   }
 }
 
@@ -95,19 +111,22 @@ object SimpleRule {
   def unapply[A](rule: SimpleRule[A]): Option[List[SimpleElement[A]]] = Some(rule.body)
 }
 
+
+
+
 class SimpleProduction[A](m_body: =>List[(SimpleElement[A], Double)]) extends SimpleElement[A] {
-  lazy val body = m_body
+  lazy val body: List[(SimpleElement[A], Double)] = m_body
   lazy val id: String = "P_" + SGIdGen()
 
   lazy val toName: String = id
   def toString(callers: List[SimpleElement[A]]): String = body map { case (se, w) =>
     if (callers contains se) "(" + se.toName + ", " + w + ")"
-    else "(" + se.toString(this::callers) + ", " + w + ")"
+    else "(" + se.toString(se::callers) + ", " + w + ")"
   } mkString (id + ":(", " || ", ")") 
   override lazy val toString: String = toString(this::Nil)
 
   def orComposition(that: =>SimpleElement[A], weight: Double): SimpleProduction[A] =
-    SimpleProduction(body :+ ((that, weight)))
+    SimpleProduction(body :+ (that, weight))
   def andComposition(that: =>SimpleElement[A]): SimpleRule[A] =
     SimpleRule(List(this, that))
 
@@ -117,6 +136,11 @@ class SimpleProduction[A](m_body: =>List[(SimpleElement[A], Double)]) extends Si
         case ((ae, aw), (be, bw)) => (aw == bw) && (ae compareBody be)
       } else false
     case _ => false
+  }
+
+  def rNullable(callers: List[SimpleElement[A]]): Boolean = {
+    def inCallers(se: SimpleElement[A]): Boolean = (this :: callers).contains(se)
+    body exists { case (e, w) => !inCallers(e) && e.rNullable(this :: callers) }
   }
 }
 
@@ -129,6 +153,8 @@ object SimpleProduction {
   def unapply[A](production: SimpleProduction[A]): Option[List[(SimpleElement[A], Double)]] =
     Some(production.body)
 }
+
+
 
 object SGIdGen {
   def reset: Unit = counter = 0
