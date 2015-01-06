@@ -105,8 +105,7 @@ class GrammarElementTest extends FunSuite with Matchers with BeforeAndAfter {
 
   test("Grammar with message") {
     val q = BPM.q
-    lazy val rref: Rule[BPM] = q ** q ** q
-    lazy val ref: RythmRefine[Int] = RythmRefine(rref)
+    lazy val ref: RootRythmRefine[Int] = RootRythmRefine(q ** q ** q)
     lazy val g: Rule[Int] = ref ** 1 ** 2 ** ref
 
     lazy val gen: Rule[Int] = new Rule(List(ref, new Word(1), new Word(2), ref))
