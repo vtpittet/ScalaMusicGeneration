@@ -52,4 +52,3 @@ case class RythmInsert(insertion: GrammarElement[BPM])
 
 case class MelodyInsert(insertion: GrammarElement[Tone])
     extends InsertMessage[Tone]
-
