@@ -1,5 +1,8 @@
 package grammar
 import generation.{PrefixOperator, Todo, Generate}
+import chord.Chord
+import rythmics.BPM
+import tonalSystem.Tone
 
 // TODO specify composition rules
 // How to allow regex notation inside bodies ? (not compulsory)
@@ -12,7 +15,7 @@ sealed trait GrammarElement[A] {
   def andComposition(that: =>GrammarElement[A]): Rule[A]
 
   val toName: String
-  def toString(callers: List[GrammarElement[A]]): String
+  def toString(callers: List[GrammarElement[Any]]): String
 
   def ||(that: =>GrammarElement[A], weight: Double): Production[A] =
     orComposition(that, weight)
@@ -23,7 +26,7 @@ sealed trait GrammarElement[A] {
   def **(word: A): Rule[A] =
     andComposition(Word(word))
 
-  def compareBody(that: GrammarElement[A]): Boolean
+  def compareBody(that: GrammarElement[Any]): Boolean
 
   lazy val nullable: Boolean = rNullable(Nil)
   def rNullable(callers: List[GrammarElement[A]]): Boolean
@@ -61,9 +64,9 @@ sealed trait Terminal[A] extends GrammarElement[A] with PrefixOperator {
     Rule(List(this, that))
 
   val toName: String = toString
-  def toString(callers: List[GrammarElement[A]]): String = toString
+  def toString(callers: List[GrammarElement[Any]]): String = toString
 
-  def compareBody(that: GrammarElement[A]): Boolean = this equals that
+  def compareBody(that: GrammarElement[Any]): Boolean = this equals that
 
 }
 
@@ -92,14 +95,17 @@ case class Epsilon[A]() extends Terminal[A] {
   * but this may be useful, depending on ending conditions
   * Use by name parameters to avoid null pointer when recursive rules
   */
-class Rule[A](m_body: =>List[Todo[A]]) extends GrammarElement[A] with PrefixOperator {
-  lazy val arity = body collect { case Generate(_) => 1 } reduce (_ + _)
+class Rule[A](m_body: =>List[GrammarElement[A]]) extends GrammarElement[A] with PrefixOperator {
+  lazy val arity = body count {
+    case m:Message[_, _] => false
+    case _ => true
+  }
 
   lazy val body: List[GrammarElement[A]] = m_body
   lazy val id: String = "R_" + GEIdGen()
 
   lazy val toName: String = id
-  def toString(callers: List[GrammarElement[A]]): String = body map { se =>
+  def toString(callers: List[GrammarElement[Any]]): String = body map { se =>
     if (callers contains se) se.toName
     else se.toString(se::callers)
   } mkString (id + ":(", " ** ", ")")
@@ -113,7 +119,7 @@ class Rule[A](m_body: =>List[Todo[A]]) extends GrammarElement[A] with PrefixOper
   def andComposition(that: =>GrammarElement[A]): Rule[A] =
     Rule(body :+ that)
 
-  def compareBody(that: GrammarElement[A]): Boolean = that match {
+  def compareBody(that: GrammarElement[Any]): Boolean = that match {
     case Rule(thatBody) =>
       if (thatBody.size == body.size) (body zip thatBody) forall { case (a, b) =>
         a compareBody b
@@ -154,7 +160,7 @@ class Production[A](m_body: =>List[(GrammarElement[A], Double)]) extends Grammar
   lazy val id: String = "P_" + GEIdGen()
 
   lazy val toName: String = id
-  def toString(callers: List[GrammarElement[A]]): String = body map { case (se, w) =>
+  def toString(callers: List[GrammarElement[Any]]): String = body map { case (se, w) =>
     if (callers contains se) "(" + se.toName + ", " + w + ")"
     else "(" + se.toString(se::callers) + ", " + w + ")"
   } mkString (id + ":(", " || ", ")") 
@@ -165,7 +171,7 @@ class Production[A](m_body: =>List[(GrammarElement[A], Double)]) extends Grammar
   def andComposition(that: =>GrammarElement[A]): Rule[A] =
     Rule(List(this, that))
 
-  def compareBody(that: GrammarElement[A]): Boolean = that match {
+  def compareBody(that: GrammarElement[Any]): Boolean = that match {
     case Production(thatBody) =>
       if (body.size == thatBody.size) (body zip thatBody) forall {
         case ((ae, aw), (be, bw)) => (aw == bw) && (ae compareBody be)
@@ -205,4 +211,100 @@ object GEIdGen {
     counter += 1
     counter
   }
+}
+
+/** message emmitted in grammar generating elements of type A,
+  * addressed to grammar generating elements of type B.
+  * A can be equals to B
+  */
+sealed abstract class Message[A, B](refinement: =>GrammarElement[B])
+    extends GrammarElement[A] {
+  lazy val message: GrammarElement[B] = refinement
+  lazy val id: String = "M_" + GEIdGen()
+
+  lazy val toName: String = id
+  def toString(callers: List[GrammarElement[Any]]): String =
+    if (callers contains message) id + ":(" + message.toName + ")"
+    else id + ":(" + message.toString(message :: callers) + ")"
+  override lazy val toString: String = toString(this::Nil)
+
+   /*  terminal does not carry its weight
+   * to overcome this, use implicit conversion from tuple
+   * by default, weight 1.0 is used */
+  def orComposition(that: =>GrammarElement[A], weight: Double): Production[A] =
+    Production(List((this, 1.0), (that, weight)))
+
+  def andComposition(that: =>GrammarElement[A]): Rule[A] = 
+    Rule(List(this, that))
+
+
+  // view of nullable and firsts is relative to direct production and not
+  // refinement's behavior
+  def rNullable(callers: List[grammar.GrammarElement[A]]): Boolean = true
+  def rFirsts(callers: List[grammar.GrammarElement[A]]): Set[A] = Set()
+
+
+}
+
+class HarmRefine[A](refinement: =>GrammarElement[Chord])
+    extends Message[A, Chord](refinement) {
+  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+    case HarmRefine(thatRefinement) => refinement compareBody thatRefinement
+    case _ => false
+  }
+}
+
+object HarmRefine {
+  def apply[A](ge: =>GrammarElement[Chord]): HarmRefine[A] = 
+    new HarmRefine[A](ge)
+  def unapply[A](hr: HarmRefine[A]): Option[GrammarElement[Chord]] =
+    Some(hr.message)
+}
+
+
+class RootRythmRefine[A](refinement: =>GrammarElement[BPM])
+    extends Message[A, BPM](refinement) {
+  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+    case RootRythmRefine(thatRefinement) => refinement compareBody thatRefinement
+    case _ => false
+  }
+}
+
+object RootRythmRefine {
+  def apply[A](ge: =>GrammarElement[BPM]): RootRythmRefine[A] = 
+    new RootRythmRefine[A](ge)
+  def unapply[A](rrr: RootRythmRefine[A]): Option[GrammarElement[BPM]] =
+    Some(rrr.message)
+}
+
+
+class RythmRefine[A](refinement: =>GrammarElement[BPM])
+    extends Message[A, BPM](refinement) {
+  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+    case RythmRefine(thatRefinement) => refinement compareBody thatRefinement
+    case _ => false
+  }
+}
+
+object RythmRefine {
+  def apply[A](ge: =>GrammarElement[BPM]): RythmRefine[A] = 
+    new RythmRefine[A](ge)
+  def unapply[A](rr: RythmRefine[A]): Option[GrammarElement[BPM]] =
+    Some(rr.message)
+}
+
+
+class MelodyRefine[A](refinement: =>GrammarElement[Tone])
+    extends Message[A, Tone](refinement) {
+  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+    case MelodyRefine(thatRefinement) => refinement compareBody thatRefinement
+    case _ => false
+  }
+}
+
+object MelodyRefine {
+  def apply[A](ge: =>GrammarElement[Tone]): MelodyRefine[A] = 
+    new MelodyRefine[A](ge)
+  def unapply[A](mr: MelodyRefine[A]): Option[GrammarElement[Tone]] =
+    Some(mr.message)
 }
