@@ -6,7 +6,7 @@ version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.11.2"
 
-//scalacOptions ++= Seq("-feature")
+scalacOptions ++= Seq("-feature", "-language:postfixOps", "-language:existentials", "-language:implicitConversions")
 
 fork := true
 

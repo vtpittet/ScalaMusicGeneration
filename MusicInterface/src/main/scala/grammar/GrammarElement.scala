@@ -15,7 +15,8 @@ sealed trait GrammarElement[A] extends Task[A] {
   def andComposition(that: =>GrammarElement[A]): Rule[A]
 
   val toName: String
-  def toString(callers: List[GrammarElement[Any]]): String
+  def rToString(callers: List[AnyRef]): String
+  override lazy val toString: String = rToString(Nil)
 
   def ||(that: =>GrammarElement[A], weight: Double): Production[A] =
     orComposition(that, weight)
@@ -26,7 +27,7 @@ sealed trait GrammarElement[A] extends Task[A] {
   def **(word: A): Rule[A] =
     andComposition(Word(word))
 
-  def compareBody(that: GrammarElement[Any]): Boolean
+  def compareBody(that: GrammarElement[A]): Boolean
 
   lazy val nullable: Boolean = rNullable(Nil)
   def rNullable(callers: List[GrammarElement[A]]): Boolean
@@ -38,13 +39,15 @@ sealed trait GrammarElement[A] extends Task[A] {
 
 object GrammarElement {
   def epsilon[A]: Epsilon[A] = Epsilon[A]()
+
   implicit def tuple2Prod[A](tpl: (GrammarElement[A], Double)): Production[A] = 
     Production(tpl::Nil)
   implicit def tupleWord2Prod[A](tpl: (A, Double)): Production[A] = {
     val (word, weight) = tpl
     Production((Word(word), weight) :: Nil)
   }
-  implicit def word2Word[A](word: A): Word[A] = Word(word)
+  implicit def wordVal2WordElt[A, B<:A](word: B): Word[A] = Word(word)
+
 }
 
 
@@ -64,9 +67,8 @@ sealed trait Terminal[A] extends GrammarElement[A] with PrefixOperator {
     Rule(List(this, that))
 
   val toName: String = toString
-  def toString(callers: List[GrammarElement[Any]]): String = toString
 
-  def compareBody(that: GrammarElement[Any]): Boolean = this equals that
+  def compareBody(that: GrammarElement[A]): Boolean = this equals that
 
 }
 
@@ -75,7 +77,7 @@ sealed trait Terminal[A] extends GrammarElement[A] with PrefixOperator {
   * with the class Char
   */
 case class Word[A](value: A) extends Terminal[A] {
-  override val toString: String = value.toString
+  def rToString(callers: List[AnyRef]): String = value.toString
 
   def rNullable(callers: List[GrammarElement[A]]): Boolean = false
   def rFirsts(callers: List[GrammarElement[A]]): Set[A] = Set(value)
@@ -84,7 +86,7 @@ case class Word[A](value: A) extends Terminal[A] {
 /** Epsilon terminal of grammar
   */
 case class Epsilon[A]() extends Terminal[A] {
-  override val toString: String = "'e'"
+  def rToString(callers: List[AnyRef]): String = "'e'"
 
   def rNullable(callers: List[GrammarElement[A]]): Boolean = true
   def rFirsts(callers: List[GrammarElement[A]]): Set[A] = Set()
@@ -105,11 +107,12 @@ class Rule[A](m_body: =>List[GrammarElement[A]]) extends GrammarElement[A] with 
   lazy val id: String = "R_" + GEIdGen()
 
   lazy val toName: String = id
-  def toString(callers: List[GrammarElement[Any]]): String = body map { se =>
-    if (callers contains se) se.toName
-    else se.toString(se::callers)
-  } mkString (id + ":(", " ** ", ")")
-  override lazy val toString: String = toString(this::Nil)
+  def rToString(callers: List[AnyRef]): String = {
+    body map { se =>
+      if ( this :: callers contains(se)) se.toName
+      else se.rToString(this::callers)
+    } mkString (id + ":(", " ** ", ")")
+  }
 
   /*  rule does not carry its weight
    * to overcome this, use implicit conversion from tuple
@@ -119,7 +122,7 @@ class Rule[A](m_body: =>List[GrammarElement[A]]) extends GrammarElement[A] with 
   def andComposition(that: =>GrammarElement[A]): Rule[A] =
     Rule(body :+ that)
 
-  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+  def compareBody(that: GrammarElement[A]): Boolean = that match {
     case Rule(thatBody) =>
       if (thatBody.size == body.size) (body zip thatBody) forall { case (a, b) =>
         a compareBody b
@@ -160,18 +163,17 @@ class Production[A](m_body: =>List[(GrammarElement[A], Double)]) extends Grammar
   lazy val id: String = "P_" + GEIdGen()
 
   lazy val toName: String = id
-  def toString(callers: List[GrammarElement[Any]]): String = body map { case (se, w) =>
-    if (callers contains se) "(" + se.toName + ", " + w + ")"
-    else "(" + se.toString(se::callers) + ", " + w + ")"
+  def rToString(callers: List[AnyRef]): String = body map { case (se, w) =>
+    if (this :: callers contains se) "(" + se.toName + ", " + w + ")"
+    else "(" + se.rToString(this::callers) + ", " + w + ")"
   } mkString (id + ":(", " || ", ")") 
-  override lazy val toString: String = toString(this::Nil)
 
   def orComposition(that: =>GrammarElement[A], weight: Double): Production[A] =
     Production(body :+ (that, weight))
   def andComposition(that: =>GrammarElement[A]): Rule[A] =
     Rule(List(this, that))
 
-  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+  def compareBody(that: GrammarElement[A]): Boolean = that match {
     case Production(thatBody) =>
       if (body.size == thatBody.size) (body zip thatBody) forall {
         case ((ae, aw), (be, bw)) => (aw == bw) && (ae compareBody be)
@@ -223,10 +225,10 @@ sealed abstract class Message[A, B](refinement: =>GrammarElement[B])
   lazy val id: String = "M_" + GEIdGen()
 
   lazy val toName: String = id
-  def toString(callers: List[GrammarElement[Any]]): String =
+  def rToString(callers: List[AnyRef]): String =
     if (callers contains message) id + ":(" + message.toName + ")"
-    else id + ":(" + message.toString(message :: callers) + ")"
-  override lazy val toString: String = toString(this::Nil)
+    else id + ":(" + message.rToString(message :: callers) + ")"
+  override lazy val toString: String = rToString(this::Nil)
 
    /*  terminal does not carry its weight
    * to overcome this, use implicit conversion from tuple
@@ -248,7 +250,7 @@ sealed abstract class Message[A, B](refinement: =>GrammarElement[B])
 
 class HarmRefine[A](refinement: =>GrammarElement[Chord])
     extends Message[A, Chord](refinement) {
-  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+  def compareBody(that: GrammarElement[A]): Boolean = that match {
     case HarmRefine(thatRefinement) => refinement compareBody thatRefinement
     case _ => false
   }
@@ -264,7 +266,7 @@ object HarmRefine {
 
 class RootRythmRefine[A](refinement: =>GrammarElement[BPM])
     extends Message[A, BPM](refinement) {
-  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+  def compareBody(that: GrammarElement[A]): Boolean = that match {
     case RootRythmRefine(thatRefinement) => refinement compareBody thatRefinement
     case _ => false
   }
@@ -280,7 +282,7 @@ object RootRythmRefine {
 
 class RythmRefine[A](refinement: =>GrammarElement[BPM])
     extends Message[A, BPM](refinement) {
-  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+  def compareBody(that: GrammarElement[A]): Boolean = that match {
     case RythmRefine(thatRefinement) => refinement compareBody thatRefinement
     case _ => false
   }
@@ -296,7 +298,7 @@ object RythmRefine {
 
 class MelodyRefine[A](refinement: =>GrammarElement[Tone])
     extends Message[A, Tone](refinement) {
-  def compareBody(that: GrammarElement[Any]): Boolean = that match {
+  def compareBody(that: GrammarElement[A]): Boolean = that match {
     case MelodyRefine(thatRefinement) => refinement compareBody thatRefinement
     case _ => false
   }

@@ -7,6 +7,12 @@ case class BPM(val computed: Double) {
 
 object BPM {
   def apply(full: Int, frac: Int = 0): BPM = BPM(full + {if(frac > 0) 1.0/frac else 0})
+  val w = BPM(4.0)
+  val h = BPM(2.0)
+  val q = BPM(1.0)
+  val e = BPM(0.5)
+  val s = BPM(0.25)
+  val t = BPM(0.125)
 }
 
 // whole note

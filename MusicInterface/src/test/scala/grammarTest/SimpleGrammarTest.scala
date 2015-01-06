@@ -30,6 +30,11 @@ class SimpleGrammarTest extends FunSuite with Matchers with BeforeAndAfter {
     prod.body shouldBe SimpleProduction((1, 2.0), (2, 1.0), (3, 0.0)).body
   }
 
+  test("bug research") {
+    val gen: SimpleRule[Int] = 1 ** 2 ** 3
+    println(gen)
+  }
+
   test("Complex expression no recursion") {
     val generated: SimpleRule[Int] = (
       (1 ** 2 ** 4, 2.0) ||
