@@ -98,7 +98,7 @@ case class ClosedTree[A](
 
 case class OpenTree[A](
   rTree: List[PrefixOperator with GrammarElement[A]],
-  stack: List[Todo[A]],
+  stack: List[Task[A]],
   prob: Double,
   refs: List[OpenTree[A]],
   msgs: List[Message])
@@ -122,13 +122,13 @@ case class OpenTree[A](
     case (m: Message) :: stk  =>
       self.updated(stack = stk, msgs = m::msgs).oneGrammStep
 
-    case Generate(t: Terminal[A]) :: stk =>
+    case (t: Terminal[A]) :: stk => // ??? what about epsilon ????
       Success(self.updated(rTree = t::rTree, stack = stk))
 
-    case Generate(r @ Rule(body)) :: stk =>
+    case (r @ Rule(body)) :: stk =>
       Pending(List(self.updated(rTree = r :: rTree, stack = body ::: stk)))
 
-    case Generate(Production(rules)) :: stk => Pending(
+    case Production(rules) :: stk => Pending(
       normalize(rules, 1) { _._2 } { (x, y) => (x._1, y) } map { r =>
         val (rule @ Rule(body), p) = r
         self.updated(rTree = rule :: rTree, stack = body ::: stk, prob = prob*p)
@@ -198,7 +198,7 @@ case class OpenTree[A](
   // builds a new open tree with updated specified values
   private def updated(
     rTree: List[PrefixOperator with GrammarElement[A]] = rTree,
-    stack: List[Todo[A]] = stack,
+    stack: List[Task[A]] = stack,
     prob: Double = prob,
     refs: List[OpenTree[A]] = refs,
     msgs: List[Message] = msgs
@@ -218,6 +218,6 @@ case class OpenTree[A](
 
 object OpenTree {
   def apply[A](ge: GrammarElement[A]): OpenTree[A] = {
-    OpenTree(Nil, Generate(ge)::Nil, 1, Nil, Nil)
+    OpenTree(Nil, ge::Nil, 1, Nil, Nil)
   }
 }

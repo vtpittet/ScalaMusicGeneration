@@ -1,5 +1,5 @@
 package grammar
-import generation.{PrefixOperator, Todo, Generate}
+import generation.{PrefixOperator, Task, Generate}
 import chord.Chord
 import rythmics.BPM
 import tonalSystem.Tone
@@ -10,7 +10,7 @@ import tonalSystem.Tone
 
 /** common top trait for grammar interface
   */
-sealed trait GrammarElement[A] {
+sealed trait GrammarElement[A] extends Task[A] {
   def orComposition(that: =>GrammarElement[A], weight: Double): Production[A]
   def andComposition(that: =>GrammarElement[A]): Rule[A]
 
