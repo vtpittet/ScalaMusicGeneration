@@ -6,7 +6,7 @@ import scala.util.Random
 sealed trait ParsingTree[A] { self =>
   val rTree: List[PrefixOperator with GrammarElement[A]]
   val prob: Double
-  val msgs: List[Message]
+  val msgs: List[Message[A, _]]
 
   lazy val wordSize: Int = rTree count {
     case Word(_) => true
@@ -92,7 +92,7 @@ object ParsingTree {
 case class ClosedTree[A](
   rTree: List[PrefixOperator with GrammarElement[A]],
   prob: Double,
-  msgs: List[Message])
+  msgs: List[Message[A, _]])
     extends ParsingTree[A]
 
 
@@ -101,7 +101,7 @@ case class OpenTree[A](
   stack: List[Task[A]],
   prob: Double,
   refs: List[OpenTree[A]],
-  msgs: List[Message])
+  msgs: List[Message[A, _]])
     extends ParsingTree[A] { self =>
   import ParsingTree._
 
@@ -119,7 +119,7 @@ case class OpenTree[A](
       if (refs.size >= maxRefinements) Failure
       else self.updated(stack = stk, refs = OpenTree(g)::refs).oneGrammStep
 
-    case (m: Message) :: stk  =>
+    case (m: Message[A, _]) :: stk  =>
       self.updated(stack = stk, msgs = m::msgs).oneGrammStep
 
     case (t: Terminal[A]) :: stk => // ??? what about epsilon ????
@@ -201,7 +201,7 @@ case class OpenTree[A](
     stack: List[Task[A]] = stack,
     prob: Double = prob,
     refs: List[OpenTree[A]] = refs,
-    msgs: List[Message] = msgs
+    msgs: List[Message[A, _]] = msgs
   ): OpenTree[A] = OpenTree(rTree, stack, prob, refs, msgs)
 
 /*

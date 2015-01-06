@@ -1,5 +1,5 @@
 package grammar
-import generation.{PrefixOperator, Task, Generate}
+import generation.{PrefixOperator, Task}
 import chord.Chord
 import rythmics.BPM
 import tonalSystem.Tone
