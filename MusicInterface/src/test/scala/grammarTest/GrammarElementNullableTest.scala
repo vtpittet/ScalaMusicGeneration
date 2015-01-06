@@ -99,5 +99,10 @@ class GrammarElementNullableTest extends FunSuite with Matchers with BeforeAndAf
     g.nullable shouldBe true
   }
 
+  test("null weight don't allow nullable") {
+    lazy val p: Production[Int] = (1, 1.0) || (p, 1.0) || (1 ** 1, 1.0) || (e ** p, 0.0) || ((e ** 1, 2.0) || (p ** p ** p, 1.0) || (e ** e, 1.0), 0.0)
+
+    p.nullable shouldBe false
+  }
 
 }

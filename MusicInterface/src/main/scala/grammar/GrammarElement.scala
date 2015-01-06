@@ -183,14 +183,16 @@ class Production[A](m_body: =>List[(GrammarElement[A], Double)]) extends Grammar
 
   def rNullable(callers: List[GrammarElement[A]]): Boolean = {
     def inCallers(se: GrammarElement[A]): Boolean = this :: callers contains se
-    body exists { case (e, w) => !inCallers(e) && e.rNullable(this :: callers) }
+    body exists { case (e, w) =>
+      w > 0 && !inCallers(e) &&  e.rNullable(this :: callers) }
   }
 
   def rFirsts(callers: List[GrammarElement[A]]): Set[A] = {
-    def inCallers(se: GrammarElement[A]): Boolean = this :: callers contains se
-    body.unzip._1.toSet filterNot { inCallers(_) } flatMap {
-      _ rFirsts (this :: callers)
+    val valid: PartialFunction[(GrammarElement[A], Double),GrammarElement[A]] = {
+      case (e, w) if w > 0 && !(this :: callers contains e) => e
     }
+
+    body.toSet collect valid flatMap { _ rFirsts (this :: callers) }
   }
 }
 
