@@ -120,6 +120,4 @@ class GrammarElementFirstsTest extends FunSuite with Matchers with BeforeAndAfte
     lazy val p: Production[Int] = (1, 1.0) || (p, 1.0) || (2 ** 3, 1.0) || (4 ** p, 0.0) || ((e ** 5, 1.0) || (p ** p ** p, 1.0) || (e ** 6, 1.0), 0.0)
     p.firsts shouldBe Set(1, 2)
   }
-
-
 }

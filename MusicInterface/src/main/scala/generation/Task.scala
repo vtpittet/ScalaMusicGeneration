@@ -9,4 +9,10 @@ import grammar.GrammarElement
   */
 trait Task[A]
 
+object Task {
+  def grammElt[A]: PartialFunction[Task[A], GrammarElement[A]] = {
+    case g: GrammarElement[A] => g
+  }
+}
+
 case class Refine[A](ge: GrammarElement[A]) extends Task[A]
