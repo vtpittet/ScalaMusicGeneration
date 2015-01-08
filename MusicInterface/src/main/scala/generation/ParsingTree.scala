@@ -45,68 +45,186 @@ case class ParsingTree[A](
     * For the first call, aka instantiation of parsing tree from grammar
     * the function prepareNexts should be called
     */
-  def nexts(wishWords: Set[A], closable: Boolean): List[ParsingTree[A]] =
-    ParsingTree.rNexts(self.genNextWord(wishWords), wishWords, closable)
+  def nexts(wishWords: Set[A], closable: Boolean): List[ParsingTree[A]] = {
 
+    def rejectTree(t: ParsingTree[A]): Boolean = {
+      (wishWords intersect t.nextWords).isEmpty &&
+      !(t.nullable && closable)
+    }
+
+    // accept tree if ready to generate word of wishWords
+    def acceptTree(t: ParsingTree[A]): Boolean = t.stack match {
+      case Nil => closable
+      case Word(w) :: tail =>  wishWords contains w
+      case _ => false
+    }
+
+    def acceptChild(e: GrammarElement[A], t: ParsingTree[A]): Boolean = {
+      (t.nextWordsWith(e) intersect wishWords).nonEmpty ||
+      (e.nullable && t.nullable && closable)
+    }
+
+    // generator generates only acceptable Trees
+    def generator(t: ParsingTree[A]): List[ParsingTree[A]] = {
+      t.gen(rejectTree, acceptTree, acceptChild)
+    }
+
+
+    val mainNexts: List[ParsingTree[A]] = rNexts(
+      self.genNextWord(wishWords),
+      acceptTree(_),
+      generator(_)
+    )
+
+    // refinement grammar preparation
+    ???
+  }
 
   /** generate one-step word from prepared state and adjust refinements
     * may be Nil if no refinement can generate the next word
     * may be longer if refinement has more than one way to generate
     * refinement
     * 
+    * The self tree must be prepared to generate (otherwise: message shift)
+    * 
     * Result Must be limited
+    * ref grammars must be updated
+    * 
+    * sanity check: is it satisfiable ?
+    * first: prepare grammars: Grammar must be in state ready to gen
+    * a terminal
     */
-  def genNextWord(wishWords: Set[A]): List[ParsingTree[A]] = ???
-
-
-  def candidatesNextWord: List[ParsingTree[A]] = ???
-
-
-  def candidatesPrepare(wishWords: Set[A]): List[ParsingTree[A]] = ???
-
-
-
-
-
-  def gen(
-    acceptTree: ParsingTree[A] => Boolean,
-    acceptChild: GrammarElement[A] => Boolean
-  ): List[ParsingTree[A]] = if (acceptTree(self)) List(self) else stack match {
-    case Nil => Nil // not accepted and nothing to change
-
-    case Refine(g) :: stk => if (refs.size >= maxRefinements) Nil else {
-      self.updated(stack = stk, refs = ParsingTree(g)::refs).gen(acceptTree, acceptChild)
-    }
-
-    case (m: Message[A, _]) :: stk  =>
-      self.updated(stack = stk, msgs = m::msgs).gen(acceptTree, acceptChild)
-
-    case (t: Terminal[A]) :: stk =>
-      self.updated(rTree = t::rTree, stack = stk).gen(acceptTree, acceptChild)
-
-    case (r @ Rule(body)) :: stk =>
-      self.updated(rTree = r :: rTree, stack = body ::: stk).gen(acceptTree, acceptChild)
-
-    case Production(rules) :: stk => {
-      /* filter out unviable childrens (typically cannot generate expected words)
-       * normalize weights to 1 for probability computation
-       */
-      val n = normalize(rules filter { x => acceptChild(x._1) }) { _._2 } { (x, y) => (x._1, y) }
-
-      /* create childrens with probability relative to parent and filter out
-       * unprobable ones
-       */
-      n collect { case (rule @ Rule(body), p) if (p*prob >= tresholdProb) =>
-        self.updated(
-          rTree = rule :: rTree,
-          stack = body ::: stk,
-          prob = prob*p
-        )
-      }
+  def genNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
+    val words = self.nextWords intersect wishWords
+    if (words.isEmpty) Nil else {
+      ???
     }
   }
 
 
+  /** Method called to put the tree where it is about to generate a
+    * single terminal in a deterministic way
+    * 
+    * highly probabale that closable will be always true
+    */
+  def prepareGen(wishWords: Set[A], closable: Boolean): List[ParsingTree[A]] = {
+
+    def rejectTree(t: ParsingTree[A]): Boolean = {
+      (wishWords intersect t.nextWords).isEmpty &&
+      !(t.nullable && closable)
+    }
+
+    // accept tree if ready to generate word of wishWords
+    def acceptTree(t: ParsingTree[A]): Boolean = t.stack match {
+      case Nil => closable
+      case Word(w) :: tail =>  wishWords contains w
+      case _ => false
+    }
+
+    def acceptChild(e: GrammarElement[A], t: ParsingTree[A]): Boolean = {
+      (t.nextWordsWith(e) intersect wishWords).nonEmpty ||
+      (e.nullable && t.nullable && closable)
+    }
+
+    // generator generates only acceptable Trees
+    def generator(t: ParsingTree[A]): List[ParsingTree[A]] = {
+      t.gen(rejectTree, acceptTree, acceptChild)
+    }
+
+
+    val mainReady: List[ParsingTree[A]] = rNexts(
+      List(self),
+      acceptTree(_),
+      generator(_)
+    )
+
+    // refinement grammar preparation
+    // TODO use list of select refinements to generate next candidates
+    ???
+  }
+
+  /** applies prepareGen on refinements, then choose up to limit
+    * tuples of new refinements (to be assigned to this tree)
+    * same tuple may be selected multiple times. too hard to
+    * select each possibility only once and not bad solution
+    */
+  def selectRefinements(wishWords: Set[A]): List[List[ParsingTree[A]]] = {
+    val words = self.nextWords intersect wishWords
+    val candidates: List[List[ParsingTree[A]]] =
+      refs map { r => r.prepareGen(words, true) }
+    // a Nil value in candidates indicates that a refinement was not able to
+    // 
+    if (candidates exists { _.isEmpty }) Nil else {
+      def oneCandidate = candidates map (chooseOne(_){ _.prob })
+      List.fill(maxMemory)(oneCandidate)
+    }
+  }
+
+
+
+
+  /** generates next step of search tree : List composed of parsing trees
+    * that are accepted (solutions) and parsing tree about to make a non
+    * deterministic step
+    * refs grammars must be updated as well !
+    */
+  def gen(
+    rejectTree: ParsingTree[A] => Boolean, // security
+    acceptTree: ParsingTree[A] => Boolean,
+    acceptChild: (GrammarElement[A], ParsingTree[A]) => Boolean
+  ): List[ParsingTree[A]] =
+    if (rejectTree(self)) Nil
+    else if (acceptTree(self)) List(self)
+    else stack match {
+      case Nil => Nil // not accepted and nothing to change
+
+      case Refine(g) :: stk => if (refs.size >= maxRefinements) Nil else {
+        self.updated(
+          stack = stk,
+          refs = ParsingTree(g)::refs
+        ).gen(rejectTree, acceptTree, acceptChild)
+      }
+
+      case (m: Message[A, _]) :: stk  =>
+        self.updated(
+          stack = stk,
+          msgs = m::msgs
+        ).gen(rejectTree, acceptTree, acceptChild)
+
+      case (t: Terminal[A]) :: stk =>
+        self.updated(
+          rTree = t::rTree,
+          stack = stk
+        ).gen(rejectTree, acceptTree, acceptChild)
+
+      case (r @ Rule(body)) :: stk =>
+        self.updated(
+          rTree = r :: rTree,
+          stack = body ::: stk
+        ).gen(rejectTree, acceptTree, acceptChild)
+
+      case Production(rules) :: stk => {
+        /* filter out unviable childrens (typically cannot generate expected words)
+         * normalize weights to 1 for probability computation
+         */
+        val n = normalize(rules filter { x => acceptChild(x._1, self) }) { _._2 } { (x, y) => (x._1, y) }
+
+        /* create childrens with probability relative to parent and filter out
+         * unprobable ones
+         */
+        n collect { case (rule @ Rule(body), p) if (p*prob >= tresholdProb) =>
+          self.updated(
+            rTree = rule :: rTree,
+            stack = body ::: stk,
+            prob = prob*p)
+        } flatMap {
+          /* adding t.topStkIsProd to accept filter will cause recursion
+           * to stop just before generating a production again
+           */
+          _.gen(rejectTree, t => acceptTree(t) || t.topStkIsProd, acceptChild)
+        }
+      }
+    }
 
   /* closed indicates : no terminal generated, tree closed
    * Success indicates : one terminal generated
@@ -193,6 +311,12 @@ case class ParsingTree[A](
     (nxtThis /: refs) { _ intersect _.nextWords }
   }
 
+  /** nextWords of this as if e was added at top of stack
+    */
+  def nextWordsWith(e: GrammarElement[A]): Set[A] =
+    if (e.nullable) e.firsts union nextWords
+    else e.firsts
+
 
 
   /* new approach : next word will return the list of trees that exactly
@@ -271,6 +395,11 @@ case class ParsingTree[A](
     msgs: List[Message[A, _]] = msgs
   ): ParsingTree[A] = ParsingTree(rTree, stack, prob, refs, msgs)
 
+  private lazy val topStkIsProd: Boolean = stack match {
+    case Production(_) :: tail => true
+    case _ => false
+  }
+
 /*
   def normalize(rules: List[(Rule[A], Double)]): List[(Rule[A], Double)] = {
     val total = rules.foldLeft(0.0)(_ + _._2)
@@ -328,6 +457,12 @@ object ParsingTree {
     r_elect(random, target)
   }
 
+  // must test that target is not null
+  def chooseOne[A](target: List[A])(extract: A => Double): A = {
+    // Error possible from here if targe == Nil
+    electOne(target)(extract)._1.get
+  }
+
   /* c: candidate
 
   def nextGen[A](c: OpenTree[A]): List[ParsingTree[A]] = {
@@ -336,20 +471,25 @@ object ParsingTree {
    */
 
   /** applies The algorithm.
-    * Solutions is splitted in valid solutions and pending solutions.
+    * Solutions is partitionned in valid solutions and pending solutions.
     * if pending is empty, return
-    * pending solutions are flat mapped with gen => ps
+    * pending solutions are flat mapped with generator => ps
     * valid solutions and ps are limited, then recursion
     */
   def rNexts[A](
     solutions: List[ParsingTree[A]],
-    wishWords: Set[A],
-    closable: Boolean
-  ): List[ParsingTree[A]] = {
-    def acceptTree(t: ParsingTree[A]): Boolean = t match {
-      case _ => true
+    acceptTree: ParsingTree[A] => Boolean,
+    generator: ParsingTree[A] => List[ParsingTree[A]]
+  ): List[ParsingTree[A]] = solutions partition acceptTree match {
+    case (sol, Nil) => sol
+    case (sol, pen) => {
+      val candidates = sol ::: (pen flatMap generator)
+      rNexts(
+        elect(maxMemory, candidates) { _.prob },
+        acceptTree, generator
+      )
     }
-    ???
+
   }
 
 
