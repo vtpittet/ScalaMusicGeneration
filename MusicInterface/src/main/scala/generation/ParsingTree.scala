@@ -3,6 +3,8 @@ package generation
 import grammar._
 import scala.util.Random
 
+
+// TODO check where are branches that cannot generate words ?
 case class ParsingTree[A](
   rTree: List[PrefixOperator with GrammarElement[A]],
   stack: List[Task[A]],
@@ -60,11 +62,8 @@ case class ParsingTree[A](
     * the function prepareNexts should be called
     */
   def nexts(wishWords: Set[A], closable: Boolean): List[ParsingTree[A]] = {
-
-    // prepareNext
-    // genNextWord
-    // prepareNext
-    ???
+    val words = wishWords intersect nextWords
+    elect(genNextWord(words) flatMap (_.prepareGen(words, true)))(_.prob)
   }
 
   /** generate one-step word from prepared state and adjust refinements
@@ -134,16 +133,7 @@ case class ParsingTree[A](
       generator(_)
     )
 
-    // refinement grammar preparation
-    // TODO use list of select refinements to generate next candidates
-    // bug : if no refinements !
-    // ??? : if refinement closed ?
-    // todo...
-    // not that probably prepareGen will replace nexts
-
-    // TODO continue here, should be ok, need check
     elect(mainReady flatMap (_.prepareRefs(words)))(_.probWithRefHead)
-
   }
 
 
@@ -250,6 +240,7 @@ case class ParsingTree[A](
   def prepareRefs(wishWords: Set[A]): List[ParsingTree[A]] = {
     val words = wishWords intersect nextWords
 
+    // note that wishWords are systematically intersected with self.nextWords
     val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
       List.fill(refs.size)(_.prepareHeadRef(words))
 
@@ -391,5 +382,3 @@ object ParsingTree {
   }
 
 }
-
-
