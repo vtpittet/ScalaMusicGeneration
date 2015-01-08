@@ -82,10 +82,57 @@ case class ParsingTree[A](
     */
   def genNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
     val words = self.nextWords intersect wishWords
-    if (words.isEmpty) Nil else {
-      ???
+
+    val size = self.wordSize
+
+    def rejectTree(t: ParsingTree[A]): Boolean = {
+      (words intersect t.nextWords).isEmpty
     }
+
+    // accept tree if one word generated (should accept as soon as word generated
+    def acceptTree(t: ParsingTree[A]): Boolean = t.wordSize == size + 1
+
+    def acceptChild(e: GrammarElement[A], t: ParsingTree[A]): Boolean = {
+      (t.nextWordsWith(e) intersect words).nonEmpty
+    }
+
+    // generator generates only acceptable Trees
+    def generator(t: ParsingTree[A]): List[ParsingTree[A]] = {
+      t.gen(rejectTree, acceptTree, acceptChild)
+    }
+
+    val mainGenerated: List[ParsingTree[A]] = rNexts(
+      List(self),
+      acceptTree(_),
+      generator(_)
+    )
+
+    elect(mainGenerated flatMap (_.refNextWord(words)))(_.probWithRefHead)
   }
+
+  def refNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
+    val words = wishWords intersect nextWords
+
+    val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
+      List.fill(refs.size)(_.refHeadNextWord(words))
+
+    def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
+
+    boundMultiGen(List(self), generators, probExtractor(_))
+  }
+
+  def refHeadNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
+
+    val words = nextWords intersect wishWords
+
+    def generate(t: ParsingTree[A]): List[ParsingTree[A]] = {
+      t.genNextWord(words)
+    }
+
+    genHeadRef(generate(_))
+  }
+
+
 
 
   /** Method called to put the tree where it is about to generate a
