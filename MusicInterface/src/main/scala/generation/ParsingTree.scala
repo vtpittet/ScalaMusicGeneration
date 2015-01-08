@@ -140,7 +140,15 @@ case class ParsingTree[A](
 
     // refinement grammar preparation
     // TODO use list of select refinements to generate next candidates
-    ???
+    // bug : if no refinements !
+    // ??? : if refinement closed ?
+    // todo...
+    // not that probably prepareGen will replace nexts
+    mainReady flatMap { m => 
+      m.selectRefinements(wishWords) map { newRefs =>
+        m.updated(refs = newRefs)
+      }
+    }
   }
 
   /** applies prepareGen on refinements, then choose up to limit
@@ -152,8 +160,8 @@ case class ParsingTree[A](
     val words = self.nextWords intersect wishWords
     val candidates: List[List[ParsingTree[A]]] =
       refs map { r => r.prepareGen(words, true) }
-    // a Nil value in candidates indicates that a refinement was not able to
-    // 
+    // a Nil value in candidates indicates that a refinement was not able to gen
+    // or that there is no refs
     if (candidates exists { _.isEmpty }) Nil else {
       def oneCandidate = candidates map (chooseOne(_){ _.prob })
       List.fill(maxMemory)(oneCandidate)
