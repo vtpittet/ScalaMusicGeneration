@@ -110,16 +110,6 @@ case class ParsingTree[A](
     elect(mainGenerated flatMap (_.refNextWord(words)))(_.probWithRefHead)
   }
 
-  def refNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
-    val words = wishWords intersect nextWords
-
-    val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
-      List.fill(refs.size)(_.refHeadNextWord(words))
-
-    def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
-
-    boundMultiGen(List(self), generators, probExtractor(_))
-  }
 
   def refHeadNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
 
@@ -133,7 +123,17 @@ case class ParsingTree[A](
   }
 
 
+  def refNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
 
+    val words = wishWords intersect nextWords
+
+    val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
+      List.fill(refs.size)(_.refHeadNextWord(words))
+
+    def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
+
+    boundMultiGen(List(self), generators, probExtractor(_))
+  }
 
   /** Method called to put the tree where it is about to generate a
     * single terminal in a deterministic way
@@ -247,7 +247,36 @@ case class ParsingTree[A](
       }
     }
 
-  /** applies a generate method to head of refinements and
+
+  def prepareHeadRef(wishWords: Set[A]): List[ParsingTree[A]] = {
+
+    val words = nextWords intersect wishWords
+
+    def generate(t: ParsingTree[A]): List[ParsingTree[A]] = {
+      t.prepareGen(words, true)
+    }
+
+    genHeadRef(generate(_))
+  }
+
+  /** take all ref grammars and put them in a state where they are
+    * ready to generate a new terminal in wishWords
+    * (typically, nextWords of refined tree)
+    */
+  def prepareRefs(wishWords: Set[A]): List[ParsingTree[A]] = {
+
+    val words = wishWords intersect nextWords
+
+    // note that wishWords are systematically intersected with self.nextWords
+    val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
+      List.fill(refs.size)(_.prepareHeadRef(words))
+
+    def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
+
+    boundMultiGen(List(self), generators, probExtractor(_))
+  }
+
+    /** applies a generate method to head of refinements and
     * return self.updated with each new refinement at tail of refs list
     * (for the sake of cyclic use of genHeadRef). If generated grammar is
     * closed, then do not reuse that gramar
@@ -267,33 +296,6 @@ case class ParsingTree[A](
       case newRef if newRef.isClosed => self.updated(refs = rs)
       case newRef /* !newRef.isClosed */ => self.updated(refs = rs :+ newRef)
     }
-  }
-
-  def prepareHeadRef(wishWords: Set[A]): List[ParsingTree[A]] = {
-
-    val words = nextWords intersect wishWords
-
-    def generate(t: ParsingTree[A]): List[ParsingTree[A]] = {
-      t.prepareGen(words, true)
-    }
-
-    genHeadRef(generate(_))
-  }
-
-  /** take all ref grammars and put them in a state where they are
-    * ready to generate a new terminal in wishWords
-    * (typically, nextWords of refined tree)
-    */
-  def prepareRefs(wishWords: Set[A]): List[ParsingTree[A]] = {
-    val words = wishWords intersect nextWords
-
-    // note that wishWords are systematically intersected with self.nextWords
-    val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
-      List.fill(refs.size)(_.prepareHeadRef(words))
-
-    def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
-
-    boundMultiGen(List(self), generators, probExtractor(_))
   }
 
 
