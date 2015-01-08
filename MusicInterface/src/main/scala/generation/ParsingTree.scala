@@ -40,8 +40,18 @@ sealed trait ParsingTree[A] { self =>
     * For the first call, aka instantiation of parsing tree from grammar
     * the function prepareNexts should be called
     */
-  def nexts: List[ParsingTree[A]]
+  def nexts(wishWords: Set[A], closable: Boolean): List[ParsingTree[A]] =
+    ParsingTree.rNexts(self.genNextWord(wishWords), wishWords, closable)
 
+
+  /** generate one-step word from prepared state and adjust refinements
+    * may be Nil if no refinement can generate the next word
+    * may be longer if refinement has more than one way to generate
+    * refinement
+    * 
+    * Result Must be limited
+    */
+  def genNextWord(wishWords: Set[A]): List[ParsingTree[A]] = ???
 
 
   def gen(
@@ -123,6 +133,23 @@ object ParsingTree {
   }
    */
 
+  /** applies The algorithm.
+    * Solutions is splitted in valid solutions and pending solutions.
+    * if pending is empty, return
+    * pending solutions are flat mapped with gen => ps
+    * valid solutions and ps are limited, then recursion
+    */
+  def rNexts[A](
+    solutions: List[ParsingTree[A]],
+    wishWords: Set[A],
+    closable: Boolean
+  ): List[ParsingTree[A]] = {
+    def acceptTree(t: ParsingTree[A]): Boolean = t match {
+      case _ => true
+    }
+    ???
+  }
+
 }
 
 
@@ -139,7 +166,6 @@ case class ClosedTree[A](
 
 
 
-  def nexts: List[ParsingTree[A]] = Nil
   val nullable: Boolean = true
   val nextWords: Set[A] = Set()
 }
@@ -283,6 +309,12 @@ case class OpenTree[A](
    * could be used when creating a tree), but it has to return a list because
    * refinement trees may have multiple solution to generate the one word of
    * the main tree
+   * 
+   * new approach : generate one word and get ready for next generation
+   * generates as far as possible without another word
+   * 
+   * should return a list of possible nexts of bounded size
+   * 
    */
   /*
    * contract: next will either return open trees t' with :
@@ -291,17 +323,12 @@ case class OpenTree[A](
    *   t.wordSize = t'.wordSize + 1
    * 
    * Additionnaly, the size of returned list is limited to avoid complexity
-   */
-  def nexts: List[ParsingTree[A]] = {
-    // find nexts for this tree
-    // find nexts for each refinement trees
-    // result is a ~join of lists on generated trees
-    // join operation : closed tree match to any open tree
-    // (special behavior closed left or right hand side)
-    // join operation will limit breadth using probabilities
+
+  def rNexts(solutions: List[Result[A]]): List[ParsingTree[A]] = {
+
     self :: Nil
   }
-
+   */
   private def nextsMain: List[ParsingTree[A]] = ???/*self.oneGrammStep match {
     case Failure => Nil
     case Closed(tree) => List(tree)
@@ -328,7 +355,7 @@ case class OpenTree[A](
     * accepted (else generated terminal equals last word of this or
     * refinements finishes) and put at the end of the refs list.
     * generated messages are lifted up to refined tree
-    */
+    *
   private def refineHead: List[ParsingTree[A]] = refs match {
     case Nil => List(self)
     case h::t => normalize(self accept h.nexts) map {
@@ -341,6 +368,7 @@ case class OpenTree[A](
           msgs = oT.msgs ::: msgs)
     }
   }
+    */
 
   // builds a new open tree with updated specified values
   private def updated(
