@@ -1,7 +1,8 @@
 package grammar
-import generation.{PrefixOperator, Task}
+import generation.{PrefixOperator, StackTask}
 import chord.Chord
 import rythmics.BPM
+import rythmics.RythmCell
 import tonalSystem.Tone
 
 // TODO specify composition rules
@@ -10,7 +11,7 @@ import tonalSystem.Tone
 
 /** common top trait for grammar interface
   */
-sealed trait GrammarElement[A] extends Task[A] {
+sealed trait GrammarElement[A] extends StackTask[A] {
   def orComposition(that: =>GrammarElement[A], weight: Double): Production[A]
   def andComposition(that: =>GrammarElement[A]): Rule[A]
 
@@ -282,8 +283,8 @@ object RootRythmRefine {
 }
 
 
-class RythmRefine[A](refinement: =>GrammarElement[BPM])
-    extends Message[A, BPM](refinement) {
+class RythmRefine[A](refinement: =>GrammarElement[RythmCell])
+    extends Message[A, RythmCell](refinement) {
   def compareBody(that: GrammarElement[A]): Boolean = that match {
     case RythmRefine(thatRefinement) => refinement compareBody thatRefinement
     case _ => false
@@ -291,9 +292,9 @@ class RythmRefine[A](refinement: =>GrammarElement[BPM])
 }
 
 object RythmRefine {
-  def apply[A](ge: =>GrammarElement[BPM]): RythmRefine[A] = 
+  def apply[A](ge: =>GrammarElement[RythmCell]): RythmRefine[A] = 
     new RythmRefine[A](ge)
-  def unapply[A](rr: RythmRefine[A]): Option[GrammarElement[BPM]] =
+  def unapply[A](rr: RythmRefine[A]): Option[GrammarElement[RythmCell]] =
     Some(rr.message)
 }
 

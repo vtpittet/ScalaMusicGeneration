@@ -7,7 +7,7 @@ import scala.util.Random
 // TODO check where are branches that cannot generate words ?
 case class ParsingTree[A](
   rTree: List[PrefixOperator with GrammarElement[A]],
-  stack: List[Task[A]],
+  stack: List[StackTask[A]],
   prob: Double,
   refs: List[ParsingTree[A]],
   msgs: List[Message[A, _]]) { self =>
@@ -37,7 +37,7 @@ case class ParsingTree[A](
     */
   lazy val nextWords: Set[A] = {
     // collect firsts of nullable head of stack (eliminating messages)
-    val nxtThis: Set[A] = (stack collect Task.grammElt span { _.nullable } match {
+    val nxtThis: Set[A] = (stack collect StackTask.grammElt span { _.nullable } match {
       case (nlb, hd::tail) => nlb :+ hd
       case (nlb, Nil) => nlb
     }).toSet flatMap { ge: GrammarElement[A] => ge.firsts }
@@ -53,6 +53,13 @@ case class ParsingTree[A](
     else e.firsts
 
 
+  lazy val getMessages: List[Message[A, _]] =
+    (refs flatMap (_.getMessages)) ++ msgs
+
+  lazy val dropMessages: ParsingTree[A] = self.updated(
+    msgs = Nil,
+    refs = refs map (_.dropMessages)
+  )
 
   /** returns a list of parsing trees such that each one is
     * one word bigger and in a state where there is one single deterministic
@@ -61,8 +68,8 @@ case class ParsingTree[A](
     * For the first call, aka instantiation of parsing tree from grammar
     * the function prepareNexts should be called
     */
-  def nexts(wishWords: Set[A], closable: Boolean): List[ParsingTree[A]] = {
-    val words = wishWords intersect nextWords
+  def nexts(wishWord: A => Boolean): List[ParsingTree[A]] = {
+    val words = nextWords filter wishWord
     elect(genNextWord(words) flatMap (_.prepareGen(words, true)))(_.prob)
   }
 
@@ -300,9 +307,9 @@ case class ParsingTree[A](
 
 
   // builds a new open tree with updated specified values
-  private def updated(
+  def updated(
     rTree: List[PrefixOperator with GrammarElement[A]] = rTree,
-    stack: List[Task[A]] = stack,
+    stack: List[StackTask[A]] = stack,
     prob: Double = prob,
     refs: List[ParsingTree[A]] = refs,
     msgs: List[Message[A, _]] = msgs
