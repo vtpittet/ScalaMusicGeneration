@@ -32,6 +32,4 @@ object ImplicitsWords2Elements {
   implicit def rCell2WordElt(word: RythmCell) = wordVal2WordElt[RythmCell](word)
   implicit def tone2WordElt(word: Tone) = wordVal2WordElt[Tone](word)
 
-
-
 }
