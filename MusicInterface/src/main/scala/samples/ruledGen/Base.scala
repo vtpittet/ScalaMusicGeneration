@@ -35,10 +35,5 @@ object Base extends App {
 
   val music = Generator(nChords(4), root, cells, tones).generateMusic
 
-  for (i <- 0 until music.notes.size if (i %3 == 0)) {
-    println(music.notes(i))
-  }
-
-
   MelodyPlayer(music, 60)
 }
