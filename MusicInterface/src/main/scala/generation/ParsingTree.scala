@@ -72,11 +72,16 @@ case class ParsingTree[A](
     * For the first call, aka instantiation of parsing tree from grammar
     * the function prepareNexts should be called
     */
-  def nexts(wishWord: A => Boolean): List[ParsingTree[A]] = {
+  def nexts(wishWord: A => Boolean, close: Boolean): List[ParsingTree[A]] = {
     val words = composeAnd(wishWord, inNextWords)
+    println(nextWords filter words)
+
+    val gens = genNextWord(words)
+    val prepared = prepareGen(x => true, close)
+
     normalize(
       elect(
-        genNextWord(words) flatMap (_.prepareGen(truePrd, true))
+        genNextWord(words) flatMap (_.prepareGen(truePrd, close))
       ) { _.prob }
     )
   }
@@ -147,7 +152,10 @@ case class ParsingTree[A](
 
     def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
 
-    boundMultiGen[ParsingTree[A]](List(self), generators, probExtractor(_))
+    def probUpdator(t: ParsingTree[A], p: Double): ParsingTree[A] =
+      t.updateProbWithRefHead(p)
+
+    boundMultiGen[ParsingTree[A]](List(self), generators, probExtractor(_), probUpdator(_, _))
   }
 
   /** Method called to put the tree where it is about to generate a
@@ -161,26 +169,25 @@ case class ParsingTree[A](
     * 
     * highly probabale that closable will be always true
     */
-  def prepareGen(wishWord: A => Boolean, closable: Boolean): List[ParsingTree[A]] = {
+  def prepareGen(wishWord: A => Boolean, close: Boolean): List[ParsingTree[A]] = {
 
     val words = composeAnd(wishWord, inNextWords)
 
-    
     def rejectTree(t: ParsingTree[A]): Boolean = {
-      (t.nextWords filter words).isEmpty &&
-      !(t.nullable && closable)
+      (close && !nullable) ||
+      (!close && (t.nextWords filter words).isEmpty)
     }
 
     // accept tree if ready to generate word of wishWord
     def acceptTree(t: ParsingTree[A]): Boolean = t.stack match {
-      case Nil => closable
-      case Word(w) :: tail =>  words(w)
+      case Nil => close
+      case Word(w) :: tail => !close &&  words(w)
       case _ => false
     }
 
     def acceptChild(e: GrammarElement[A], t: ParsingTree[A]): Boolean = {
-      (t.nextWordsWith(e) filter words).nonEmpty ||
-      (e.nullable && t.nullable && closable)
+      (close && e.nullable && t.nullable) ||
+      (!close && (t.nextWordsWith(e) filter words).nonEmpty)
     }
 
     // generator generates only acceptable Trees
@@ -288,7 +295,10 @@ case class ParsingTree[A](
 
     def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
 
-    boundMultiGen[ParsingTree[A]](List(self), generators, probExtractor(_))
+    def probUpdator(t: ParsingTree[A], p: Double): ParsingTree[A] =
+      t.updateProbWithRefHead(p)
+
+    boundMultiGen[ParsingTree[A]](List(self), generators, probExtractor(_), probUpdator(_, _))
   }
 
     /** applies a generate method to head of refinements and
@@ -331,6 +341,18 @@ case class ParsingTree[A](
   private lazy val probWithRefHead: Double = refs match {
     case Nil => self.prob
     case r :: rs => self.prob * r.prob
+  }
+
+  def updateProbWithRefHead(p: Double): ParsingTree[A] = refs match {
+    case Nil => self.updated(prob = p)
+    case r :: rs => {
+      val probFactor = math.sqrt(p/(self.prob*r.prob))
+
+      val probSelf = self.prob * probFactor
+      val probRef = r.prob * probFactor
+
+      self.updated(refs = r.updated(prob = probRef) :: rs, prob = probSelf)
+    }
   }
 }
 
@@ -439,13 +461,15 @@ object ParsingTree {
   def boundMultiGen[A](
     solutions: List[A],
     generators: List[A => List[A]],
-    probExtractor: A => Double
+    probExtractor: A => Double,
+    probUpdator: (A, Double) => A
   ): List[A] = generators match {
     case Nil => solutions
     case gen :: gens => boundMultiGen(
-      elect(solutions flatMap gen)(probExtractor),
-      gens, probExtractor
-    )
+      normalize(
+        elect(solutions flatMap gen)(probExtractor)
+      )(probExtractor)(probUpdator),
+      gens, probExtractor, probUpdator)
   }
 
 

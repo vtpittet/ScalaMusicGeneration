@@ -128,7 +128,7 @@ case class Harm(
       nextMelodyTones.isEmpty || (nextMelodyTones exists { c contains _ })
     }
 
-    val nextH = h.nexts(suitableChord(_))
+    val nextH = h.nexts(suitableChord(_), close = false)
 
     nextH map { Root(_, rr, rc, m) }
 
@@ -159,7 +159,7 @@ case class Root(
     m.updated(prob = pm)
   )
   def gen: List[Next] = {
-    rr.nexts(x => true) map { Cell(h, _, rc, m) }
+    rr.nexts(x => true, h.isClosed) map { Cell(h, _, rc, m) }
   }
 }
 
@@ -189,7 +189,7 @@ case class Cell(
   )
 
   def gen: List[Next] = {
-    rc.nexts(x => true) map { Melody(h, rr, _, m) }
+    rc.nexts(x => true, close = h.isClosed) map { Melody(h, rr, _, m) }
   }
 }
 
@@ -217,31 +217,52 @@ case class Melody(
     m.updated(prob = pm)
   )
 
-  def gen: List[Next] = {
-    val count = rc.lastWord match {
-      case None => 0
-      case Some(cell) => cell.size
+  def gen: List[Next] = rc.lastWord match {
+    case None => List(Harm(h, rr, rc, m))
+    case Some(cell) if cell.size == 1 => genOne
+    case Some(cell) => realGen(cell.size)
+  }
+
+  private def genOne: List[Next] = {
+    val suitableFirstTone: Tone => Boolean = tone => h.lastWord match {
+      case None => true
+      case Some(chord) => chord contains tone
     }
 
-    if (count <= 0) List(Harm(h, rr, rc, m))
-    else realGen(count)
+    val probExtractor: ParsingTree[Tone] => Double = _.prob
+
+    val gens = m.nexts(suitableFirstTone, close = h.isClosed)
+
+    gens map (Harm(h, rr, rc, _))
   }
 
   private def realGen(count: Int): List[Next] = {
+
+//    println("realgen with count" + count)
 
     val suitableFirstTone: Tone => Boolean = h.lastWord match {
       case None => x => true
       case Some(chord) => chord contains _
     }
 
-    val firstGen = m.nexts(suitableFirstTone)
+    val firstGen = m.nexts(suitableFirstTone, close = false)
 
     val generators: List[ParsingTree[Tone] => List[ParsingTree[Tone]]] =
-      List.fill(count-1)(_.nexts(x => true))
+      List.fill(count-2)(_.nexts(x => true, close = false))
+
+    val lastGen: ParsingTree[Tone] => List[ParsingTree[Tone]] =
+      _.nexts(x => true, close = h.isClosed)
 
     val probExtractor: ParsingTree[Tone] => Double = _.prob
 
-    val gens = ParsingTree.boundMultiGen(firstGen, generators, probExtractor)
+    def probUpdator(t: ParsingTree[Tone], p: Double): ParsingTree[Tone] =
+      t.updated(prob = p)
+
+
+
+    val gens = ParsingTree.boundMultiGen[ParsingTree[Tone]](
+      firstGen, generators :+ lastGen, probExtractor, probUpdator(_, _)
+    )
 
     gens map (Harm(h, rr, rc, _))
   }

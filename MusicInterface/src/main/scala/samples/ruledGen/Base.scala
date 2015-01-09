@@ -15,27 +15,29 @@ import midiInterface.MelodyPlayer
 object Base extends App {
 
   val closCond: PartialSolution[_] => Boolean = { ps =>
-    ps.h.isClosed //&& ps.rc.isClosed && ps.m.isClosed
+    ps.h.isClosed && ps.rc.isClosed && ps.m.isClosed
   }
 
 
   lazy val chords: Grammar[Chord] = 
-    Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I)
+    Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I) ** Triad(I)
 
-  lazy val root: Grammar[BPM] = H ** Q ** root
+  lazy val root: Grammar[BPM] = H ** Q ** root || H
 
   lazy val cells: Grammar[RythmCell] = (Q +: E +: E) ** cells || Q
 
   lazy val tones: Grammar[Tone] = gen(I) ** I
 
 
-  def gen(t: Tone): Grammar[Tone] = t ** (
+  def gen(t: Tone): Grammar[Tone] = (t ** (
     (gen(t decreaseBy 2), 2.0) ||
     (gen(t decreaseBy 1), 4.0) ||
     (gen(t), 1.0) ||
     (gen(t increaseBy 1), 4.0) ||
     (gen(t increaseBy 2), 2.0)
-  )
+  )) || Epsilon[Tone]()
+
+  
 
   //println(sols)
 
