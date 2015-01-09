@@ -123,8 +123,10 @@ case class Harm(
 
   def genNoDispatch: List[Next] = {
     val nextMelodyTones = m.nextWords
-    
-    def suitableChord(c: Chord): Boolean = nextMelodyTones exists { c contains _ }
+
+    def suitableChord(c: Chord): Boolean = {
+      nextMelodyTones.isEmpty || (nextMelodyTones exists { c contains _ })
+    }
 
     val nextH = h.nexts(suitableChord(_))
 

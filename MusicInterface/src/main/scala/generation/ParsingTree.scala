@@ -46,6 +46,8 @@ case class ParsingTree[A](
     (nxtThis /: refs) { _ intersect _.nextWords }
   }
 
+  lazy val inNextWords: A => Boolean = nextWords contains _
+
   /** nextWords of this as if e was added at top of stack
     */
   def nextWordsWith(e: GrammarElement[A]): Set[A] =
@@ -71,10 +73,10 @@ case class ParsingTree[A](
     * the function prepareNexts should be called
     */
   def nexts(wishWord: A => Boolean): List[ParsingTree[A]] = {
-    val words = nextWords filter wishWord
+    val words = composeAnd(wishWord, inNextWords)
     normalize(
       elect(
-        genNextWord(words) flatMap (_.prepareGen(Set(), true))
+        genNextWord(words) flatMap (_.prepareGen(truePrd, true))
       ) { _.prob }
     )
   }
@@ -93,20 +95,20 @@ case class ParsingTree[A](
     * first: prepare grammars: Grammar must be in state ready to gen
     * a terminal
     */
-  def genNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
-    val words = self.nextWords intersect wishWords
+  def genNextWord(wishWord: A => Boolean): List[ParsingTree[A]] = {
+    val words = composeAnd(wishWord, inNextWords)
 
     val size = self.wordSize
 
     def rejectTree(t: ParsingTree[A]): Boolean = {
-      (words intersect t.nextWords).isEmpty
+      (t.nextWords filter words).isEmpty
     }
 
     // accept tree if one word generated (should accept as soon as word generated
     def acceptTree(t: ParsingTree[A]): Boolean = t.wordSize == size + 1
 
     def acceptChild(e: GrammarElement[A], t: ParsingTree[A]): Boolean = {
-      (t.nextWordsWith(e) intersect words).nonEmpty
+      (t.nextWordsWith(e) filter words).nonEmpty
     }
 
     // generator generates only acceptable Trees
@@ -124,9 +126,9 @@ case class ParsingTree[A](
   }
 
 
-  def refHeadNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
+  def refHeadNextWord(wishWord: A => Boolean): List[ParsingTree[A]] = {
 
-    val words = nextWords intersect wishWords
+    val words = composeAnd(wishWord, inNextWords)
 
     def generate(t: ParsingTree[A]): List[ParsingTree[A]] = {
       t.genNextWord(words)
@@ -136,9 +138,9 @@ case class ParsingTree[A](
   }
 
 
-  def refNextWord(wishWords: Set[A]): List[ParsingTree[A]] = {
+  def refNextWord(wishWord: A => Boolean): List[ParsingTree[A]] = {
 
-    val words = wishWords intersect nextWords
+    val words = composeAnd(wishWord, inNextWords)
 
     val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
       List.fill(refs.size)(_.refHeadNextWord(words))
@@ -159,25 +161,25 @@ case class ParsingTree[A](
     * 
     * highly probabale that closable will be always true
     */
-  def prepareGen(wishWords: Set[A], closable: Boolean): List[ParsingTree[A]] = {
+  def prepareGen(wishWord: A => Boolean, closable: Boolean): List[ParsingTree[A]] = {
 
-    val words = wishWords intersect nextWords
+    val words = composeAnd(wishWord, inNextWords)
 
     
     def rejectTree(t: ParsingTree[A]): Boolean = {
-      (words intersect t.nextWords).isEmpty &&
+      (t.nextWords filter words).isEmpty &&
       !(t.nullable && closable)
     }
 
-    // accept tree if ready to generate word of wishWords
+    // accept tree if ready to generate word of wishWord
     def acceptTree(t: ParsingTree[A]): Boolean = t.stack match {
       case Nil => closable
-      case Word(w) :: tail =>  words contains w
+      case Word(w) :: tail =>  words(w)
       case _ => false
     }
 
     def acceptChild(e: GrammarElement[A], t: ParsingTree[A]): Boolean = {
-      (t.nextWordsWith(e) intersect words).nonEmpty ||
+      (t.nextWordsWith(e) filter words).nonEmpty ||
       (e.nullable && t.nullable && closable)
     }
 
@@ -207,8 +209,8 @@ case class ParsingTree[A](
     acceptTree: ParsingTree[A] => Boolean,
     acceptChild: (GrammarElement[A], ParsingTree[A]) => Boolean
   ): List[ParsingTree[A]] =
-    if (rejectTree(self)) Nil
-    else if (acceptTree(self)) List(self)
+    if (acceptTree(self)) List(self)
+    else if (rejectTree(self)) Nil
     else stack match {
       case Nil => Nil // not accepted and nothing to change
 
@@ -261,9 +263,9 @@ case class ParsingTree[A](
     }
 
 
-  def prepareHeadRef(wishWords: Set[A]): List[ParsingTree[A]] = {
+  def prepareHeadRef(wishWord: A => Boolean): List[ParsingTree[A]] = {
 
-    val words = nextWords intersect wishWords
+    val words = composeAnd(wishWord, inNextWords)
 
     def generate(t: ParsingTree[A]): List[ParsingTree[A]] = {
       t.prepareGen(words, true)
@@ -273,14 +275,14 @@ case class ParsingTree[A](
   }
 
   /** take all ref grammars and put them in a state where they are
-    * ready to generate a new terminal in wishWords
+    * ready to generate a new terminal in wishWord
     * (typically, nextWords of refined tree)
     */
-  def prepareRefs(wishWords: Set[A]): List[ParsingTree[A]] = {
+  def prepareRefs(wishWord: A => Boolean): List[ParsingTree[A]] = {
 
-    val words = wishWords intersect nextWords
+    val words = composeAnd(wishWord, inNextWords)
 
-    // note that wishWords are systematically intersected with self.nextWords
+    // note that wishWord are systematically intersected with self.nextWords
     val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
       List.fill(refs.size)(_.prepareHeadRef(words))
 
@@ -297,7 +299,7 @@ case class ParsingTree[A](
     * result of generate method must be
     * normalized in probability
     * all childrens of generated refinement must respect
-    * nullable || (nextWords intersect wishWords /*of parent*/).nonEmpty
+    * nullable || (nextWords intersect wishWord /*of parent*/).nonEmpty
     * 
     * 
     */
@@ -336,6 +338,22 @@ object ParsingTree {
   val tresholdProb = 0.01
   val maxRefinements = 2
   val maxMemory = 10
+
+  def composeOr[A](lhs: A => Boolean, rhs: A => Boolean): A => Boolean = { a =>
+    lhs(a) || rhs(a)
+  }
+
+  def composeAnd[A](lhs: A => Boolean, rhs: A => Boolean): A => Boolean = { a =>
+    lhs(a) && rhs(a)
+  }
+
+  def compose[A](lhs: A => Boolean, rhs: A => Boolean)(
+    combine: (Boolean, Boolean) => Boolean): A => Boolean = { a =>
+    lhs(a) || rhs(a)
+  }
+
+  val truePrd: Any => Boolean = x => true
+
 
   def normalize[A](target: List[A])(extract: A => Double)(update: (A, Double) => A): List[A] = {
     val total = (0.0 /: target) { _ + extract(_) }

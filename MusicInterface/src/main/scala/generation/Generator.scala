@@ -17,25 +17,11 @@ class Generator(
   melody: GrammarElement[Tone]
 ) {
 
-
-  def solToSegment(sol: Harm): Sequential = {
-    val Harm(h, rr, rc, m) = sol
-    val roots = rr.collectWords
-    val cells = rc.collectWords
-    val tones = m.collectWords
-
-    val durations: List[BPM] = roots zip cells flatMap {
-      case (rr, rc) => rc.durations map { _ / (rc.duration / rr.computed) }
-    }
-    val notes = tones zip durations map {
-      case (tone, duration) => Note(tone, duration)
-    }
-
-    Sequential(notes)
-
+  def generate(minLength: Int = 0): Option[Sequential] = {
+    Generator.electOne(genOnly(minLength)) map (Generator.solToSegment(_))
   }
 
-  def generate(minLength: Int = 0): Option[Sequential] = {
+  def genOnly(minLength: Int = 0): List[Harm] = {
     val initSols: List[Harm] = List(Harm(
       ParsingTree(harm),
       ParsingTree(rootRythm),
@@ -43,10 +29,28 @@ class Generator(
       ParsingTree(melody)
     ))
 
-    val sols = rGenerate(initSols, minLength)
+    Generator.rGenerate(initSols, minLength)
+  }
 
+}
 
-    Generator.electOne(sols) map (solToSegment(_))
+object Generator {
+  def apply(
+    h: GrammarElement[Chord],
+    rr: GrammarElement[BPM],
+    r: GrammarElement[RythmCell],
+    m: GrammarElement[Tone]
+  ): Generator = new Generator(h, rr, r, m)
+
+  val globalProb: PartialSolution[_] => Double = _.prob
+
+  def elect[A <: PartialSolution[A]](target: List[A]) = ParsingTree.elect(target)(globalProb)
+
+  def normalize[A <: PartialSolution[A]](target: List[A]): List[A] =
+    PartialSolution.normalize(target)
+
+  def electOne[A <: PartialSolution[A]](target: List[A]): Option[A] = {
+    ParsingTree.electOne(target)(globalProb)._1
   }
 
   // returns at the first solution found
@@ -85,25 +89,20 @@ class Generator(
     stepHarm
   }
 
-}
+  def solToSegment(sol: Harm): Sequential = {
+    val Harm(h, rr, rc, m) = sol
+    val roots = rr.collectWords
+    val cells = rc.collectWords
+    val tones = m.collectWords
 
-object Generator {
-  def apply(
-    h: GrammarElement[Chord],
-    rr: GrammarElement[BPM],
-    r: GrammarElement[RythmCell],
-    m: GrammarElement[Tone]
-  ): Generator = new Generator(h, rr, r, m)
+    val durations: List[BPM] = roots zip cells flatMap {
+      case (rr, rc) => rc.durations map { _ / (rc.duration / rr.computed) }
+    }
+    val notes = tones zip durations map {
+      case (tone, duration) => Note(tone, duration)
+    }
 
-  val globalProb: PartialSolution[_] => Double = _.prob
-
-  def elect[A <: PartialSolution[A]](target: List[A]) = ParsingTree.elect(target)(globalProb)
-
-  def normalize[A <: PartialSolution[A]](target: List[A]): List[A] =
-    PartialSolution.normalize(target)
-
-  def electOne[A <: PartialSolution[A]](target: List[A]): Option[A] = {
-    ParsingTree.electOne(target)(globalProb)._1
+    Sequential(notes)
   }
 
 }

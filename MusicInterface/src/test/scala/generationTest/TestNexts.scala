@@ -22,32 +22,55 @@ class TestNexts extends FunSuite with Matchers with BeforeAndAfter {
 
   def eps[A]: Epsilon[A] = GrammarElement.epsilon[A]
 
-  test("Hello world") {
-    def gen(t: Tone): Grammar[Tone] = t ** (
-      (gen(t decreaseBy 2), 2.0) ||
-      (gen(t decreaseBy 1), 2.0) ||
+
+  lazy val chords: Grammar[Chord] =
+    Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I)
+
+  lazy val root: Grammar[BPM] = H ** Q ** root
+
+  lazy val cells: Grammar[RythmCell] = (Q +: E +: E) ** cells
+
+  lazy val tones: Grammar[Tone] = gen(I)
+
+
+  def gen(t: Tone): Grammar[Tone] = t ** (
+    (gen(t decreaseBy 2), 2.0) ||
+      (gen(t decreaseBy 1), 4.0) ||
       (gen(t), 1.0) ||
       (gen(t increaseBy 1), 4.0) ||
       (gen(t increaseBy 2), 2.0)
-    )
+  )
 
-    lazy val tones: Grammar[Tone] = gen(II)
+  test("nexts on harm") {
+    val tree = ParsingTree(chords)
+    val nexts: List[ParsingTree[Chord]] = tree.nexts(x => true)
+
+    nexts.size > 0 shouldBe true
+  }
+
+  test("nexts on rule > 2") {
+    val gramm: Grammar[Tone] = I ** IV ** V
+    println(gramm)
+    val tree = ParsingTree(gramm)
+    val nexts = tree.nexts(x => true)
+
+    nexts.size > 0 shouldBe true
+  }
+
+  test("Base Test") {
 
     val tree = ParsingTree(tones)
 
-    val next = tree.nexts(x => true).head
 
-    val nnexts = tree.nexts(x => true) flatMap (_.nexts(x => true))
+    val nexts: List[ParsingTree[Tone]] = tree.nexts(x => true)
 
-    for(n <- nnexts) println(n.collectWords)
+    nexts.size shouldBe 5
 
-    //println(nexts.size)
-    
-//    println(next.collectWords)
+    nexts.toSet flatMap { n: ParsingTree[Tone] => n.nextWords } shouldBe Set(
+      VI(-1, None), VII(-1,  None), I(0, None), II(0, None), III(0, None)
+    )
 
-
-    // TODO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOO y aurait-il un word.head qui se repercute ???
-    // TODO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO toString problem with parametric grammar will cause same problem in nullable and firsts
+    for(n <- nexts) n.lastWord shouldBe Some(I)
 
   }
 
@@ -56,4 +79,5 @@ class TestNexts extends FunSuite with Matchers with BeforeAndAfter {
 
     gram.nullable shouldBe false
   }
+
 }
