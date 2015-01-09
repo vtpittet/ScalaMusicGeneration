@@ -61,6 +61,8 @@ case class ParsingTree[A](
     refs = refs map (_.dropMessages)
   )
 
+  lazy val collectWords: List[A] = rTree.collect{case Word(w) => w}.reverse
+
   /** returns a list of parsing trees such that each one is
     * one word bigger and in a state where there is one single deterministic
     * step to generate a new word or closed.
@@ -70,7 +72,11 @@ case class ParsingTree[A](
     */
   def nexts(wishWord: A => Boolean): List[ParsingTree[A]] = {
     val words = nextWords filter wishWord
-    elect(genNextWord(words) flatMap (_.prepareGen(words, true)))(_.prob)
+    normalize(
+      elect(
+        genNextWord(words) flatMap (_.prepareGen(words, true))
+      ) { _.prob }
+    )
   }
 
   /** generate one-step word from prepared state and adjust refinements
@@ -139,7 +145,7 @@ case class ParsingTree[A](
 
     def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
 
-    boundMultiGen(List(self), generators, probExtractor(_))
+    boundMultiGen[ParsingTree[A]](List(self), generators, probExtractor(_))
   }
 
   /** Method called to put the tree where it is about to generate a
@@ -280,7 +286,7 @@ case class ParsingTree[A](
 
     def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
 
-    boundMultiGen(List(self), generators, probExtractor(_))
+    boundMultiGen[ParsingTree[A]](List(self), generators, probExtractor(_))
   }
 
     /** applies a generate method to head of refinements and
@@ -324,14 +330,6 @@ case class ParsingTree[A](
     case Nil => self.prob
     case r :: rs => self.prob * r.prob
   }
-
-/*
-  def normalize(rules: List[(Rule[A], Double)]): List[(Rule[A], Double)] = {
-    val total = rules.foldLeft(0.0)(_ + _._2)
-    rules map { r => (r._1, r._2/total) }
-  }
- */
-
 }
 
 object ParsingTree {
@@ -421,10 +419,10 @@ object ParsingTree {
     */
 
   def boundMultiGen[A](
-    solutions: List[ParsingTree[A]],
-    generators: List[ParsingTree[A] => List[ParsingTree[A]]],
-    probExtractor: ParsingTree[A] => Double
-  ): List[ParsingTree[A]] = generators match {
+    solutions: List[A],
+    generators: List[A => List[A]],
+    probExtractor: A => Double
+  ): List[A] = generators match {
     case Nil => solutions
     case gen :: gens => boundMultiGen(
       elect(solutions flatMap gen)(probExtractor),

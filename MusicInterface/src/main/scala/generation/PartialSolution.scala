@@ -7,22 +7,31 @@ import grammar._
 import generation.StackTask._
 
 
-trait PartialSolution {
+trait PartialSolution[+A <: PartialSolution[A]] {
   val h: ParsingTree[Chord]
   val rr: ParsingTree[BPM]
   val rc: ParsingTree[RythmCell]
   val m: ParsingTree[Tone]
 
-  type Next <: PartialSolution
+  type Next <: PartialSolution[Next]
   type Current <: ParsingTree[_]
 
   val toNext: Next
+  val current: Current
+
+  def updateCurrentProb(newProb: Double): A
+  def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): A
 
   // generates one step of 'current' tree and go to next.
   // Consider context constraint but not messages (or maybe yes, melody)
   def gen: List[Next]
 
+  // easy test if this partial solution is a good solution
   lazy val completed: Boolean = h.isClosed //&& rr.isClosed && rc.isClosed && m.isClosed
+
+  // should not reach zero by roundings
+  // prob > ParsingTree.tresholdProg ^ 4 (initially 0.01 ^ 4 => 10^-8)
+  lazy val prob: Double = h.prob * rr.prob * rc.prob * m.prob
 
   /*
    * do not generate but take (and drop) emmitted messages and distribute
@@ -60,8 +69,23 @@ trait PartialSolution {
     (newH, newRR, newRC, newM)
   }
 
-
 }
+
+object PartialSolution {
+  def normalize[A <: PartialSolution[A]](target: List[A]): List[A] = {
+    val (th, trr, trc, tm) = ((0.0, 0.0, 0.0, 0.0) /: target) {
+      case ((th, trr, trc, tm), ps) => (
+        th + ps.h.prob,
+        trr + ps.rr.prob,
+        trc + ps.rc.prob,
+        tm + ps.m.prob
+      )
+    }
+
+    target map { _.updateProbs(th, trr, trc, tm) }
+  }
+}
+
 
 
 case class Harm(
@@ -69,11 +93,24 @@ case class Harm(
   rr: ParsingTree[BPM],
   rc: ParsingTree[RythmCell],
   m: ParsingTree[Tone]
-) extends PartialSolution {
+) extends PartialSolution[Harm] {
   type Next = Root
   type Current = ParsingTree[Chord]
+
+  val current = h
   lazy val toNext = Root(h, rr, rc, m)
 
+
+  def updateCurrentProb(newProb: Double): Harm = Harm(
+    h.updated(prob = newProb),
+    rr, rc, m
+  )
+  def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): Harm = Harm(
+    h.updated(prob = ph),
+    rr.updated(prob = prr),
+    rc.updated(prob = prc),
+    m.updated(prob = pm)
+  )
 
   def gen: List[Next] = {
     // dispatched messages
@@ -101,11 +138,24 @@ case class Root(
   rr: ParsingTree[BPM],
   rc: ParsingTree[RythmCell],
   m: ParsingTree[Tone]
-) extends PartialSolution {
+) extends PartialSolution[Root] {
   type Next = Cell
   type Current = ParsingTree[BPM]
+
+  val current = rr
   lazy val toNext = Cell(h, rr, rc, m)
 
+  def updateCurrentProb(newProb: Double): Root = Root(
+    h,
+    rr.updated(prob = newProb),
+    rc, m
+  )
+  def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): Root = Root(
+    h.updated(prob = ph),
+    rr.updated(prob = prr),
+    rc.updated(prob = prc),
+    m.updated(prob = pm)
+  )
   def gen: List[Next] = {
     rr.nexts(x => true) map { Cell(h, _, rc, m) }
   }
@@ -116,10 +166,25 @@ case class Cell(
   rr: ParsingTree[BPM],
   rc: ParsingTree[RythmCell],
   m: ParsingTree[Tone]
-) extends PartialSolution {
+) extends PartialSolution[Cell] {
   type Next = Melody
   type Current = ParsingTree[RythmCell]
+
+  val current = rc
   lazy val toNext = Melody(h, rr, rc, m)
+
+  def updateCurrentProb(newProb: Double): Cell = Cell(
+    h, rr,
+    rc.updated(prob = newProb),
+    m
+  )
+
+  def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): Cell = Cell(
+    h.updated(prob = ph),
+    rr.updated(prob = prr),
+    rc.updated(prob = prc),
+    m.updated(prob = pm)
+  )
 
   def gen: List[Next] = {
     rc.nexts(x => true) map { Melody(h, rr, _, m) }
@@ -131,10 +196,24 @@ case class Melody(
   rr: ParsingTree[BPM],
   rc: ParsingTree[RythmCell],
   m: ParsingTree[Tone]
-) extends PartialSolution {
+) extends PartialSolution[Melody] {
   type Next = Harm
   type Current = ParsingTree[Tone]
+
+  val current = m
   lazy val toNext = Harm(h, rr, rc, m)
+
+  def updateCurrentProb(newProb: Double): Melody = Melody(
+    h, rr, rc,
+    m.updated(prob = newProb)
+  )
+
+  def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): Melody = Melody(
+    h.updated(prob = ph),
+    rr.updated(prob = prr),
+    rc.updated(prob = prc),
+    m.updated(prob = pm)
+  )
 
   def gen: List[Next] = {
     val count = rc.lastWord match {
