@@ -27,7 +27,7 @@ trait PartialSolution[+A <: PartialSolution[A]] {
   def gen: List[Next]
 
   // easy test if this partial solution is a good solution
-  lazy val completed: Boolean = h.isClosed //&& rr.isClosed && rc.isClosed && m.isClosed
+  lazy val completed: Boolean = h.onlyClosable //&& rr.isClosed && rc.isClosed && m.isClosed
 
   // should not reach zero by roundings
   // prob > ParsingTree.tresholdProg ^ 4 (initially 0.01 ^ 4 => 10^-8)

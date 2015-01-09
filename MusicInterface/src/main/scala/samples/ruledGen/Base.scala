@@ -14,20 +14,16 @@ import midiInterface.MelodyPlayer
 
 object Base extends App {
 
-  val closCond: PartialSolution[_] => Boolean = { ps =>
-    ps.h.isClosed && ps.rc.isClosed && ps.m.isClosed
-  }
-
-
   lazy val chords: Grammar[Chord] = 
-    Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I) ** Triad(I)
+    Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I)
 
-  lazy val root: Grammar[BPM] = H ** Q ** root || H
+  def nChords(n: Int): Grammar[Chord] = if (n > 0) chords ** nChords(n-1) else Epsilon[Chord]()
 
-  lazy val cells: Grammar[RythmCell] = (Q +: E +: E) ** cells || Q
+  lazy val root: Grammar[BPM] = H ** Q ** root
 
-  lazy val tones: Grammar[Tone] = gen(I) ** I
+  lazy val cells: Grammar[RythmCell] = (Q +: E +: E) ** cells
 
+  lazy val tones: Grammar[Tone] = gen(I)
 
   def gen(t: Tone): Grammar[Tone] = (t ** (
     (gen(t decreaseBy 2), 2.0) ||
@@ -35,18 +31,14 @@ object Base extends App {
     (gen(t), 1.0) ||
     (gen(t increaseBy 1), 4.0) ||
     (gen(t increaseBy 2), 2.0)
-  )) || Epsilon[Tone]()
+  ))
 
-  
+  val music = Generator(nChords(4), root, cells, tones).generateMusic
 
-  //println(sols)
+  for (i <- 0 until music.notes.size if (i %3 == 0)) {
+    println(music.notes(i))
+  }
 
-  
-  val music = Generator(chords, root, cells, tones, closCond).generateMusic
-  
 
   MelodyPlayer(music, 60)
-
-  println(music)
-
 }

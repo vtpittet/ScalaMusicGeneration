@@ -64,7 +64,7 @@ object Generator {
   // returns at the first solution found
   // if one call of rGenerate miss, return one previous step
   def rGenerate(sols: List[Harm], closCond: Harm => Boolean): List[Harm] = {
-    println("iteration in generator")
+    //println("iteration in generator")
     val gen: Harm => List[Harm] = oneStepGen(_)
     
     sols flatMap gen match {
@@ -97,11 +97,12 @@ object Generator {
 
     val stepHarm: List[Harm] = normalize(elect(stepMelody flatMap (_.gen)))
 
+    /*
     println(stepRoot.size)
     println(stepCell.size)
     println(stepMelody.size)
     println(stepHarm.size)
-
+     */
     stepHarm
   }
 

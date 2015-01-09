@@ -24,6 +24,16 @@ case class ParsingTree[A](
 
   val isClosed: Boolean = stack.isEmpty
 
+  lazy val onlyClosable: Boolean = {
+    // collect firsts of nullable head of stack (eliminating messages)
+    val nxtThis: Set[A] = (stack collect StackTask.grammElt span { _.nullable } match {
+      case (nlb, hd::tail) => nlb :+ hd
+      case (nlb, Nil) => nlb
+    }).toSet flatMap { ge: GrammarElement[A] => ge.firsts }
+
+    nxtThis.isEmpty && self.nullable
+  }
+
 
   /** returns true if this tree can be closed without generating any word
     */
@@ -71,12 +81,16 @@ case class ParsingTree[A](
     * Note that this function should not close a tree without generating a word.
     * For the first call, aka instantiation of parsing tree from grammar
     * the function prepareNexts should be called
+    * 
+    * 
+    * TODO close is for now ignored, left for later debug
     */
   def nexts(wishWord: A => Boolean, close: Boolean): List[ParsingTree[A]] = {
     val words = composeAnd(wishWord, inNextWords)
-    println(nextWords filter words)
+    //println(nextWords filter words)
 
     val gens = genNextWord(words)
+    /*
     println("gens "+ gens.size)
     for(g <- gens) {
       println(g.collectWords)
@@ -85,8 +99,11 @@ case class ParsingTree[A](
       println(g.nullable)
       println(close)
     }
+     */
     val prepared = gens flatMap (_.prepareGen(x => true, close))
+    /*
     println("prep " + prepared.size)
+     */
 
     normalize(
       elect(
@@ -175,27 +192,35 @@ case class ParsingTree[A](
     * tree is still open
     * To ease the computation, don't forget to filter branches using firsts 
     *
-    * 
+    * TODO close is for now ignored, left for later debug
     */
   def prepareGen(wishWord: A => Boolean, close: Boolean): List[ParsingTree[A]] = {
 
     val words = composeAnd(wishWord, inNextWords)
 
+
+    /*
     def rejectTree(t: ParsingTree[A]): Boolean = {
-      (close && !nullable) ||
+      (close && !t.nullable) ||
       (!close && (t.nextWords filter words).isEmpty)
+    }
+     */
+
+    def rejectTree(t: ParsingTree[A]): Boolean = {
+      !t.nullable && (t.nextWords filter words).isEmpty
     }
 
     // accept tree if ready to generate word of wishWord
-    def acceptTree(t: ParsingTree[A]): Boolean = t.stack match {
-      case Nil => close
-      case Word(w) :: tail => !close &&  words(w)
-      case _ => false
-    }
+    def acceptTree(t: ParsingTree[A]): Boolean =
+      if (t.onlyClosable) true /*close*/  else t.stack match {
+        case Nil => true //close
+        case Word(w) :: tail => /*!close &&*/  words(w)
+        case _ => false
+      }
 
     def acceptChild(e: GrammarElement[A], t: ParsingTree[A]): Boolean = {
-      (close && e.nullable && t.nullable) ||
-      (!close && (t.nextWordsWith(e) filter words).nonEmpty)
+      (/*close &&*/ e.nullable && t.nullable) ||
+      (/*!close &&*/ (t.nextWordsWith(e) filter words).nonEmpty)
     }
 
     // generator generates only acceptable Trees
@@ -365,7 +390,7 @@ case class ParsingTree[A](
 }
 
 object ParsingTree {
-  val tresholdProb = 0.001
+  val tresholdProb = 0.0
   val maxRefinements = 2
   val maxMemory = 10
 
