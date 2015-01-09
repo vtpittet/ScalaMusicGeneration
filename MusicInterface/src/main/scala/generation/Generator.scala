@@ -17,21 +17,13 @@ class Generator(
   melody: GrammarElement[Tone]
 ) {
 
-  def genAndPlay(minLength: Int, bpm: Int): Unit = {
-    generate(minLength) match {
-      case None => println("No solution at all")
-      case Some(sol) => {
-        playSol(sol, bpm)
-        if (!sol.completed) println("solution was not complete")
-      }
-    }
-  }
 
-  def playSol(sol: Harm, bpm: Int): Unit = {
+  def solToSegment(sol: Harm): Sequential = {
     val Harm(h, rr, rc, m) = sol
     val roots = rr.collectWords
     val cells = rc.collectWords
     val tones = m.collectWords
+
     val durations: List[BPM] = roots zip cells flatMap {
       case (rr, rc) => rc.durations map { _ / (rc.duration / rr.computed) }
     }
@@ -39,11 +31,11 @@ class Generator(
       case (tone, duration) => Note(tone, duration)
     }
 
-    MelodyPlayer(Sequential(notes), bpm)
+    Sequential(notes)
+
   }
 
-
-  def generate(minLength: Int = 0): Option[Harm] = {
+  def generate(minLength: Int = 0): Option[Sequential] = {
     val initSols: List[Harm] = List(Harm(
       ParsingTree(harm),
       ParsingTree(rootRythm),
@@ -51,8 +43,7 @@ class Generator(
       ParsingTree(melody)
     ))
 
-
-    Generator.electOne(rGenerate(initSols, minLength))
+    Generator.electOne(rGenerate(initSols, minLength)) map (solToSegment(_))
   }
 
   // returns at the first solution found
