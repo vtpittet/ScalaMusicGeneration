@@ -74,7 +74,7 @@ case class ParsingTree[A](
     val words = nextWords filter wishWord
     normalize(
       elect(
-        genNextWord(words) flatMap (_.prepareGen(words, true))
+        genNextWord(words) flatMap (_.prepareGen(Set(), true))
       ) { _.prob }
     )
   }
