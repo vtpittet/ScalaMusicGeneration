@@ -77,11 +77,20 @@ case class ParsingTree[A](
     println(nextWords filter words)
 
     val gens = genNextWord(words)
-    val prepared = prepareGen(x => true, close)
+    println("gens "+ gens.size)
+    for(g <- gens) {
+      println(g.collectWords)
+      println(g.nextWords)
+      println(stack)
+      println(g.nullable)
+      println(close)
+    }
+    val prepared = gens flatMap (_.prepareGen(x => true, close))
+    println("prep " + prepared.size)
 
     normalize(
       elect(
-        genNextWord(words) flatMap (_.prepareGen(truePrd, close))
+        prepared
       ) { _.prob }
     )
   }
@@ -167,7 +176,6 @@ case class ParsingTree[A](
     * To ease the computation, don't forget to filter branches using firsts 
     *
     * 
-    * highly probabale that closable will be always true
     */
   def prepareGen(wishWord: A => Boolean, close: Boolean): List[ParsingTree[A]] = {
 
@@ -357,7 +365,7 @@ case class ParsingTree[A](
 }
 
 object ParsingTree {
-  val tresholdProb = 0.01
+  val tresholdProb = 0.001
   val maxRefinements = 2
   val maxMemory = 10
 
