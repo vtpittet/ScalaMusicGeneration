@@ -12,12 +12,17 @@ import tonalSystem.Tone
 /** common top trait for grammar interface
   */
 sealed trait GrammarElement[A] extends StackTask[A] {
+
   def orComposition(that: =>GrammarElement[A], weight: Double): Production[A]
   def andComposition(that: =>GrammarElement[A]): Rule[A]
 
   val toName: String
-  def rToString(callers: List[AnyRef]): String
-  override lazy val toString: String = rToString(Nil)
+  // recursive toString that detects when one member calls itself
+  def rToString(callers: List[AnyRef], depth: Int): String
+  // depth bounded toString
+  def bToString(depth: Int): String
+  override lazy val toString: String =
+    rToString(Nil, GrammarElement.TO_STRING_DEPTH)
 
   def ||(that: =>GrammarElement[A], weight: Double): Production[A] =
     orComposition(that, weight)
@@ -30,15 +35,20 @@ sealed trait GrammarElement[A] extends StackTask[A] {
 
   def compareBody(that: GrammarElement[A]): Boolean
 
-  lazy val nullable: Boolean = rNullable(Nil)
-  def rNullable(callers: List[GrammarElement[A]]): Boolean
+  lazy val nullable: Boolean = rNullable(Nil, GrammarElement.NULLABLE_DEPTH)
+  def rNullable(callers: List[GrammarElement[A]], depth: Int): Boolean
 
 
-  lazy val firsts: Set[A] = rFirsts(Nil)
-  def rFirsts(callers: List[GrammarElement[A]]): Set[A]
+  lazy val firsts: Set[A] = rFirsts(Nil, GrammarElement.FIRSTS_DEPTH)
+  def rFirsts(callers: List[GrammarElement[A]], depth: Int): Set[A]
 }
 
 object GrammarElement {
+  val TO_STRING_DEPTH = 2
+  val NULLABLE_DEPTH = 10
+  val FIRSTS_DEPTH = 10
+
+
   def epsilon[A]: Epsilon[A] = Epsilon[A]()
 
   implicit def tuple2Prod[A](tpl: (GrammarElement[A], Double)): Production[A] = 
@@ -68,6 +78,10 @@ sealed trait Terminal[A] extends GrammarElement[A] with PrefixOperator {
     Rule(List(this, that))
 
   val toName: String = toString
+  def bToString(depth: Int): String = toString
+  def rToString(callers: List[AnyRef], depth: Int): String = toString
+
+  override lazy val toString: String = "'t'"
 
   def compareBody(that: GrammarElement[A]): Boolean = this equals that
 
@@ -78,19 +92,19 @@ sealed trait Terminal[A] extends GrammarElement[A] with PrefixOperator {
   * with the class Char
   */
 case class Word[A](value: A) extends Terminal[A] {
-  def rToString(callers: List[AnyRef]): String = value.toString
+  override lazy val toString: String = value.toString
 
-  def rNullable(callers: List[GrammarElement[A]]): Boolean = false
-  def rFirsts(callers: List[GrammarElement[A]]): Set[A] = Set(value)
+  def rNullable(callers: List[GrammarElement[A]], depth: Int): Boolean = false
+  def rFirsts(callers: List[GrammarElement[A]], depth: Int): Set[A] = Set(value)
 }
 
 /** Epsilon terminal of grammar
   */
 case class Epsilon[A]() extends Terminal[A] {
-  def rToString(callers: List[AnyRef]): String = "'e'"
+  override lazy val toString: String = "'e'"
 
-  def rNullable(callers: List[GrammarElement[A]]): Boolean = true
-  def rFirsts(callers: List[GrammarElement[A]]): Set[A] = Set()
+  def rNullable(callers: List[GrammarElement[A]], depth: Int): Boolean = true
+  def rFirsts(callers: List[GrammarElement[A]], depth: Int): Set[A] = Set()
 }
 
 /** A Rule is a sequential list of grammar elements
@@ -108,10 +122,16 @@ class Rule[A](m_body: =>List[GrammarElement[A]]) extends GrammarElement[A] with 
   lazy val id: String = "R_" + GEIdGen()
 
   lazy val toName: String = id
-  def rToString(callers: List[AnyRef]): String = {
+  def bToString(depth: Int): String = {
     body map { se =>
-      if ( this :: callers contains(se)) se.toName
-      else se.rToString(this::callers)
+      if (depth <= 0) se.toName
+      else se.bToString(depth-1)
+    } mkString (id + ":(", " ** ", ")")
+  }
+  def rToString(callers: List[AnyRef], depth: Int): String = {
+    body map { se =>
+      if ( depth <= 0 || (this :: callers contains(se))) se.toName
+      else se.rToString(this::callers, depth-1)
     } mkString (id + ":(", " ** ", ")")
   }
 
@@ -131,19 +151,21 @@ class Rule[A](m_body: =>List[GrammarElement[A]]) extends GrammarElement[A] with 
     case _ => false
   }
 
-  def rNullable(callers: List[GrammarElement[A]]): Boolean = {
+  def rNullable(callers: List[GrammarElement[A]], depth: Int): Boolean = {
     def inCallers(se: GrammarElement[A]): Boolean = this :: callers contains se
-    body forall { e => !inCallers(e) && e.rNullable(this :: callers) }
+    body forall { e =>
+      !inCallers(e) && (depth >= 0) && e.rNullable(this :: callers, depth-1)
+    }
   }
 
-  def rFirsts(callers: List[GrammarElement[A]]): Set[A] = {
+  def rFirsts(callers: List[GrammarElement[A]], depth: Int): Set[A] = {
     def inCallers(se: GrammarElement[A]): Boolean = this :: callers contains se
     def prefix = body span (_.nullable) match {
       case (prefix, head :: tail) => prefix :+ head
       case (prefix, Nil) => prefix
     }
-    prefix.toSet filterNot { inCallers(_) } flatMap {
-      _ rFirsts (this :: callers)
+    prefix.toSet filter { e => !inCallers(e) && (depth >= 0) } flatMap {
+      _ rFirsts (this :: callers, depth-1)
     }
   }
 }
@@ -164,9 +186,13 @@ class Production[A](m_body: =>List[(GrammarElement[A], Double)]) extends Grammar
   lazy val id: String = "P_" + GEIdGen()
 
   lazy val toName: String = id
-  def rToString(callers: List[AnyRef]): String = body map { case (se, w) =>
-    if (this :: callers contains se) "(" + se.toName + ", " + w + ")"
-    else "(" + se.rToString(this::callers) + ", " + w + ")"
+  def bToString(depth: Int): String = body map { case (se, w) =>
+    if (depth <= 0) "(" + se.toName + ", " + w + ")"
+    else "(" + se.bToString(depth-1) + ", " + w + ")"
+  } mkString (id + ":(", " || ", ")")
+  def rToString(callers: List[AnyRef], depth: Int): String = body map { case (se, w) =>
+    if (depth <= 0 || (this :: callers contains se)) "(" + se.toName + ", " + w + ")"
+    else "(" + se.rToString(this::callers, depth-1) + ", " + w + ")"
   } mkString (id + ":(", " || ", ")") 
 
   def orComposition(that: =>GrammarElement[A], weight: Double): Production[A] =
@@ -182,18 +208,19 @@ class Production[A](m_body: =>List[(GrammarElement[A], Double)]) extends Grammar
     case _ => false
   }
 
-  def rNullable(callers: List[GrammarElement[A]]): Boolean = {
+  def rNullable(callers: List[GrammarElement[A]], depth: Int): Boolean = {
     def inCallers(se: GrammarElement[A]): Boolean = this :: callers contains se
     body exists { case (e, w) =>
-      w > 0 && !inCallers(e) &&  e.rNullable(this :: callers) }
+      w > 0 && !inCallers(e) && (depth >= 0) &&
+      e.rNullable(this :: callers, depth-1) }
   }
 
-  def rFirsts(callers: List[GrammarElement[A]]): Set[A] = {
+  def rFirsts(callers: List[GrammarElement[A]], depth: Int): Set[A] = {
     val valid: PartialFunction[(GrammarElement[A], Double),GrammarElement[A]] = {
-      case (e, w) if w > 0 && !(this :: callers contains e) => e
+      case (e, w) if w > 0 && depth >= 0 && !(this :: callers contains e) => e
     }
 
-    body.toSet collect valid flatMap { _ rFirsts (this :: callers) }
+    body.toSet collect valid flatMap { _ rFirsts (this :: callers, depth-1) }
   }
 }
 
@@ -228,10 +255,12 @@ sealed abstract class Message[A, B](refinement: =>GrammarElement[B])
   lazy val id: String = "M_" + GEIdGen()
 
   lazy val toName: String = id
-  def rToString(callers: List[AnyRef]): String =
-    if (callers contains message) id + ":(" + message.toName + ")"
-    else id + ":(" + message.rToString(message :: callers) + ")"
-  override lazy val toString: String = rToString(this::Nil)
+  def bToString(depth: Int): String =
+    if (depth <= 0) id + ":(" + message.toName + ")"
+    else id + ":(" + message.bToString(depth-1) + ")"
+  def rToString(callers: List[AnyRef], depth: Int): String =
+    if (depth <= 0 || callers.contains(message)) id + ":(" + message.toName + ")"
+    else id + ":(" + message.rToString(message :: callers, depth-1) + ")"
 
    /*  terminal does not carry its weight
    * to overcome this, use implicit conversion from tuple
@@ -245,8 +274,10 @@ sealed abstract class Message[A, B](refinement: =>GrammarElement[B])
 
   // view of nullable and firsts is relative to direct production and not
   // refinement's behavior
-  def rNullable(callers: List[grammar.GrammarElement[A]]): Boolean = true
-  def rFirsts(callers: List[grammar.GrammarElement[A]]): Set[A] = Set()
+  def rNullable(callers: List[GrammarElement[A]], depth: Int): Boolean =
+    true
+  def rFirsts(callers: List[GrammarElement[A]], depth: Int): Set[A] =
+    Set()
 
 
 }

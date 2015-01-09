@@ -33,9 +33,13 @@ object Base extends App {
     (gen(t increaseBy 2), 2.0)
   )
 
+  println(tones.firsts)
+
   Generator(chords, root, cells, tones).generate(0) match {
     case None => println("nothing returned, first gen should have failed")
-    case Some(music) => MelodyPlayer(music, 60)
+    case Some(music) => {
+//      MelodyPlayer(music, 60)
+    }
   }
 
   

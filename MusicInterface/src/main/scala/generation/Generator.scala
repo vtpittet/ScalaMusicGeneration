@@ -43,7 +43,10 @@ class Generator(
       ParsingTree(melody)
     ))
 
-    Generator.electOne(rGenerate(initSols, minLength)) map (solToSegment(_))
+    val sols = rGenerate(initSols, minLength)
+
+
+    Generator.electOne(sols) map (solToSegment(_))
   }
 
   // returns at the first solution found
