@@ -26,8 +26,12 @@ sealed trait GrammarElement[A] extends StackTask[A] {
 
   def ||(that: =>GrammarElement[A], weight: Double): Production[A] =
     orComposition(that, weight)
+  def ||(that: =>GrammarElement[A]): Production[A] =
+    orComposition(that, 1.0)
   def ||(word: A, weight: Double): Production[A] =
     orComposition(Word(word), weight)
+  def ||(word: A): Production[A] =
+    orComposition(Word(word), 1.0)
   def **(that: =>GrammarElement[A]): Rule[A] =
     andComposition(that)
   def **(word: A): Rule[A] =

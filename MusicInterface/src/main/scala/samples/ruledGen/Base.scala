@@ -14,15 +14,19 @@ import midiInterface.MelodyPlayer
 
 object Base extends App {
 
+  val closCond: PartialSolution[_] => Boolean = { ps =>
+    ps.h.isClosed //&& ps.rc.isClosed && ps.m.isClosed
+  }
+
 
   lazy val chords: Grammar[Chord] = 
     Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I)
 
   lazy val root: Grammar[BPM] = H ** Q ** root
 
-  lazy val cells: Grammar[RythmCell] = (Q +: E +: E) ** cells
+  lazy val cells: Grammar[RythmCell] = (Q +: E +: E) ** cells || Q
 
-  lazy val tones: Grammar[Tone] = gen(I)
+  lazy val tones: Grammar[Tone] = gen(I) ** I
 
 
   def gen(t: Tone): Grammar[Tone] = t ** (
@@ -33,19 +37,14 @@ object Base extends App {
     (gen(t increaseBy 2), 2.0)
   )
 
-  val sols = Generator(chords, root, cells, tones).genOnly(0)
-
   //println(sols)
 
   
-  Generator(chords, root, cells, tones).generate(0) match {
-    case None => println("nothing returned, first gen should have failed")
-    case Some(music) => {
-      MelodyPlayer(music, 60)
-    }
-  }
+  val music = Generator(chords, root, cells, tones, closCond).generateMusic
   
 
-  
+  MelodyPlayer(music, 60)
+
+  println(music)
 
 }

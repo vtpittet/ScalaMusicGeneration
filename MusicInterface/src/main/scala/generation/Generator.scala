@@ -14,14 +14,17 @@ class Generator(
   harm: GrammarElement[Chord],
   rootRythm: GrammarElement[BPM],
   rythm: GrammarElement[RythmCell],
-  melody: GrammarElement[Tone]
+  melody: GrammarElement[Tone],
+  closingCondition: PartialSolution[_] => Boolean
 ) {
 
-  def generate(minLength: Int = 0): Option[Sequential] = {
-    Generator.electOne(genOnly(minLength)) map (Generator.solToSegment(_))
+  def generateMusic = generate(0)
+
+  def generate(minLength: Int): Sequential = {
+    Generator.solToSegment(Generator.electOne(genOnly(minLength)).get)
   }
 
-  def genOnly(minLength: Int = 0): List[Harm] = {
+  def genOnly(minLength: Int): List[Harm] = {
     val initSols: List[Harm] = List(Harm(
       ParsingTree(harm),
       ParsingTree(rootRythm),
@@ -29,7 +32,11 @@ class Generator(
       ParsingTree(melody)
     ))
 
-    Generator.rGenerate(initSols, minLength)
+    val closCond: Harm => Boolean = { ps: Harm =>
+      ps.h.wordSize >= minLength && closingCondition(ps)
+    }
+
+    Generator.rGenerate(initSols, closCond)
   }
 
 }
@@ -39,8 +46,9 @@ object Generator {
     h: GrammarElement[Chord],
     rr: GrammarElement[BPM],
     r: GrammarElement[RythmCell],
-    m: GrammarElement[Tone]
-  ): Generator = new Generator(h, rr, r, m)
+    m: GrammarElement[Tone],
+    cCond: PartialSolution[_] => Boolean = _.completed
+  ): Generator = new Generator(h, rr, r, m, cCond)
 
   val globalProb: PartialSolution[_] => Double = _.prob
 
@@ -55,16 +63,18 @@ object Generator {
 
   // returns at the first solution found
   // if one call of rGenerate miss, return one previous step
-  def rGenerate(sols: List[Harm], minLength: Int): List[Harm] = {
+  def rGenerate(sols: List[Harm], closCond: Harm => Boolean): List[Harm] = {
     val gen: Harm => List[Harm] = oneStepGen(_)
     
     sols flatMap gen match {
-      case Nil => Generator.normalize(Generator.elect(sols)) // failure
-      case newSols if minLength <= 0 && newSols.exists(_.completed) =>
-        Generator.normalize(Generator.elect(newSols filter (_.completed)))
+      case Nil => {
+        println("[warn]: no solution found, returning longest partial solution")
+        Generator.normalize(Generator.elect(sols)) // failure
+      }
+      case newSols if newSols exists closCond =>
+        Generator.normalize(Generator.elect(newSols filter closCond))
       case newSols => {
-        val mL = if (minLength <= 0) 0 else minLength - 1
-        rGenerate(Generator.normalize(Generator.elect(newSols)), mL)
+        rGenerate(Generator.normalize(Generator.elect(newSols)), closCond)
       }
     }
   }
