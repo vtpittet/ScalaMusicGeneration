@@ -10,9 +10,16 @@ import rythmics.RythmCell._
 import tonalSystem.Tone.{I, II, III, IV, V, VI, VII}
 import tonalSystem.Tone
 import midiInterface.MelodyPlayer
+import tonalSystem.Minor
+import tonalSystem.C
 
 
-object Base extends App {
+trait Base {
+
+
+  lazy val noChords: Grammar[Chord] = FullChord(I)
+
+  def nNoChords(n: Int): Grammar[Chord] = if (n > 0) noChords ** noChords ** noChords ** noChords ** nNoChords(n-1) else Epsilon[Chord]()
 
   lazy val chords: Grammar[Chord] = 
     Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I)
@@ -26,14 +33,29 @@ object Base extends App {
   lazy val tones: Grammar[Tone] = gen(I)
 
   def gen(t: Tone): Grammar[Tone] = (t ** (
-    (gen(t decreaseBy 2), 2.0) ||
-    (gen(t decreaseBy 1), 4.0) ||
-    (gen(t), 1.0) ||
-    (gen(t increaseBy 1), 4.0) ||
-    (gen(t increaseBy 2), 2.0)
+    (gen(t decreaseBy 2), 2.0 * w(t)) ||
+    (gen(t decreaseBy 1), 4.0 * w(t)) ||
+    (gen(t), 1.0 * w(t)) ||
+    (gen(t increaseBy 1), 4.0 * w(t)) ||
+    (gen(t increaseBy 2), 2.0 * w(t))
   ))
 
-  val music = Generator(nChords(4), root, cells, tones).generateMusic
+  def w(t: Tone): Double = 1/(1 + math.abs(t.octave))
 
-  MelodyPlayer(music, 60)
 }
+
+object BaseNoHarmonic extends App with Base {
+  def music = Generator(nNoChords(8), root, cells, tones).generateMusic
+  MelodyPlayer(music, 80)
+}
+
+object BaseSingleVoice extends App with Base {
+  def music = Generator(nChords(8), root, cells, tones).generateMusic
+  MelodyPlayer(music, 80)
+}
+
+object BaseWithAccompaniment extends App with Base {
+  def music = Generator(nChords(8), root, cells, tones).generateMusicWithChords
+  MelodyPlayer(music, 80)
+}
+

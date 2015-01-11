@@ -6,6 +6,7 @@ import tonalSystem.Tone._
 sealed trait Chord {
   val fun: Tone
   val tones: List[Tone => Tone]
+  lazy val getTones: List[Tone] = tones map (_(fun))
 
   def apply(n: Int): Tone = {
     def posMod(i: Int, mod: Int): Int = (i % mod + mod) % mod
@@ -19,6 +20,10 @@ sealed trait Chord {
   def equalModOctaveTones(t1: Tone, t2: Tone): Boolean =
     t1.stepsTo(t2) % 7 == 0 && t1.alter == t2.alter
 
+}
+
+case class FullChord(val fun: Tone) extends Chord {
+  val tones: List[Tone => Tone] = (for(i <- 0 to 7) yield { t: Tone => t increaseBy i }).toList
 }
 
 case class Triad(val fun: Tone) extends Chord {

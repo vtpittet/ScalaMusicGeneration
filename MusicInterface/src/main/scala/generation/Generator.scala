@@ -5,8 +5,7 @@ import chord.Chord
 import rythmics.BPM
 import rythmics.RythmCell
 import tonalSystem.Tone
-import segmentSystem.Sequential
-import segmentSystem.Note
+import segmentSystem._
 import midiInterface.MelodyPlayer
 
 
@@ -20,11 +19,17 @@ class Generator(
 
   def generateMusic = generate(0)
 
-  def generate(minLength: Int): Sequential = {
-    Generator.solToSegment(Generator.electOne(genOnly(minLength)).get)
+  def generateMusicWithChords = generateWithChords(0)
+
+  def generate(minLength: Int): MusicalSegment = {
+    Generator.solToSegment(genOnly(minLength))
   }
 
-  def genOnly(minLength: Int): List[Harm] = {
+  def generateWithChords(minLength: Int) : MusicalSegment = {
+    Generator.solToSegmentWithChords(genOnly(minLength))
+  }
+
+  def genOnly(minLength: Int): Harm = {
     val initSols: List[Harm] = List(Harm(
       ParsingTree(harm),
       ParsingTree(rootRythm),
@@ -36,7 +41,7 @@ class Generator(
       ps.h.wordSize >= minLength && closingCondition(ps)
     }
 
-    Generator.rGenerate(initSols, closCond)
+    Generator.electOne(Generator.rGenerate(initSols, closCond)).get
   }
 
 }
@@ -120,6 +125,22 @@ object Generator {
     }
 
     Sequential(notes)
+  }
+
+  def solToChords(sol: Harm): MusicalSegment = {
+    val Harm(h, rr, rc, m) = sol
+    val chords = h.collectWords
+    val roots = rr.collectWords
+    
+    val harms = chords zip roots map {
+      case (chord, bpm) => Parallel(chord.getTones map (Note(_, bpm)))
+    }
+
+    Sequential(harms)
+  }
+
+  def solToSegmentWithChords(sol: Harm): Parallel = {
+    Parallel(List(solToSegment(sol), solToChords(sol)))
   }
 
 }
