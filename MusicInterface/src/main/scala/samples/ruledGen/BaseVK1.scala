@@ -14,8 +14,7 @@ import tonalSystem.Minor
 import tonalSystem.C
 
 
-trait Base {
-
+trait BaseVK1 {
 
   lazy val noChords: Grammar[Chord] = FullChord(I)
 
@@ -23,8 +22,13 @@ trait Base {
 
   lazy val chords: Grammar[Chord] = 
 //    Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I)
-    Triad(I) ** Seventh(V) ** Triad(I) ** Triad(IV) ** Triad(V) ** 
+    Triad(I) ** Seventh(V) ** Triad(I) ** Triad(VI) ** Triad(V) **
+    Seventh(V) ** Triad(I)
+
+/*
+** Triad(I) ** Triad(IV) ** Triad(V) ** 
   Triad(VI) ** Triad(I) ** Seventh(V) ** Triad(I)
+*/
 
   def nChords(n: Int): Grammar[Chord] = if (n > 0) chords ** nChords(n-1) else Epsilon[Chord]()
 
@@ -50,18 +54,20 @@ trait Base {
 
 }
 
-object BaseNoHarmonic extends App with Base {
+/*
+object BaseNoHarmonic extends App with BaseVK1 {
   def music = Generator(nNoChords(8), root, cells, tones).generateMusic
   MelodyPlayer(music, 80)
 }
 
-object BaseSingleVoice extends App with Base {
+object BaseSingleVoice extends App with BaseVK1 {
   def music = Generator(nChords(2), root, cells, tones).generateMusic
   MelodyPlayer(music, 80)
 }
+*/
 
-object BaseWithAccompaniment extends App with Base {
-  def music = Generator(nChords(2), root, cells, tones).generateMusicWithChords
+object BaseWithAccompanimentVK1 extends App with BaseVK1 {
+  def music = Generator(nChords(4), root, cells, tones).generateMusicWithChords
   MelodyPlayer(music, 80)
 }
 
