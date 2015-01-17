@@ -283,20 +283,25 @@ case class ParsingTree[A](
         /* filter out unviable childrens (typically cannot generate expected words)
          * normalize weights to 1 for probability computation
          */
-        val n = normalize(rules filter { x => acceptChild(x._1, self) }) { _._2 } { (x, y) => (x._1, y) }
+        val normRules =
+          normalize(rules filter { x => acceptChild(x._1, self) }) { _._2 } { (x, y) => (x._1, y) }
 
         /* create childrens with probability relative to parent and filter out
          * unprobable ones
+         * to generate a child, 1) take an option of production 2) add it at top of stack 3) update prob
          */
-        n collect { case (rule @ Rule(body), p) if (p*prob >= tresholdProb) =>
-          self.updated(
-            rTree = rule :: rTree,
-            stack = body ::: stk,
-            prob = prob*p)
-        } flatMap {
+        val childrens = normRules collect {
+          case (ge, p) if (p*prob >= tresholdProb) =>
+            self.updated(
+              stack = ge::stk,
+              prob = prob * p)
+        }
+        
+        childrens flatMap {
           /* adding t.topStkIsProd to accept filter will cause recursion
            * to stop just before generating a production again
            */
+          // TODO check contract of function, make sure that usage corresponds !!
           _.gen(rejectTree, t => acceptTree(t) || t.topStkIsProd, acceptChild)
         }
       }
@@ -412,7 +417,11 @@ object ParsingTree {
 
   def normalize[A](target: List[A])(extract: A => Double)(update: (A, Double) => A): List[A] = {
     val total = (0.0 /: target) { _ + extract(_) }
-    if (total <= 0) Nil else target map { t => update(t, extract(t)/total) }
+    if (total <= 0 && target != Nil) {
+      // TODO remove debug output
+      println("[warn]: normalizing with total <= 0")
+      Nil
+    } else target map { t => update(t, extract(t)/total) }
   }
 
 

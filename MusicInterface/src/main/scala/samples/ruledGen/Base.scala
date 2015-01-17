@@ -28,7 +28,7 @@ trait Base {
 
   lazy val root: Grammar[BPM] = H ** Q ** root
 
-  lazy val cells: Grammar[RythmCell] = (Q +: E +: E) ** cells
+  lazy val cells: Grammar[RythmCell] = ((Q +: E +: E) || ((Q-) +: E)) ** cells
 
   lazy val tones: Grammar[Tone] = gen(I)
 
@@ -40,7 +40,10 @@ trait Base {
     (gen(t increaseBy 2), 2.0 * w(t))
   ))
 
-  def w(t: Tone): Double = 1/(1 + math.abs(t.octave))
+  def w(t: Tone): Double = t match {
+    case VII(_, _) => 0
+    case t => 1/(1 + math.abs(t.octave))
+  }
 
 }
 
@@ -50,7 +53,7 @@ object BaseNoHarmonic extends App with Base {
 }
 
 object BaseSingleVoice extends App with Base {
-  def music = Generator(nChords(8), root, cells, tones).generateMusic
+  def music = Generator(nChords(3), root, cells, tones).generateMusic
   MelodyPlayer(music, 80)
 }
 

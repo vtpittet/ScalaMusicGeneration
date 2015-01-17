@@ -21,6 +21,9 @@ trait PartialSolution[+A <: PartialSolution[A]] {
 
   def updateCurrentProb(newProb: Double): A
   def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): A
+  def normProbsTo(th: Double, trr: Double, trc: Double, tm: Double): A = {
+    updateProbs(h.prob/th, rr.prob/trr, rc.prob/trc, m.prob/tm)
+  }
 
   // generates one step of 'current' tree and go to next.
   // Consider context constraint but not messages (or maybe yes, melody)
@@ -82,7 +85,7 @@ object PartialSolution {
       )
     }
 
-    target map { _.updateProbs(th, trr, trc, tm) }
+    target map { _.normProbsTo(th, trr, trc, tm) }
   }
 }
 
