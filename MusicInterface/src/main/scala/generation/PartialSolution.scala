@@ -12,6 +12,7 @@ trait PartialSolution[+A <: PartialSolution[A]] {
   val rr: ParsingTree[BPM]
   val rc: ParsingTree[RythmCell]
   val m: ParsingTree[Tone]
+  val closeWithH: PartialSolution[_] => Boolean
 
   type Next <: PartialSolution[Next]
   type Current <: ParsingTree[_]
@@ -30,7 +31,7 @@ trait PartialSolution[+A <: PartialSolution[A]] {
   def gen: List[Next]
 
   // easy test if this partial solution is a good solution
-  lazy val completed: Boolean = h.onlyClosable //&& rr.isClosed && rc.isClosed && m.isClosed
+  lazy val completed: Boolean = h.isClosed // && rr.isClosed && rc.isClosed && m.isClosed
 
   // should not reach zero by roundings
   // prob > ParsingTree.tresholdProg ^ 4 (initially 0.01 ^ 4 => 10^-8)
@@ -95,30 +96,33 @@ case class Harm(
   h: ParsingTree[Chord],
   rr: ParsingTree[BPM],
   rc: ParsingTree[RythmCell],
-  m: ParsingTree[Tone]
+  m: ParsingTree[Tone],
+  closeWithH: PartialSolution[_] => Boolean
 ) extends PartialSolution[Harm] {
   type Next = Root
   type Current = ParsingTree[Chord]
 
   val current = h
-  lazy val toNext = Root(h, rr, rc, m)
+  lazy val toNext = Root(h, rr, rc, m, closeWithH)
 
 
   def updateCurrentProb(newProb: Double): Harm = Harm(
     h.updated(prob = newProb),
-    rr, rc, m
+    rr, rc, m,
+    closeWithH
   )
   def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): Harm = Harm(
     h.updated(prob = ph),
     rr.updated(prob = prr),
     rc.updated(prob = prc),
-    m.updated(prob = pm)
+    m.updated(prob = pm),
+    closeWithH
   )
 
   def gen: List[Next] = {
     // dispatched messages
     val dH: Harm = this.dispatchMsgs match {
-      case (nh, nrr, nrc, nm) => Harm(nh, nrr, nrc, nm)
+      case (nh, nrr, nrc, nm) => Harm(nh, nrr, nrc, nm, closeWithH)
     }
 
     dH.genNoDispatch
@@ -131,9 +135,9 @@ case class Harm(
       nextMelodyTones.isEmpty || (nextMelodyTones exists { c contains _ })
     }
 
-    val nextH = h.nexts(suitableChord(_), close = false)
+    val nextH = h.nexts(suitableChord(_), true, true)
 
-    nextH map { Root(_, rr, rc, m) }
+    nextH map { Root(_, rr, rc, m, closeWithH) }
 
   }
 }
@@ -142,27 +146,32 @@ case class Root(
   h: ParsingTree[Chord],
   rr: ParsingTree[BPM],
   rc: ParsingTree[RythmCell],
-  m: ParsingTree[Tone]
+  m: ParsingTree[Tone],
+  closeWithH: PartialSolution[_] => Boolean
 ) extends PartialSolution[Root] {
   type Next = Cell
   type Current = ParsingTree[BPM]
 
   val current = rr
-  lazy val toNext = Cell(h, rr, rc, m)
+  lazy val toNext = Cell(h, rr, rc, m, closeWithH)
 
   def updateCurrentProb(newProb: Double): Root = Root(
     h,
     rr.updated(prob = newProb),
-    rc, m
+    rc, m,
+    closeWithH
   )
   def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): Root = Root(
     h.updated(prob = ph),
     rr.updated(prob = prr),
     rc.updated(prob = prc),
-    m.updated(prob = pm)
+    m.updated(prob = pm),
+    closeWithH
   )
   def gen: List[Next] = {
-    rr.nexts(x => true, h.isClosed) map { Cell(h, _, rc, m) }
+    rr.nexts(x => true, h.isClosed, !h.isClosed || !closeWithH(this)) map {
+      Cell(h, _, rc, m, closeWithH)
+    }
   }
 }
 
@@ -170,29 +179,34 @@ case class Cell(
   h: ParsingTree[Chord],
   rr: ParsingTree[BPM],
   rc: ParsingTree[RythmCell],
-  m: ParsingTree[Tone]
+  m: ParsingTree[Tone],
+  closeWithH: PartialSolution[_] => Boolean
 ) extends PartialSolution[Cell] {
   type Next = Melody
   type Current = ParsingTree[RythmCell]
 
   val current = rc
-  lazy val toNext = Melody(h, rr, rc, m)
+  lazy val toNext = Melody(h, rr, rc, m, closeWithH)
 
   def updateCurrentProb(newProb: Double): Cell = Cell(
     h, rr,
     rc.updated(prob = newProb),
-    m
+    m,
+    closeWithH
   )
 
   def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): Cell = Cell(
     h.updated(prob = ph),
     rr.updated(prob = prr),
     rc.updated(prob = prc),
-    m.updated(prob = pm)
+    m.updated(prob = pm),
+    closeWithH
   )
 
   def gen: List[Next] = {
-    rc.nexts(x => true, close = h.isClosed) map { Melody(h, rr, _, m) }
+    rc.nexts(x => true, h.isClosed, !h.isClosed || !closeWithH(this)) map {
+      Melody(h, rr, _, m, closeWithH)
+    }
   }
 }
 
@@ -200,28 +214,31 @@ case class Melody(
   h: ParsingTree[Chord],
   rr: ParsingTree[BPM],
   rc: ParsingTree[RythmCell],
-  m: ParsingTree[Tone]
+  m: ParsingTree[Tone],
+  closeWithH: PartialSolution[_] => Boolean
 ) extends PartialSolution[Melody] {
   type Next = Harm
   type Current = ParsingTree[Tone]
 
   val current = m
-  lazy val toNext = Harm(h, rr, rc, m)
+  lazy val toNext = Harm(h, rr, rc, m, closeWithH)
 
   def updateCurrentProb(newProb: Double): Melody = Melody(
     h, rr, rc,
-    m.updated(prob = newProb)
+    m.updated(prob = newProb),
+    closeWithH
   )
 
   def updateProbs(ph: Double, prr: Double, prc: Double, pm: Double): Melody = Melody(
     h.updated(prob = ph),
     rr.updated(prob = prr),
     rc.updated(prob = prc),
-    m.updated(prob = pm)
+    m.updated(prob = pm),
+    closeWithH
   )
 
   def gen: List[Next] = rc.lastWord match {
-    case None => List(Harm(h, rr, rc, m))
+    case None => List(Harm(h, rr, rc, m, closeWithH))
     case Some(cell) if cell.size == 1 => genOne
     case Some(cell) => realGen(cell.size)
   }
@@ -234,9 +251,10 @@ case class Melody(
 
     val probExtractor: ParsingTree[Tone] => Double = _.prob
 
-    val gens = m.nexts(suitableFirstTone, close = h.isClosed)
+    val gens =
+      m.nexts(suitableFirstTone, h.isClosed, !h.isClosed || !closeWithH(this))
 
-    gens map (Harm(h, rr, rc, _))
+    gens map (Harm(h, rr, rc, _, closeWithH))
   }
 
   private def realGen(count: Int): List[Next] = {
@@ -248,13 +266,13 @@ case class Melody(
       case Some(chord) => chord contains _
     }
 
-    val firstGen = m.nexts(suitableFirstTone, close = false)
+    val firstGen = m.nexts(suitableFirstTone, false, true)
 
     val generators: List[ParsingTree[Tone] => List[ParsingTree[Tone]]] =
-      List.fill(count-2)(_.nexts(x => true, close = false))
+      List.fill(count-2)(_.nexts(x => true, false, true))
 
     val lastGen: ParsingTree[Tone] => List[ParsingTree[Tone]] =
-      _.nexts(x => true, close = h.isClosed)
+      _.nexts(x => true, h.isClosed, !h.isClosed || !closeWithH(this))
 
     val probExtractor: ParsingTree[Tone] => Double = _.prob
 
@@ -267,6 +285,6 @@ case class Melody(
       firstGen, generators :+ lastGen, probExtractor, probUpdator(_, _)
     )
 
-    gens map (Harm(h, rr, rc, _))
+    gens map (Harm(h, rr, rc, _, closeWithH))
   }
 }

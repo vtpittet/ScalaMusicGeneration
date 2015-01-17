@@ -83,9 +83,12 @@ case class ParsingTree[A](
     * the function prepareNexts should be called
     * 
     * 
-    * TODO close is for now ignored, left for later debug
+    * close and continue will select if after this nexts generation, the tree
+    * must go to a state to continue or end the generation. (both can be true
+    * if both acceptable)
     */
-  def nexts(wishWord: A => Boolean, close: Boolean): List[ParsingTree[A]] = {
+  def nexts(wishWord: A => Boolean, close: Boolean, continue: Boolean):
+      List[ParsingTree[A]] = {
     val words = composeAnd(wishWord, inNextWords)
     //println(nextWords filter words)
 
@@ -100,7 +103,8 @@ case class ParsingTree[A](
       println(close)
     }
      */
-    val prepared = gens flatMap (_.prepareGen(x => true, close))
+    val prepared = gens flatMap (_.prepareGen(x => true, close, continue))
+
     /*
     println("prep " + prepared.size)
      */
@@ -192,42 +196,48 @@ case class ParsingTree[A](
     * tree is still open
     * To ease the computation, don't forget to filter branches using firsts 
     *
-    * close is a selection parameter that overrides usual wishwords.
-    * when close is true, then the generated tree must go to closed state
-    * when close is false, then the generated tree must be able to
-    * generate a new word
+    * close and continue indicate if the tree can be closed without generating
+    * more words or respectively if it can generate another word (matching
+    * wishWord predicate, ofc)
+    * 
     */
-  def prepareGen(wishWord: A => Boolean, close: Boolean): List[ParsingTree[A]] = {
+  def prepareGen(wishWord: A => Boolean, close: Boolean, continue: Boolean): List[ParsingTree[A]] = {
 
     val words = composeAnd(wishWord, inNextWords)
 
 
-    
+    /*
+     * 
+     */
     def rejectTree(t: ParsingTree[A]): Boolean = {
-      (close && !t.nullable) ||
-      (!close && (t.nextWords filter words).isEmpty)
+      ((close && continue) && (!t.nullable && (t.nextWords filter words).isEmpty)) ||
+      ((close && !continue) && !t.nullable) ||
+      ((!close && continue) && (t.nextWords filter words).isEmpty) ||
+      (!close && !continue)
     }
     
-    /*
+    /* without close, continue
     def rejectTree(t: ParsingTree[A]): Boolean = {
       !t.nullable && (t.nextWords filter words).isEmpty
     }
     */
 
-    // accept tree if ready to generate word of wishWord
-    def acceptTree(t: ParsingTree[A]): Boolean =
-      if (t.onlyClosable) close  else t.stack match {
-        case Nil => close
-        case Word(w) :: tail => !close &&  words(w)
-        case _ => false
-      }
+    // accept tree if ready to generate word of wishWord and continue
+    // or closed (stack is empty) and close
+    def acceptTree(t: ParsingTree[A]): Boolean = t.stack match {
+      case Nil => close
+      case Word(w) :: tail => continue &&  words(w)
+      case _ => false
+    }
 
     def acceptChild(e: GrammarElement[A], t: ParsingTree[A]): Boolean = {
       (close && e.nullable && t.nullable) ||
-      (!close && (t.nextWordsWith(e) filter words).nonEmpty)
+      (continue && (t.nextWordsWith(e) filter words).nonEmpty)
     }
 
-    // generator generates only acceptable Trees
+    // generator generates only acceptable Childrens
+    // returned list contains accepted trees and pending solutions
+    // (need to elect, normalize before generating further)
     def generator(t: ParsingTree[A]): List[ParsingTree[A]] = {
       t.gen(rejectTree, acceptTree, acceptChild)
     }
@@ -317,7 +327,8 @@ case class ParsingTree[A](
     val words = composeAnd(wishWord, inNextWords)
 
     def generate(t: ParsingTree[A]): List[ParsingTree[A]] = {
-      t.prepareGen(words, true)
+      // ref grammars can close and continue
+      t.prepareGen(words, true, true)
     }
 
     genHeadRef(generate(_))

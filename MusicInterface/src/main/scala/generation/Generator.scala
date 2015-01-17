@@ -14,7 +14,7 @@ class Generator(
   rootRythm: GrammarElement[BPM],
   rythm: GrammarElement[RythmCell],
   melody: GrammarElement[Tone],
-  closingCondition: PartialSolution[_] => Boolean
+  closeWithH: PartialSolution[_] => Boolean
 ) {
 
   def generateMusic = generate(0)
@@ -34,11 +34,12 @@ class Generator(
       ParsingTree(harm),
       ParsingTree(rootRythm),
       ParsingTree(rythm),
-      ParsingTree(melody)
+      ParsingTree(melody),
+      closeWithH
     ))
 
     val closCond: Harm => Boolean = { ps: Harm =>
-      ps.h.wordSize >= minLength && closingCondition(ps)
+      ps.h.wordSize >= minLength && ps.completed
     }
 
     Generator.electOne(Generator.rGenerate(initSols, closCond)).get
@@ -50,10 +51,21 @@ object Generator {
   def apply(
     h: GrammarElement[Chord],
     rr: GrammarElement[BPM],
-    r: GrammarElement[RythmCell],
+    rc: GrammarElement[RythmCell],
     m: GrammarElement[Tone],
-    cCond: PartialSolution[_] => Boolean = _.completed
-  ): Generator = new Generator(h, rr, r, m, cCond)
+    rrCloseWithH: Boolean = false,
+    rcCloseWithH: Boolean = false,
+    mCloseWithH: Boolean = false
+  ): Generator = {
+    def closeWithH(ps: PartialSolution[_]): Boolean = ps match {
+      case h: Harm => true
+      case rr: Root => rrCloseWithH
+      case rc: Cell => rcCloseWithH
+      case m: Melody => mCloseWithH
+    }
+
+    new Generator(h, rr, rc, m, closeWithH)
+  }
 
   val globalProb: PartialSolution[_] => Double = _.prob
 
@@ -112,7 +124,7 @@ object Generator {
   }
 
   def solToSegment(sol: Harm): Sequential = {
-    val Harm(h, rr, rc, m) = sol
+    val Harm(h, rr, rc, m, _) = sol
     val roots = rr.collectWords
     val cells = rc.collectWords
     val tones = m.collectWords
@@ -128,7 +140,7 @@ object Generator {
   }
 
   def solToChords(sol: Harm): MusicalSegment = {
-    val Harm(h, rr, rc, m) = sol
+    val Harm(h, rr, rc, m, _) = sol
     val chords = h.collectWords
     val roots = rr.collectWords
     
