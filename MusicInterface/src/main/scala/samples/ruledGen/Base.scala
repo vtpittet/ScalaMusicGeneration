@@ -1,4 +1,4 @@
-package ruledGen
+package samples.ruledGen
 
 import grammar._
 import grammar.ImplicitsWords2Elements._
