@@ -120,6 +120,13 @@ object Generator {
     val stepMelody: List[Melody] = normalize(elect(stepCell flatMap (_.gen)))
     //println("stepMelody : " + stepMelody.size)
 
+    stepMelody match {
+      case Nil => Unit
+      case hd :: tl => if (hd.m.wordSize == 4 && hd.m.stack.size == 1) {
+        println("gotcha")
+        println()
+      }
+    }
     //println("gen melody")
     val stepHarm: List[Harm] = normalize(elect(stepMelody flatMap (_.gen)))
     //println("stepHarm : " + stepHarm.size)

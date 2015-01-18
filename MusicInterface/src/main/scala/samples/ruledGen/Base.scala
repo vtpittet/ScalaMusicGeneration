@@ -28,7 +28,7 @@ trait Base {
     (Triad(IV) ** Triad(V) ** Seventh(V) ** Triad(I))
   ) ** Triad(I)
 
-  def nChords(n: Int): Grammar[Chord] = if (n > 0) chords ** nChords(n-1) else Epsilon[Chord]()
+  def nChords(n: Int): Grammar[Chord] = if (n > 0) chords ** nChords(n-1) else Triad(I)
 
   lazy val root: Grammar[BPM] = (Q ** Q || H) ** ((root, 1.0) || (H, 1.0))
   lazy val cells: Grammar[RythmCell] = //RythmCell(Q::Nil) ** cells
@@ -48,14 +48,14 @@ trait Base {
   def inertialGen(t: Tone): Grammar[Tone] = {
     // positive if t2 higher, negative if t2 lower
     def d0(t2: Tone): Int = t stepsTo t2
-    val pertFactor: Double = 1.0
+    val pertFactor: Double = 1.5
     def perturbation : Int = (scala.util.Random.nextGaussian() * pertFactor).toInt
     // inertia factor
     // gravity factor
     // randomness
     def rec(t: Tone, inertia: Int, deviation: Int): Grammar[Tone] = {
 //      print(inertia + ", ")
-      val zeroTend = - d0(t) / 2
+      val zeroTend = (- d0(t) ).toInt
       val newInertia = inertia - deviation + perturbation + zeroTend
       val factorDown = if (newInertia > 0) 0.25 else 1.0
       val factorUp = if (newInertia < 0) 0.25 else 1.0
@@ -85,12 +85,12 @@ object BaseNoHarmonic extends App with Base {
 }
 
 object BaseSingleVoice extends App with Base {
-  def music = Generator(nChords(4), root, cells, tones, true, true, true).generateMusic
+  def music = Generator(nChords(6), root, cells, tones, true, true, true).generateMusic
   MelodyPlayer(music, 80)
 }
 
 object BaseWithAccompaniment extends App with Base {
-  def music = Generator(nChords(4), root, cells, tones).generateMusicWithChords
+  def music = Generator(nChords(6), root, cells, tones).generateMusicWithChords
   MelodyPlayer(music, 80)
 }
 

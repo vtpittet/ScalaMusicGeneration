@@ -158,14 +158,17 @@ case class ParsingTree[A](
       acceptTree(_),
       generator(_)
     )
-
+    // todo replace words by last word of _
     elect(mainGenerated flatMap (_.refNextWord(words)))(_.probWithRefHead)
   }
 
 
   def refHeadNextWord(wishWord: A => Boolean): List[ParsingTree[A]] = {
 
-    val words = composeAnd(wishWord, inNextWords)
+    // fix this word computation was wrong
+    // called in already next word generated main tree
+    // refinement will be generated
+    val words = wishWord//composeAnd(wishWord, inNextWords)
 
     def generate(t: ParsingTree[A]): List[ParsingTree[A]] = {
       t.genNextWord(words)
@@ -177,7 +180,8 @@ case class ParsingTree[A](
 
   def refNextWord(wishWord: A => Boolean): List[ParsingTree[A]] = {
 
-    val words = composeAnd(wishWord, inNextWords)
+    // fixme this was wrong, intersection of already generated main tree with not yet generated ref tree
+    val words = wishWord //composeAnd(wishWord, inNextWords)
 
     val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
       List.fill(refs.size)(_.refHeadNextWord(words))
@@ -340,14 +344,14 @@ case class ParsingTree[A](
     * ready to generate a new terminal in wishWord
     * (typically, nextWords of refined tree)
     */
-  def prepareRefs(wishWord: A => Boolean): List[ParsingTree[A]] = {
-
+  def prepareRefs(wishWord: A => Boolean): List[ParsingTree[A]] = if (self.isClosed) {
+    List(self)
+  } else {
     val words = composeAnd(wishWord, inNextWords)
-
+    
     // note that wishWord are systematically intersected with self.nextWords
     val generators: List[ParsingTree[A] => List[ParsingTree[A]]] =
       List.fill(refs.size)(_.prepareHeadRef(words))
-
     def probExtractor(t: ParsingTree[A]): Double = t.probWithRefHead
 
     def probUpdator(t: ParsingTree[A], p: Double): ParsingTree[A] =
@@ -412,9 +416,9 @@ case class ParsingTree[A](
 }
 
 object ParsingTree {
-  val tresholdProb = 0.001
   val maxRefinements = 2
   val maxMemory = 100
+  val tresholdProb = math.pow(maxMemory, -3)
 
   def composeOr[A](lhs: A => Boolean, rhs: A => Boolean): A => Boolean = { a =>
     lhs(a) || rhs(a)
