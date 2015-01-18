@@ -38,16 +38,18 @@ class PartialSolTest extends FunSuite with Matchers with BeforeAndAfter {
       (gen(t increaseBy 2), 2.0)
   )
 
+  val default: PartialSolution[_] => Boolean = x => false
   val initSol = Harm(
     ParsingTree(chords),
     ParsingTree(root),
     ParsingTree(cells),
-    ParsingTree(tones)
+    ParsingTree(tones),
+    default
   )
 
   test("dispatch id under no messages") {
     val (h, rr, rc, m) = initSol.dispatchMsgs
-    initSol shouldBe Harm(h, rr, rc, m)
+    initSol shouldBe Harm(h, rr, rc, m, default)
   }
 
   test("gen test") {

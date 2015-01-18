@@ -53,15 +53,15 @@ object Generator {
     rr: GrammarElement[BPM],
     rc: GrammarElement[RythmCell],
     m: GrammarElement[Tone],
-    rrCloseWithH: Boolean = false,
-    rcCloseWithH: Boolean = false,
-    mCloseWithH: Boolean = false
+    rrCWH: Boolean = false,
+    rcCWH: Boolean = false,
+    mCWH: Boolean = false
   ): Generator = {
     def closeWithH(ps: PartialSolution[_]): Boolean = ps match {
       case h: Harm => true
-      case rr: Root => rrCloseWithH
-      case rc: Cell => rcCloseWithH
-      case m: Melody => mCloseWithH
+      case rr: Root => rrCWH
+      case rc: Cell => rcCWH
+      case m: Melody => mCWH
     }
 
     new Generator(h, rr, rc, m, closeWithH)
@@ -84,6 +84,8 @@ object Generator {
     //println("iteration in generator")
     val gen: Harm => List[Harm] = oneStepGen(_)
     
+    //println("call oneStepGen with sols.size = " + sols.size)
+
     sols flatMap gen match {
       case Nil => {
         println("[warn]: no solution found, returning longest partial solution")
@@ -106,20 +108,23 @@ object Generator {
     def normalize[A <: PartialSolution[A]](target: List[A]) =
       PartialSolution.normalize(target)
 
+    //println("gen chords")
     val stepRoot: List[Root] = normalize(elect(start.gen))
+    //println("stepRoot : " + stepRoot.size)
 
+    //println("gen root")
     val stepCell: List[Cell] = normalize(elect(stepRoot flatMap (_.gen)))
+    //println("stepCell : " + stepCell.size)
 
+    //println("gen cells")
     val stepMelody: List[Melody] = normalize(elect(stepCell flatMap (_.gen)))
+    //println("stepMelody : " + stepMelody.size)
 
+    //println("gen melody")
     val stepHarm: List[Harm] = normalize(elect(stepMelody flatMap (_.gen)))
+    //println("stepHarm : " + stepHarm.size)
 
-    /*
-    println(stepRoot.size)
-    println(stepCell.size)
-    println(stepMelody.size)
-    println(stepHarm.size)
-     */
+
     stepHarm
   }
 

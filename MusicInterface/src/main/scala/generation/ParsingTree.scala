@@ -105,15 +105,17 @@ case class ParsingTree[A](
      */
     val prepared = gens flatMap (_.prepareGen(x => true, close, continue))
 
-    /*
-    println("prep " + prepared.size)
-     */
 
-    normalize(
+//    println("prep " + prepared.size)
+
+    val res = normalize(
       elect(
         prepared
       ) { _.prob }
     )
+
+//    println("res " + res.size)
+    res
   }
 
   /** generate one-step word from prepared state and adjust refinements
@@ -410,9 +412,9 @@ case class ParsingTree[A](
 }
 
 object ParsingTree {
-  val tresholdProb = 0.0
+  val tresholdProb = 0.001
   val maxRefinements = 2
-  val maxMemory = 10
+  val maxMemory = 100
 
   def composeOr[A](lhs: A => Boolean, rhs: A => Boolean): A => Boolean = { a =>
     lhs(a) || rhs(a)

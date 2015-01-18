@@ -42,7 +42,8 @@ class GeneratorTest extends FunSuite with Matchers with BeforeAndAfter {
     ParsingTree(chords),
     ParsingTree(root),
     ParsingTree(cells),
-    ParsingTree(tones)
+    ParsingTree(tones),
+    x => false
   )
 
   test("oneStepGen") {

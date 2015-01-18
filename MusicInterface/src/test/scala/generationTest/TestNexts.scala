@@ -43,7 +43,7 @@ class TestNexts extends FunSuite with Matchers with BeforeAndAfter {
 
   test("nexts on harm") {
     val tree = ParsingTree(chords)
-    val nexts: List[ParsingTree[Chord]] = tree.nexts(x => true, false)
+    val nexts: List[ParsingTree[Chord]] = tree.nexts(x => true, false, true)
 
     nexts.size > 0 shouldBe true
   }
@@ -52,7 +52,7 @@ class TestNexts extends FunSuite with Matchers with BeforeAndAfter {
     val gramm: Grammar[Tone] = I ** IV ** V
     println(gramm)
     val tree = ParsingTree(gramm)
-    val nexts = tree.nexts(x => true, false)
+    val nexts = tree.nexts(x => true, false, true)
 
     nexts.size > 0 shouldBe true
   }
@@ -62,7 +62,7 @@ class TestNexts extends FunSuite with Matchers with BeforeAndAfter {
     val tree = ParsingTree(tones)
 
 
-    val nexts: List[ParsingTree[Tone]] = tree.nexts(x => true, false)
+    val nexts: List[ParsingTree[Tone]] = tree.nexts(x => true, false, true)
 
     nexts.size shouldBe 5
 
