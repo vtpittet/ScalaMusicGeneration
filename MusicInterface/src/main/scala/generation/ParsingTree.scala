@@ -158,7 +158,7 @@ case class ParsingTree[A](
       acceptTree(_),
       generator(_)
     )
-    // todo replace words by last word of _
+    
     elect(mainGenerated flatMap (_.refNextWord(words)))(_.probWithRefHead)
   }
 
