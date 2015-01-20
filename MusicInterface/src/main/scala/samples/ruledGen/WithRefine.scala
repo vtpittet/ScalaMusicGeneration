@@ -33,28 +33,28 @@ trait WithRefine {
   def inertialGen(t: Tone): Grammar[Tone] = {
     // positive if t2 higher, negative if t2 lower
     def d0(t2: Tone): Int = t stepsTo t2
-    val pertFactor: Double = 0.0
+    val pertFactor: Double = 1.0
     def perturbation : Int = (scala.util.Random.nextGaussian() * pertFactor).toInt
     // inertia factor
     // gravity factor
     // randomness
     def rec(t: Tone, inertia: Int, deviation: Int): Grammar[Tone] = {
 //      print(inertia + ", ")
-      val zeroTend = 0 //- d0(t)
+      val zeroTend = - d0(t)
       val newInertia = inertia - deviation + perturbation + zeroTend
       val factorDown = if (newInertia > 0) 0.25 else 1.0
       val factorUp = if (newInertia < 0) 0.25 else 1.0
       val newT = t increaseBy deviation
       (newT) ** (
-        (rec(newT, newInertia, -2), 4.0 * factorDown) ||
-          (rec(newT, newInertia, -1), 2.0 * factorDown) ||
+        (rec(newT, newInertia, -2), 2.0 * factorDown) ||
+          (rec(newT, newInertia, -1), 4.0 * factorDown) ||
           (rec(newT, newInertia, 0), 1.0) ||
-          (rec(newT, newInertia, 1), 2.0 * factorUp) ||
-          (rec(newT, newInertia, 2), 4.0 * factorUp) ||
+          (rec(newT, newInertia, 1), 4.0 * factorUp) ||
+          (rec(newT, newInertia, 2), 2.0 * factorUp) ||
           (Epsilon[Tone](), 2.0)
       )
     }
-    rec(t, -10, 0)
+    rec(t, 25, 0)
   }
 
 
@@ -86,6 +86,11 @@ object WithRefineSingleVoice extends App with WithRefine {
 //  println(converge(2))
 //  for ( i <- 1 to 10) println(converge(i).firsts)
   val music = Generator(finalChords, root, cells, tones, true, true, true).generateMusic
+  MelodyPlayer(music, 80)
+}
+
+object WithRefineWithAccom extends App with WithRefine {
+  val music = Generator(finalChords, root, cells, tones, true, true, true).generateMusicWithChords
   MelodyPlayer(music, 80)
 }
 
