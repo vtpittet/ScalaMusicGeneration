@@ -10,14 +10,14 @@ import tonalSystem.Tone
 
 /** Calls to generation algorithm and details of melody producing
   * plus some helping function are implemented in Presentation trait
-  * Extending object only has to define the four grammars :
+  * Extending element only has to define the four grammars :
   * chords, root, cells and tones
   * and call play() to compose and play the music.
   */
-object PurelyRandom extends App with Presentation {
+trait PurelyRandomSpec extends Presentation {
 
   // helping value
-  val chords0: Grammar[Chord] =
+  private[this] val chords0: Grammar[Chord] =
     Triad(I) ** Triad(IV) ** Triad(V) ** Triad(I)
 
   // repeats chords0 three times in a sequence
@@ -37,7 +37,6 @@ object PurelyRandom extends App with Presentation {
   // uniformly distributed tones of scale
   lazy val tones: Grammar[Tone] =
     (I || II || III || IV || V || VI || VII) ** tones
-
-
-  play
 }
+
+object PurelyRandom extends App with PurelyRandomSpec { play }

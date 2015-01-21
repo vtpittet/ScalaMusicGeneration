@@ -25,9 +25,9 @@ trait Presentation {
   val cells: Grammar[RythmCell]
   val tones: Grammar[Tone]
 
-  var closeRoot: Boolean = false
-  var closeCells: Boolean = false
-  var closeTones: Boolean = false
+  val closeRoot: Boolean = false
+  val closeCells: Boolean = false
+  val closeTones: Boolean = false
 
   // repeats the same grammar g n times
   def repeat[T](n: Int)(g: Grammar[T]): Grammar[T] =
