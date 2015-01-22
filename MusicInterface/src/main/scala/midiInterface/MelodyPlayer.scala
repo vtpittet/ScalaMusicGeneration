@@ -36,7 +36,9 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN:
   play
   
   def setTempo {
-    midiTrack.add(new MidiEvent(new MetaMessage(0x51, getMPQN(bpm), 3), 0))
+	val metaMessage = new MetaMessage()
+	metaMessage.setMessage(0x51, getMPQN(bpm), 3)
+    midiTrack.add(new MidiEvent(metaMessage, 0))
     def getMPQN(bpm: Int): Array[Byte] = {
       val microsecondsPerMinute = 60000000
       val mpqn: Int = Math.max(Math.min(microsecondsPerMinute / bpm, 8355711), 0)
@@ -77,14 +79,19 @@ case class MelodyPlayer(melody: MusicalSegment, bpm: Int, fromQN: Int = 0, toQN:
   def createEventsPerNote(tone: Tone, duration: BPM, scale: Scale, segtTimeStamp: Double, noteOn: Boolean): Double = {
     // if segtTimeStamp is in given interval (toQN == -1 => no upperbound)
     if (segtTimeStamp >= 0 && (segtTimeStamp < toQN-fromQN || toQN == -1)) {
-      if (noteOn) midiTrack.add(new MidiEvent(new ShortMessage(
-              ShortMessage.NOTE_ON, 0, MidiToneExtractor(scale.pitchTone(tone)),
-              DEFAULT_VELOCITY),
+	  val shortMessage = new ShortMessage()
+	  shortMessage.setMessage(
+	          ShortMessage.NOTE_ON, 0, MidiToneExtractor(scale.pitchTone(tone)),
+			  DEFAULT_VELOCITY)
+      if (noteOn) midiTrack.add(new MidiEvent(shortMessage,
               (segtTimeStamp * DEFAULT_RESOLUTION).toLong))
-      else midiTrack.add(new MidiEvent(new ShortMessage(
-              ShortMessage.NOTE_OFF, 0, MidiToneExtractor(scale.pitchTone(tone)),
-              DEFAULT_VELOCITY),
-              ((segtTimeStamp + duration.computed) * DEFAULT_RESOLUTION).toLong))
+      else {
+		val shortMessage = new ShortMessage()
+		shortMessage.setMessage(ShortMessage.NOTE_OFF, 0, MidiToneExtractor(scale.pitchTone(tone)),
+                DEFAULT_VELOCITY)
+	    midiTrack.add(new MidiEvent(shortMessage,
+                ((segtTimeStamp + duration.computed) * DEFAULT_RESOLUTION).toLong))
+	  }
     
     }
     segtTimeStamp + duration.computed
